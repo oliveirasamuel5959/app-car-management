@@ -1,0 +1,3 @@
+Regra de ouro
+Router → Service → Repository → DB
+Sem lógica de negócio nos routers.
