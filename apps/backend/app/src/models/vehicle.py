@@ -1,0 +1,31 @@
+from sqlalchemy import Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
+from uuid import uuid4
+
+from .base import Base
+
+
+class Vehicle(Base):
+    __tablename__ = "vehicles"
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True,
+        default=uuid4
+    )
+
+    owner_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=False,
+        index=True
+    )
+
+    brand: Mapped[str] = mapped_column(String(100), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    plate: Mapped[str] = mapped_column(String(20), nullable=True)
+
+    owner = relationship(
+        "User",
+        back_populates="vehicles"
+    )
