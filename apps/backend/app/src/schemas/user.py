@@ -10,14 +10,20 @@ class UserRole(str, Enum):
 
 
 class UserCreate(BaseModel):
+    name: str
+    age: int
+    sex: str
     email: EmailStr
     password: str
     role: UserRole
 
 
 class UserRead(BaseModel):
-    id: UUID
+    id: int
     email: EmailStr
+    name: str
+    age: int
+    sex: str
     role: UserRole
     created_at: datetime
 
