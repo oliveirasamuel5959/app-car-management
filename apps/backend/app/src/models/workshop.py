@@ -1,21 +1,17 @@
-from sqlalchemy import Float, String, Text
+from sqlalchemy import Float, String, Text, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
 
-from .base import Base
-
+from app.src.db.base import Base
 
 class Workshop(Base):
     __tablename__ = "workshops"
 
-    id: Mapped[UUID] = mapped_column(
-        primary_key=True,
-        default=uuid4
-    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    user_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
+    user_id: Mapped[int] = mapped_column(
+        Integer,
         nullable=False,
         unique=True
     )

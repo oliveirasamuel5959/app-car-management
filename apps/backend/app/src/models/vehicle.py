@@ -3,19 +3,16 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
 
-from .base import Base
+from app.src.db.base import Base
 
 
 class Vehicle(Base):
     __tablename__ = "vehicles"
 
-    id: Mapped[UUID] = mapped_column(
-        primary_key=True,
-        default=uuid4
-    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    owner_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
+    owner_id: Mapped[int] = mapped_column(
+        Integer,
         nullable=False,
         index=True
     )
