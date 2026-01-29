@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.src.db.base import Base
-from app.src.models import user, vehicle, workshop
+from app.src.models import User, Vehicle, Workshop
 
 config = context.config
 
