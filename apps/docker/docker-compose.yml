@@ -1,19 +1,19 @@
 version: "3.9"
 
 services:
-  api:
-    build: ./apps/backend
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    depends_on:
-      - db
+  # api:
+  #   build: ./apps/backend
+  #   ports:
+  #     - "8000:8000"
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - db
 
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: saas
+      POSTGRES_DB: car_db
       POSTGRES_USER: saas
       POSTGRES_PASSWORD: saas
     ports:

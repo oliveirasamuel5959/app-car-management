@@ -1,10 +1,10 @@
 import enum
-from sqlalchemy import Boolean, DateTime, Enum, String
+from sqlalchemy import Boolean, DateTime, Enum
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from uuid import UUID, uuid4
 
-from .base import Base
+from app.src.db.base import Base
 
 
 class UserRole(str, enum.Enum):
@@ -15,11 +15,10 @@ class UserRole(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[UUID] = mapped_column(
-        primary_key=True,
-        default=uuid4
-    )
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    age: Mapped[int] = mapped_column(Integer, nullable=False)
+    sex: Mapped[str] = mapped_column(String(20), nullable=False)
     email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
