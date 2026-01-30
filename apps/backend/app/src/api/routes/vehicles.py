@@ -1,3 +1,4 @@
+from app.src.core.exceptions import DuplicateVehiclePlateError
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.src.db.database import get_session
@@ -16,6 +17,9 @@ def create_vehicle(vehicle_create: VehicleCreate, db: Session = Depends(get_sess
   
   try:
     return vehicle_service.create_vehicle(vehicle_create)
-  except ValueError as e:
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+  except DuplicateVehiclePlateError as e:
+    raise HTTPException(
+      status_code=status.HTTP_409_CONFLICT, 
+      detail="Vehicle with this plate already exists"
+    )
   
