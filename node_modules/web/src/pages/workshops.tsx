@@ -24,7 +24,7 @@ export default function WorkshopsPage() {
   const { data: workshops, isLoading } = useWorkshops(search);
 
   // Default center (San Francisco for demo)
-  const center = { lat: 37.7749, lng: -122.4194 };
+  const center = { lat: -7.21189, lng: -36.6294 };
 
   return (
     <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] flex flex-col md:flex-row gap-6 animate-in fade-in duration-500">
