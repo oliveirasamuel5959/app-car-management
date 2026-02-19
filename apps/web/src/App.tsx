@@ -1,73 +1,39 @@
-import { Switch, Route, useLocation, Redirect } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
-
-import NotFound from "@/pages/not-found";
-import AuthPage from "@/pages/auth-page";
-import Dashboard from "@/pages/dashboard";
-import CarsPage from "@/pages/cars";
-import WorkshopsPage from "@/pages/workshops";
-import WorkshopDetails from "@/pages/workshop-details";
-import Layout from "@/components/layout";
-
-// Protected Route Wrapper
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
-
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!user) {
-    return <Redirect to="/auth" />;
-  }
-
-  return (
-    <Layout>
-      <Component />
-    </Layout>
-  );
-}
-
-function Router() {
-  return (
-    <Switch>
-      <Route path="/auth" component={AuthPage} />
-      
-      {/* Protected Routes */}
-      <Route path="/">
-        {() => <ProtectedRoute component={Dashboard} />}
-      </Route>
-      <Route path="/cars">
-        {() => <ProtectedRoute component={CarsPage} />}
-      </Route>
-      <Route path="/workshops">
-        {() => <ProtectedRoute component={WorkshopsPage} />}
-      </Route>
-      <Route path="/workshops/:id">
-        {() => <ProtectedRoute component={WorkshopDetails} />}
-      </Route>
-      
-      {/* Fallback */}
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import MainLayout from './layouts/main-layout';
+import ProtectedRoute from './components/routing/protected-route';
+import { AuthProvider } from './context/auth-context';
+import { publicRoutes, protectedRoutes } from './routes/routes';
+import './App.css';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Router />
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <Router>
+        <MainLayout>
+          <Routes>
+            {publicRoutes.map((route) => (
+              <Route 
+                key={route.path}
+                path={route.path}
+                element={route.element}
+              />
+            ))}
+            
+            {/* {protectedRoutes.map((route) => (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={
+                  <ProtectedRoute>
+                    {route.element}
+                  </ProtectedRoute>
+                }
+              />
+            ))} */}
+          </Routes>
+        </MainLayout>
+      </Router>
+    </AuthProvider>
   );
 }
 
