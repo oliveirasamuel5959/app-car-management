@@ -1,0 +1,20 @@
+<svg width="220" height="60" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <!-- Icon Background -->
+  <rect x="0" y="5" width="50" height="50" rx="14" fill="#111827"/>
+
+  <!-- Shield Shape -->
+  <path d="M25 15 L38 20 V30 C38 38 32 43 25 45 C18 43 12 38 12 30 V20 Z"
+        fill="#2563EB"/>
+
+  <!-- Car silhouette -->
+  <path d="M15 32 L18 26 C19 24 21 23 23 23 H27 C29 23 31 24 32 26 L35 32 H15 Z"
+        fill="white"/>
+  <circle cx="20" cy="33" r="2" fill="#111827"/>
+  <circle cx="30" cy="33" r="2" fill="#111827"/>
+
+  <!-- Brand Text -->
+  <text x="65" y="38" font-family="Inter, Arial, sans-serif"
+        font-size="28" font-weight="600" fill="#111827">
+    Car<tspan fill="#2563EB">Keep</tspan>
+  </text>
+</svg>
