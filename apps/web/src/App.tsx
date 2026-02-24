@@ -19,7 +19,7 @@ function App() {
               />
             ))}
             
-            {/* {protectedRoutes.map((route) => (
+            {protectedRoutes.map((route) => (
               <Route
                 key={route.path}
                 path={route.path}
@@ -29,7 +29,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-            ))} */}
+            ))}
           </Routes>
         </MainLayout>
       </Router>

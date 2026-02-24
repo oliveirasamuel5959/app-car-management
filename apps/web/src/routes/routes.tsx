@@ -17,20 +17,16 @@ export const publicRoutes = [
     element: <LoginPage />,
   },
   {
-    path: '/dashboard',
-    element: <DashboardLayout><Dashboard /></DashboardLayout>,
-  },
-  {
     path: '/signup',
     element: <SignUpPage />,
   }
 ];
 
 export const protectedRoutes = [
-  // {
-  //   path: '/dashboard',
-  //   element: <DashboardLayout><Dashboard /></DashboardLayout>,
-  // },
+  {
+    path: '/dashboard',
+    element: <DashboardLayout><Dashboard /></DashboardLayout>,
+  },
   // {
   //   path: '/trips',
   //   element: <DashboardLayout><Dashboard /></DashboardLayout>,
