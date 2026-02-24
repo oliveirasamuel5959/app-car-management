@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.src.models.user import User 
+from app.src.models.user import User
 from app.src.schemas.user import UserCreate
 from app.src.core.security import hash_password
 
@@ -21,3 +21,9 @@ def repo_create_user(db: Session, user: UserCreate) -> User:
 
 def get_user_by_email(db: Session, email: str) -> User | None:
     return db.query(User).filter(User.email == email).first()
+
+
+def email_exists(db: Session, email: str) -> bool:
+    """Check if email already exists in database."""
+    return db.query(User).filter(User.email == email).first() is not None
+
