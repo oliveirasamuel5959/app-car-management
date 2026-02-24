@@ -20,10 +20,12 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+
   const [formErrors, setFormErrors] = useState({
     email: '',
     password: ''
