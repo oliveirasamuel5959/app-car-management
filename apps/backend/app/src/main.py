@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.src.routers import api_router
 from app.src.core.middleware import AuthMiddleware, SecurityHeadersMiddleware, RateLimitMiddleware
+from app.src.core.config import settings
 
 servers = [
   {"url": "http://localhost:5500", "description": "Staging environment"},
@@ -35,6 +37,15 @@ Banck account transactions management.
   openapi_tags=tags_metadata,
   # openapi_url=None, # disable docs
   servers=servers,
+)
+
+# CORS Configuration for React frontend (from environment variables)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.cors_methods_list,
+    allow_headers=settings.CORS_ALLOW_HEADERS.split(","),
 )
 
 # Add security middlewares
