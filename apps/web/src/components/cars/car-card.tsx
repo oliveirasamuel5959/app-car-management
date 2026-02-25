@@ -1,9 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 import CarChevrolet from '../../assets/cars/car-chevrolet-tracker.png';
+import { carService } from "../../services/car-service";
 
-const CarCard = ({ car, loading }) => {
+const CarCard = ({ carData, loading }) => {
   const navigate = useNavigate();
+  const [error, setError] = useState(null);
 
   if (loading) {
     return (
@@ -20,12 +23,12 @@ const CarCard = ({ car, loading }) => {
 
   return (
     <div className="w-full max-w-5xl mx-auto bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-      
+
       {/* 🔥 BIG IMAGE */}
       <div className="h-96 w-full overflow-hidden">
         <img
           src={CarChevrolet}
-          alt={`${car.brand} ${car.model}`}
+          alt={`${carData.brand} ${carData.model}`}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
         />
       </div>
@@ -34,7 +37,7 @@ const CarCard = ({ car, loading }) => {
       <div className="p-10">
         {/* Title */}
         <h2 className="text-4xl font-bold text-gray-900 mb-2">
-          {car.model} {car.brand}
+          {carData.model} {carData.brand}
         </h2>
 
         <p className="text-lg text-gray-500 mb-6">
@@ -43,25 +46,25 @@ const CarCard = ({ car, loading }) => {
 
         {/* INFO GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          
+
           <div className="bg-gray-100 p-6 rounded-2xl text-center">
             <p className="text-sm text-gray-500">Year</p>
             <p className="text-2xl font-semibold text-gray-800">
-              {car.year}
+              {carData.year}
             </p>
           </div>
 
           <div className="bg-gray-100 p-6 rounded-2xl text-center">
             <p className="text-sm text-gray-500">Plate</p>
             <p className="text-2xl font-semibold text-gray-800">
-              {car.plate}
+              {carData.plate}
             </p>
           </div>
 
           <div className="bg-gray-100 p-6 rounded-2xl text-center">
             <p className="text-sm text-gray-500">ID</p>
             <p className="text-2xl font-semibold text-gray-800">
-              #{car.id}
+              #{carData.id}
             </p>
           </div>
 
@@ -69,7 +72,7 @@ const CarCard = ({ car, loading }) => {
 
         {/* BUTTON */}
         <button
-          onClick={() => navigate(`/cars/${car.id}`)}
+          onClick={() => navigate(`/cars/${carData.id}`)}
           className="
             w-full
             bg-black

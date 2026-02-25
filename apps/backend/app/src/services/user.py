@@ -1,4 +1,5 @@
-from app.src.repositories.user import repo_create_user, get_user_by_email, email_exists
+from app.src.repositories.user import repo_create_user, repo_get_user_by_email
+from app.src.repositories.user import repo_email_exists, repo_get_user_by_id
 from app.src.models.user import User
 from app.src.core.security import verify_password, create_access_token
 from sqlalchemy.orm import Session
@@ -64,7 +65,7 @@ class UserService:
         Raises:
             ValueError: If credentials are invalid
         """
-        user = get_user_by_email(self.db, email)
+        user = repo_get_user_by_email(self.db, email)
 
         if not user:
             raise ValueError("Invalid email or password")
@@ -78,6 +79,11 @@ class UserService:
         )
 
         return user, access_token
-
+    
+    def get_user_by_id(self, user_id: int) -> User:
+        user = repo_get_user_by_id(self.db, user_id)
+        if not user:
+            raise ValueError("User not found")
+        return user
 
   

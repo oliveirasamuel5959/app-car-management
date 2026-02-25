@@ -8,8 +8,6 @@ class VehicleCreate(BaseModel):
     model: str
     year: int
     plate: str | None
-    user: Annotated[UserCreate, Field(description="Nome do usuario", nullable=False)]
-
 
 class VehicleRead(BaseModel):
     id: int

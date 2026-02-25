@@ -17,7 +17,7 @@ export const carService = {
 
   createCar: async (carData) => {
     try {
-      const response = await api.post('/api/cars', carData);
+      const response = await api.post('/vehicles', carData);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to create car');

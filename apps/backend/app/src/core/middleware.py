@@ -1,7 +1,4 @@
-"""
-Authentication middleware for protecting routes and adding user context to requests.
-Provides both global middleware and decorator-based protection for individual routes.
-"""
+
 from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -13,28 +10,8 @@ from app.src.core.security import verify_token
 
 logger = logging.getLogger(__name__)
 
-
-# ============================================================================
-# DECORATOR-BASED AUTH MIDDLEWARE
-# ============================================================================
-
 def auth_middleware(func: Callable) -> Callable:
-    """
-    Decorator to protect individual route handlers with JWT authentication.
 
-    Usage:
-        @router.get("/protected")
-        @auth_middleware
-        def protected_route(request: Request):
-            user_data = request.state.user
-            return {"user": user_data}
-
-    Args:
-        func: Route handler function to protect
-
-    Returns:
-        Wrapped function that validates JWT token before execution
-    """
     @wraps(func)
     async def wrapper(*args, **kwargs):
         # Extract request from kwargs or args
@@ -93,23 +70,7 @@ def auth_middleware(func: Callable) -> Callable:
 
 
 def role_protected(allowed_roles: List[str]) -> Callable:
-    """
-    Decorator to protect routes based on user role.
-    Must be used with @auth_middleware.
-
-    Usage:
-        @router.delete("/admin")
-        @auth_middleware
-        @role_protected(["ADMIN", "MANAGER"])
-        def admin_route(request: Request):
-            return {"message": "Admin action"}
-
-    Args:
-        allowed_roles: List of roles allowed to access this route
-
-    Returns:
-        Decorator function
-    """
+ 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -145,24 +106,7 @@ def role_protected(allowed_roles: List[str]) -> Callable:
 
 
 def owner_protected(func: Callable) -> Callable:
-    """
-    Decorator to verify user owns the requested resource.
-    Must be used with @auth_middleware.
-    Expects 'user_id' or 'id' as a path parameter.
 
-    Usage:
-        @router.get("/users/{user_id}/profile")
-        @auth_middleware
-        @owner_protected
-        def get_user_profile(user_id: int, request: Request):
-            return {"data": "user profile"}
-
-    Args:
-        func: Route handler function
-
-    Returns:
-        Wrapped function that verifies ownership
-    """
     @wraps(func)
     async def wrapper(*args, **kwargs):
         # Extract request
@@ -285,15 +229,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     @staticmethod
     def _is_public_route(path: str) -> bool:
-        """
-        Check if the route is publicly accessible (no auth required).
 
-        Args:
-            path: Request path
-
-        Returns:
-            True if route is public, False if auth is required
-        """
         # Check exact matches
         if path in AuthMiddleware.PUBLIC_ROUTES:
             return True
@@ -303,10 +239,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return any(path.startswith(prefix) for prefix in public_prefixes)
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to track request counts and enforce rate limiting per user.
-    Helps prevent abuse and brute force attacks.
-    """
 
     def __init__(self, app, requests_per_minute: int = 60):
         super().__init__(app)
@@ -314,16 +246,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.request_counts = {}  # {user_id: [timestamps]}
 
     async def dispatch(self, request: Request, call_next: Callable) -> JSONResponse:
-        """
-        Track requests and enforce rate limiting.
 
-        Args:
-            request: Incoming HTTP request
-            call_next: Next middleware/route handler
-
-        Returns:
-            Response or rate limit error
-        """
         # Get user identifier (user_id or IP address)
         user_id = getattr(request.state, "user_id", request.client.host)
 
@@ -355,22 +278,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to add security headers to all responses.
-    Enhances security against common web vulnerabilities.
-    """
 
     async def dispatch(self, request: Request, call_next: Callable):
-        """
-        Add security headers to responses.
 
-        Args:
-            request: Incoming HTTP request
-            call_next: Next middleware/route handler
-
-        Returns:
-            Response with security headers
-        """
         response = await call_next(request)
 
         # Add security headers

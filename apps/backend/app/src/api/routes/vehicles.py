@@ -27,17 +27,11 @@ def create_vehicle(
     try:
         # Use authenticated user's email instead of from request body
         user_email = current_user.get("sub")
+        user_id = current_user.get("user_id")
+        
+        print(f"Authenticated user ID: {user_id}, email: {user_email}")
 
-        # Create VehicleCreate with authenticated user's email
-        vehicle_data = VehicleCreate(
-            brand=vehicle_create.brand,
-            model=vehicle_create.model,
-            year=vehicle_create.year,
-            plate=vehicle_create.plate,
-            user=vehicle_create.user
-        )
-
-        return vehicle_service.create_vehicle(vehicle_data)
+        return vehicle_service.create_vehicle(vehicle_create, user_id=user_id)
       
     except DuplicateVehiclePlateError:
         raise HTTPException(
@@ -57,7 +51,7 @@ def create_vehicle(
         
 @router.get(
     "/",
-    response_model=VehicleRead,
+    response_model=list[VehicleRead],
     status_code=status.HTTP_200_OK,
     summary="Get user's vehicle",
     description="Get the vehicle associated with the authenticated user"

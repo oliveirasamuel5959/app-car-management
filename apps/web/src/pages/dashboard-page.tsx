@@ -1,16 +1,36 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth-context";
-import CarList from "../components/cars/car-list";
 import travelingSvg from "../assets/undraw_traveling_yhxq.svg";
 import { useEffect, useState } from "react";
-import { api } from "../services/api";
+import { carService } from "../services/car-service";
+import CarCard from "../components/cars/car-card";
 
-const Dashboard = () => {
+export function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("access_token");
-  console.log("Dashboard token:", token);
+  const [carData, setCarData] = useState(null);
+  const [loadingState, setLoadingState] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCars = async () => {
+      try {
+        setLoadingState(true);
+        const data = await carService.getAllCars();
+        console.log("Fetched cars:", data);
+        setCarData(data[0] || null);
+      } catch (err) {
+        console.error("CarList error:", err);
+        setError(err.message || "Failed to load cars");
+      } finally {
+        setLoadingState(false);
+      }
+    };
+
+    fetchCars();
+  }, []);
+
 
   const WelcomeMessage = () => (
     <div className="flex flex-col items-center text-center py-20 px-6">
@@ -63,40 +83,53 @@ const Dashboard = () => {
     </div>
   );
 
+  const LoadingState = () => (
+    <div className="flex items-center justify-center py-20">
+      <p className="text-gray-500 animate-pulse">
+        Loading your cars...
+      </p>
+    </div>
+  );
+
+  /* ---------------- RENDER ---------------- */
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <title>Car Keep - Dashboard</title>
-      {/* Header */}
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">
-              My Cars
-            </h1>
-            <p className="text-gray-500 mt-2">
-              Welcome back{user?.name ? `, ${user.name}` : ""}.
-            </p>
+      <div className="max-w-7xl mx-auto px-6 py-12">
+
+        {/* Header only appears if user has cars */}
+        {!loadingState && !error && carData.length > 0 && (
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">
+                My Cars
+              </h1>
+              <p className="text-gray-500 mt-2">
+                Welcome back{user?.name ? `, ${user.name}` : ""}.
+              </p>
+            </div>
           </div>
+        )}
 
-          <button
-            onClick={() => navigate("/cars/new")}
-            className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition"
-          >
-            + Add Car
-          </button>
-        </div>
+        {/* Main Container */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 min-h-[60vh] flex flex-col justify-center">
 
-        {/* Cars Container */}
-        <div className="mt-10 bg-white rounded-3xl shadow-lg p-8 min-h-[60vh]">
-          <CarList
-            WelcomeMessage={WelcomeMessage}
-            ErrorState={ErrorState}
-          />
+          {loadingState ? (
+            <LoadingState />
+          ) : error ? (
+            <ErrorState />
+          ) : carData.length === 0 ? (
+            <WelcomeMessage />
+          ) : (
+            <CarCard
+              carData={carData}
+              loading={loadingState}
+            />
+          )}
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default Dashboard;
