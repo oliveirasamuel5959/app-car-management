@@ -1,69 +1,92 @@
-import { 
-  Card, 
-  CardContent, 
-  CardMedia, 
-  Typography, 
-  CardActions, 
-  Button,
-  Chip,
-  Box,
-  Skeleton
-} from '@mui/material';
-import { 
-  LocationOn, 
-  DateRange,
-  ArrowForward 
-} from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
-const CarCard = ({ trip, loading }) => {
+import CarChevrolet from '../../assets/cars/car-chevrolet-tracker.png';
+
+const CarCard = ({ car, loading }) => {
   const navigate = useNavigate();
 
   if (loading) {
     return (
-      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Skeleton variant="rectangular" height={140} />
-        <CardContent>
-          <Skeleton variant="text" height={32} width="80%" />
-          <Skeleton variant="text" height={24} width="60%" />
-          <Skeleton variant="text" height={24} width="40%" />
-        </CardContent>
-        <CardActions>
-          <Skeleton variant="rectangular" width={100} height={36} />
-        </CardActions>
-      </Card>
+      <div className="w-full max-w-5xl mx-auto bg-white rounded-3xl shadow-lg overflow-hidden animate-pulse">
+        <div className="h-80 bg-gray-300"></div>
+        <div className="p-8 space-y-4">
+          <div className="h-6 bg-gray-300 rounded w-1/3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/5"></div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Typography gutterBottom variant="h5" component="h2">
-          {trip.title}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <LocationOn fontSize="small" color="primary" />
-          <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-            {trip.destination}
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <DateRange fontSize="small" color="primary" />
-          <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-            {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}
-          </Typography>
-        </Box>
-      </CardContent>
-      <CardActions>
-        <Button 
-          size="small" 
-          endIcon={<ArrowForward />}
-          onClick={() => navigate(`/trips/${trip.id}`)}
+    <div className="w-full max-w-5xl mx-auto bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+      
+      {/* 🔥 BIG IMAGE */}
+      <div className="h-96 w-full overflow-hidden">
+        <img
+          src={CarChevrolet}
+          alt={`${car.brand} ${car.model}`}
+          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+        />
+      </div>
+
+      {/* 📦 CONTENT */}
+      <div className="p-10">
+        {/* Title */}
+        <h2 className="text-4xl font-bold text-gray-900 mb-2">
+          {car.model} {car.brand}
+        </h2>
+
+        <p className="text-lg text-gray-500 mb-6">
+          Premium vehicle • Excellent condition
+        </p>
+
+        {/* INFO GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          
+          <div className="bg-gray-100 p-6 rounded-2xl text-center">
+            <p className="text-sm text-gray-500">Year</p>
+            <p className="text-2xl font-semibold text-gray-800">
+              {car.year}
+            </p>
+          </div>
+
+          <div className="bg-gray-100 p-6 rounded-2xl text-center">
+            <p className="text-sm text-gray-500">Plate</p>
+            <p className="text-2xl font-semibold text-gray-800">
+              {car.plate}
+            </p>
+          </div>
+
+          <div className="bg-gray-100 p-6 rounded-2xl text-center">
+            <p className="text-sm text-gray-500">ID</p>
+            <p className="text-2xl font-semibold text-gray-800">
+              #{car.id}
+            </p>
+          </div>
+
+        </div>
+
+        {/* BUTTON */}
+        <button
+          onClick={() => navigate(`/cars/${car.id}`)}
+          className="
+            w-full
+            bg-black
+            text-white
+            py-4
+            rounded-2xl
+            text-lg
+            font-semibold
+            hover:bg-gray-800
+            transition
+            duration-300
+          "
         >
-          View Details
-        </Button>
-      </CardActions>
-    </Card>
+          View Details →
+        </button>
+      </div>
+    </div>
   );
 };
 

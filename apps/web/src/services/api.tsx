@@ -28,7 +28,6 @@ const handleResponse = async (response: Response) => {
 
   // const res_data = await response.json();
 
-  console.log("API Response Status:", response);
   // console.log("API Response Body:", res_data); // ← IMPORTANT
 
   // Handle 401 Unauthorized - redirect to login
@@ -83,7 +82,6 @@ const handleResponse = async (response: Response) => {
     throw new Error(data.detail || data.message || data.error || 'Request failed');
   }
 
-  console.log('API Response:', data);
   return data;
 };
 

@@ -239,10 +239,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         if request.method == "OPTIONS":
             return await call_next(request)
-
-        # Public routes
-        if any(request.url.path.startswith(route) for route in self.public_routes):
-            return await call_next(request)
     
         # Check if route requires authentication
         if self._is_public_route(request.url.path):

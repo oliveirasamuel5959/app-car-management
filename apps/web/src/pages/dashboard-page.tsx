@@ -1,111 +1,101 @@
-import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Grid, Paper, Button } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
-import CarList from '../components/cars/car-list';
-import { useAuth } from '../context/auth-context';
-import travelingSvg from '../assets/undraw_traveling_yhxq.svg';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/auth-context";
+import CarList from "../components/cars/car-list";
+import travelingSvg from "../assets/undraw_traveling_yhxq.svg";
+import { useEffect, useState } from "react";
+import { api } from "../services/api";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const token = localStorage.getItem("access_token");
+  console.log("Dashboard token:", token);
+
   const WelcomeMessage = () => (
-    <Box
-      sx={{
-        textAlign: 'center',
-        py: 6,
-        px: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3
-      }}
-    >
+    <div className="flex flex-col items-center text-center py-20 px-6">
       <img
         src={travelingSvg}
-        alt="Start your journey"
-        style={{
-          maxWidth: '300px',
-          width: '100%',
-          height: 'auto',
-          marginBottom: '1rem'
-        }} 
+        alt="Start"
+        className="w-72 mb-8 opacity-90"
       />
-      <Typography variant="h4" component="h2" gutterBottom>
-        Welcome to Car Keep! 
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '600px', mb: 3 }}>
-        Ready to start planning your next adventure? Create your first trip and let us help you organize everything from destinations to activities.
-      </Typography>
-      <Button
-        variant="contained"
-        size="large"
-        startIcon={<AddIcon />}
-        onClick={() => navigate('/trips/new')}
+
+      <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        Welcome to Car Keep
+      </h2>
+
+      <p className="text-gray-500 max-w-xl mb-8">
+        You haven’t registered any vehicles yet. Add your first car and start
+        managing everything in one place.
+      </p>
+
+      <button
+        onClick={() => navigate("/cars/new")}
+        className="bg-black text-white px-8 py-3 rounded-xl font-semibold hover:bg-gray-800 transition"
       >
-        Plan Your First Trip
-      </Button>
-    </Box>
+        + Add Your First Car
+      </button>
+    </div>
   );
 
   const ErrorState = () => (
-    <Box
-      sx={{
-        textAlign: 'center',
-        py: 6,
-        px: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3
-      }}
-    >
+    <div className="flex flex-col items-center text-center py-20 px-6">
       <img
         src={travelingSvg}
-        alt="Error loading trips"
-        style={{
-          maxWidth: '300px',
-          width: '100%',
-          height: 'auto',
-          marginBottom: '1rem',
-          opacity: 0.7
-        }}
+        alt="Error"
+        className="w-72 mb-8 opacity-60"
       />
-      <Typography variant="h5" component="h2" gutterBottom>
-        Oops! Looks like you didn't register any cars yet.
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '600px', mb: 3 }}>
-        We're having trouble loading your cars. Don't worry, try to refresh the page or check your internet connection. If the problem persists, please contact support.
-      </Typography>
-      <Button
-        variant="contained"
+
+      <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+        Something went wrong
+      </h2>
+
+      <p className="text-gray-500 max-w-xl mb-8">
+        We couldn’t load your cars. Try refreshing the page.
+      </p>
+
+      <button
         onClick={() => window.location.reload()}
+        className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition"
       >
         Try Again
-      </Button>
-    </Box>
+      </button>
+    </div>
   );
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, sm: 3 } }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        My Cars
-      </Typography>
-      <Paper
-        elevation={2}
-        sx={{
-          p: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '60vh'
-        }}
-      >
-        <CarList
-          WelcomeMessage={WelcomeMessage}
-          ErrorState={ErrorState}
-        />
-      </Paper>
-    </Box>
+    <div className="min-h-screen bg-gray-50">
+      <title>Car Keep - Dashboard</title>
+      {/* Header */}
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900">
+              My Cars
+            </h1>
+            <p className="text-gray-500 mt-2">
+              Welcome back{user?.name ? `, ${user.name}` : ""}.
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate("/cars/new")}
+            className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition"
+          >
+            + Add Car
+          </button>
+        </div>
+
+        {/* Cars Container */}
+        <div className="mt-10 bg-white rounded-3xl shadow-lg p-8 min-h-[60vh]">
+          <CarList
+            WelcomeMessage={WelcomeMessage}
+            ErrorState={ErrorState}
+          />
+        </div>
+      </div>
+    </div>
   );
 };
 

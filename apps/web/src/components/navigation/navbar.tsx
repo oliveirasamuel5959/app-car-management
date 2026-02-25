@@ -18,7 +18,7 @@ const Navbar = () => {
           variant="h6" 
           component="div" 
           sx={{ flexGrow: 1, cursor: 'pointer', textAlign: 'left' }}
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
         >
           Car Management System
         </Typography>
@@ -27,9 +27,9 @@ const Navbar = () => {
             <>
               <Button 
                 color="inherit" 
-                onClick={() => navigate('/trips')}
+                onClick={() => navigate('/profile')}
               >
-                My Trips
+                Profile
               </Button>
               <Button 
                 color="inherit" 

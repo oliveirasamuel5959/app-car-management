@@ -3,12 +3,10 @@ import { api } from './api';
 export const carService = {
   getAllCars: async () => {
     try {
-      console.log('Fetching cars with auth token:', localStorage.getItem('access_token')); // Debug log
       const response = await api.get('/vehicles');
-      console.log('Cars response:', response); // Debug log
       return response;
     } catch (error) {
-      console.error('Error in getAllCars:', error); // Debug log
+
       if (error.message.includes('Session expired')) {
         // Handle session expiration specifically
         return { cars: [] };
@@ -28,9 +26,7 @@ export const carService = {
 
   getCar: async (carId) => {
     try {
-      console.log('Fetching car with ID:', carId);
       const response = await api.get(`/api/cars/${carId}`);
-      console.log('Raw car response:', response);
       
       // If the response itself is the car data
       if (response && response.id) {
@@ -51,9 +47,7 @@ export const carService = {
 
   updateCar: async (carId, carData) => {
     try {
-      console.log('Updating car:', carId, carData);
       const response = await api.put(`/api/cars/${carId}`, carData);
-      console.log('Update response:', response);
       return response;
     } catch (error) {
       console.error('Error in updateCar:', error);
