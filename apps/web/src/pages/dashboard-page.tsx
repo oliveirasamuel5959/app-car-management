@@ -41,33 +41,33 @@ const sampleCarInWorkshop: CarInWorkshop = {
 const maintenanceTips: MaintenanceTip[] = [
   {
     id: 1,
-    title: "Oil Change Required",
+    title: "Troca de Óleo Necessária",
     description:
-      "Your vehicle is due for an oil change. Synthetic oil is recommended for better engine performance.",
+      "Seu veículo precisa de uma troca de óleo. Óleo sintético é recomendado para melhor desempenho do motor.",
     category: "oil",
     priority: "high",
   },
   {
     id: 2,
-    title: "Tire Rotation Scheduled",
+    title: "Rodízio de Pneus Agendado",
     description:
-      "It's time to rotate your tires to ensure even wear and extend their lifespan.",
+      "É hora de fazer o rodízio dos seus pneus para garantir desgaste uniforme e prolongar sua vida útil.",
     category: "tires",
     priority: "medium",
   },
   {
     id: 3,
-    title: "Brake Inspection",
+    title: "Inspeção de Freios",
     description:
-      "Schedule a brake inspection to ensure your vehicle stops safely. Check brake fluid levels.",
+      "Agende uma inspeção de freios para garantir que seu veículo pare com segurança. Verifique os níveis de fluido de freio.",
     category: "brakes",
     priority: "high",
   },
   {
     id: 4,
-    title: "Battery Health Check",
+    title: "Verificação de Saúde da Bateria",
     description:
-      "Your battery is 3 years old. Consider a health check to avoid unexpected failures.",
+      "Sua bateria tem 3 anos. Considere uma verificação de saúde para evitar falhas inesperadas.",
     category: "battery",
     priority: "medium",
   },
@@ -76,28 +76,28 @@ const maintenanceTips: MaintenanceTip[] = [
 const workshopServices: WorkshopService[] = [
   {
     id: 1,
-    name: "Oil Change & Filter Replacement",
+    name: "Troca de Óleo e Substituição de Filtro",
     status: "completed",
     startDate: "2025-02-20",
     completionDate: "2025-02-20",
   },
   {
     id: 2,
-    name: "Brake Inspection & Pad Replacement",
+    name: "Inspeção de Freios e Substituição de Pastilhas",
     status: "in-progress",
     startDate: "2025-02-21",
     completionDate: null,
   },
   {
     id: 3,
-    name: "Tire Rotation & Alignment",
+    name: "Rodízio de Pneus e Alinhamento",
     status: "pending",
     startDate: "2025-02-25",
     completionDate: null,
   },
   {
     id: 4,
-    name: "Battery Replacement",
+    name: "Substituição de Bateria",
     status: "pending",
     startDate: "2025-02-26",
     completionDate: null,
@@ -174,10 +174,10 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Vehicle Dashboard
+            Painel do Veículo
           </h1>
           <p className="text-gray-600">
-            Track your car status, maintenance schedule, and workshop progress
+            Acompanhe o status do seu carro, cronograma de manutenção e progresso da oficina
           </p>
         </div>
 
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                     {sampleCarInWorkshop.brand} {sampleCarInWorkshop.model}
                   </h2>
                   <p className="text-gray-600">
-                    License Plate: <span className="font-mono font-bold">{sampleCarInWorkshop.licensePlate}</span>
+                    Placa: <span className="font-mono font-bold">{sampleCarInWorkshop.licensePlate}</span>
                   </p>
                 </div>
                 <div
@@ -209,56 +209,56 @@ export default function DashboardPage() {
                 {/* Check-in Info */}
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <p className="text-sm text-gray-600 font-semibold mb-1">
-                    CHECK-IN DATE
+                    DATA DE ENTRADA
                   </p>
                   <p className="text-xl font-bold text-gray-900">
                     {new Date(sampleCarInWorkshop.checkInDate).toLocaleDateString()}
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
-                    {daysInWorkshop} days in workshop
+                    {daysInWorkshop} dias na oficina
                   </p>
                 </div>
 
                 {/* Days Remaining */}
                 <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
                   <p className="text-sm text-orange-700 font-semibold mb-1">
-                    ESTIMATED COMPLETION
+                    CONCLUSÃO ESTIMADA
                   </p>
                   <p className="text-xl font-bold text-orange-900">
                     {new Date(sampleCarInWorkshop.estimatedCompletion).toLocaleDateString()}
                   </p>
                   <p className="text-xs text-orange-600 mt-2">
-                    {daysRemaining > 0 ? `${daysRemaining} days remaining` : "Due soon!"}
+                    {daysRemaining > 0 ? `${daysRemaining} dias restantes` : "Prazo próximo!"}
                   </p>
                 </div>
 
                 {/* Services Progress */}
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
                   <p className="text-sm text-green-700 font-semibold mb-1">
-                    PROGRESS
+                    PROGRESSO
                   </p>
                   <p className="text-xl font-bold text-green-900">
                     {completedServices}/{workshopServices.length}
                   </p>
-                  <p className="text-xs text-green-600 mt-2">Services completed</p>
+                  <p className="text-xs text-green-600 mt-2">Serviços concluídos</p>
                 </div>
 
                 {/* In Progress */}
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
                   <p className="text-sm text-blue-700 font-semibold mb-1">
-                    IN PROGRESS
+                    EM PROGRESSO
                   </p>
                   <p className="text-xl font-bold text-blue-900">
                     {inProgressServices}
                   </p>
-                  <p className="text-xs text-blue-600 mt-2">Services being handled</p>
+                  <p className="text-xs text-blue-600 mt-2">Serviços em atendimento</p>
                 </div>
               </div>
 
               {/* Timeline */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  📅 Timeline Since Check-in
+                  📅 Cronograma desde Entrada
                 </h3>
                 <div className="relative">
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-blue-300" />
@@ -267,10 +267,10 @@ export default function DashboardPage() {
                       <div className="absolute -left-6 top-1 w-5 h-5 bg-blue-500 rounded-full border-4 border-white" />
                       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                         <p className="font-semibold text-gray-900">
-                          Vehicle Check-in
+                          Entrada do Veículo
                         </p>
                         <p className="text-sm text-gray-600">
-                          {new Date(sampleCarInWorkshop.checkInDate).toLocaleDateString("en-US", {
+                          {new Date(sampleCarInWorkshop.checkInDate).toLocaleDateString("pt-BR", {
                             weekday: "long",
                             year: "numeric",
                             month: "long",
@@ -284,10 +284,10 @@ export default function DashboardPage() {
                       <div className="absolute -left-6 top-1 w-5 h-5 bg-green-500 rounded-full border-4 border-white" />
                       <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                         <p className="font-semibold text-gray-900">
-                          {completedServices} Services Completed
+                          {completedServices} Serviço(s) Concluído(s)
                         </p>
                         <p className="text-sm text-gray-600">
-                          {completedServices > 0 ? "Initial maintenance tasks completed" : "Waiting for first service"}
+                          {completedServices > 0 ? "Tarefas de manutenção inicial concluídas" : "Aguardando primeiro serviço"}
                         </p>
                       </div>
                     </div>
@@ -297,10 +297,10 @@ export default function DashboardPage() {
                         <div className="absolute -left-6 top-1 w-5 h-5 bg-yellow-500 rounded-full border-4 border-white animate-pulse" />
                         <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
                           <p className="font-semibold text-gray-900">
-                            {inProgressServices} Service(s) In Progress
+                            {inProgressServices} Serviço(s) em Progresso
                           </p>
                           <p className="text-sm text-gray-600">
-                            Currently being worked on
+                            Atualmente em atendimento
                           </p>
                         </div>
                       </div>
@@ -310,10 +310,10 @@ export default function DashboardPage() {
                       <div className="absolute -left-6 top-1 w-5 h-5 bg-blue-400 rounded-full border-4 border-white" />
                       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                         <p className="font-semibold text-gray-900">
-                          Expected Ready Date
+                          Data Prevista de Conclusão
                         </p>
                         <p className="text-sm text-gray-600">
-                          {new Date(sampleCarInWorkshop.estimatedCompletion).toLocaleDateString("en-US", {
+                          {new Date(sampleCarInWorkshop.estimatedCompletion).toLocaleDateString("pt-BR", {
                             weekday: "long",
                             year: "numeric",
                             month: "long",
@@ -336,7 +336,7 @@ export default function DashboardPage() {
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
               <div className="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-gray-900">
-                  🔧 Workshop Services Schedule
+                  🔧 Cronograma de Serviços da Oficina
                 </h2>
               </div>
 
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                     <div className="flex gap-4 text-sm text-gray-600">
                       <div>
                         <p className="text-xs text-gray-500 font-semibold uppercase">
-                          Start Date
+                          Data de Início
                         </p>
                         <p className="font-medium">
                           {new Date(service.startDate).toLocaleDateString()}
@@ -370,7 +370,7 @@ export default function DashboardPage() {
                       {service.completionDate && (
                         <div>
                           <p className="text-xs text-gray-500 font-semibold uppercase">
-                            Completed
+                            Concluído
                           </p>
                           <p className="font-medium">
                             {new Date(service.completionDate).toLocaleDateString()}
@@ -397,7 +397,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-semibold uppercase mb-1">
-                    Total Services
+                    Total de Serviços
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
                     {workshopServices.length}
@@ -412,7 +412,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-semibold uppercase mb-1">
-                    Pending Tasks
+                    Tarefas Pendentes
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
                     {workshopServices.filter((s) => s.status === "pending").length}
@@ -427,7 +427,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-semibold uppercase mb-1">
-                    High Priority
+                    Alta Prioridade
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
                     {maintenanceTips.filter((t) => t.priority === "high").length}
@@ -443,7 +443,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-amber-50 to-amber-100 px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-bold text-gray-900">
-              💡 Maintenance Tips & Alerts
+              💡 Dicas de Manutenção e Alertas
             </h2>
           </div>
 
@@ -505,7 +505,7 @@ export default function DashboardPage() {
                       selectedTip.priority
                     )}`}
                   >
-                    {selectedTip.priority.toUpperCase()} PRIORITY
+                    {selectedTip.priority.toUpperCase()} PRIORIDADE
                   </span>
                   <span className="px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-800">
                     {selectedTip.category.toUpperCase()}
@@ -518,29 +518,29 @@ export default function DashboardPage() {
 
         {/* Footer Info */}
         <div className="mt-8 bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6">
-          <h3 className="font-bold text-gray-900 mb-2">ℹ️ Vehicle Information</h3>
+          <h3 className="font-bold text-gray-900 mb-2">ℹ️ Informações do Veículo</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="text-gray-600 text-xs uppercase font-semibold">Brand</p>
+              <p className="text-gray-600 text-xs uppercase font-semibold">Marca</p>
               <p className="font-bold text-gray-900">
                 {sampleCarInWorkshop.brand}
               </p>
             </div>
             <div>
-              <p className="text-gray-600 text-xs uppercase font-semibold">Model</p>
+              <p className="text-gray-600 text-xs uppercase font-semibold">Modelo</p>
               <p className="font-bold text-gray-900">
                 {sampleCarInWorkshop.model}
               </p>
             </div>
             <div>
-              <p className="text-gray-600 text-xs uppercase font-semibold">Year</p>
+              <p className="text-gray-600 text-xs uppercase font-semibold">Ano</p>
               <p className="font-bold text-gray-900">
                 {sampleCarInWorkshop.year}
               </p>
             </div>
             <div>
               <p className="text-gray-600 text-xs uppercase font-semibold">
-                License Plate
+                Placa
               </p>
               <p className="font-bold text-gray-900 font-mono">
                 {sampleCarInWorkshop.licensePlate}

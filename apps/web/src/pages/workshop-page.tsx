@@ -66,7 +66,7 @@ export default function WorkshopPage() {
           />
         )}
 
-        {workshop && (
+        {/* {workshop && (
           <div className="mt-12 bg-white rounded-lg shadow-sm p-6 border border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
               Workshop Data (JSON)
@@ -75,7 +75,7 @@ export default function WorkshopPage() {
               {JSON.stringify(workshop, null, 2)}
             </pre>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
