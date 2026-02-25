@@ -48,10 +48,11 @@ app.add_middleware(
     allow_headers=settings.CORS_ALLOW_HEADERS.split(","),
 )
 
-# Add security middlewares
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
-app.add_middleware(AuthMiddleware, public_routes=["/", "/docs", "/redoc", "/openapi.json"])
+
+# Add security middlewares
+app.add_middleware(AuthMiddleware, public_routes=["/", "/docs", "/redoc", "/openapi.json", "/auth/register", "/auth/login"])
 
 app.include_router(api_router)
 

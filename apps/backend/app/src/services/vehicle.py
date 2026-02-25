@@ -1,8 +1,8 @@
 from sqlalchemy.exc import IntegrityError
 from app.src.repositories.user import get_user_by_email
-from app.src.repositories.vehicle import repo_create_vehicle
+from app.src.repositories.vehicle import get_vehicle_by_email, repo_create_vehicle
 from app.src.schemas.vehicle import VehicleCreate
-from app.src.repositories.vehicle import get_vehicle_by_user_id
+from app.src.repositories.vehicle import get_vehicle_by_email
 from app.src.core.exceptions import DuplicateVehiclePlateError
 from app.src.repositories.vehicle import check_duplicate_plate
 class VehicleService:
@@ -30,4 +30,7 @@ class VehicleService:
     except IntegrityError:
       self.db.rollback()
       raise DuplicateVehiclePlateError()
+    
+  def get_vehicle_by_email(self, email):
+    return get_vehicle_by_email(self.db, email)
   

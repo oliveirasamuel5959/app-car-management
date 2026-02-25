@@ -3,8 +3,8 @@ import { api } from './api';
 export const carService = {
   getAllCars: async () => {
     try {
-      console.log('Fetching cars with auth token:', localStorage.getItem('token')); // Debug log
-      const response = await api.get('/api/cars');
+      console.log('Fetching cars with auth token:', localStorage.getItem('access_token')); // Debug log
+      const response = await api.get('/vehicles');
       console.log('Cars response:', response); // Debug log
       return response;
     } catch (error) {

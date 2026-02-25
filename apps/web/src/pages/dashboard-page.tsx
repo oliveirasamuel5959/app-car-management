@@ -32,7 +32,7 @@ const Dashboard = () => {
         }} 
       />
       <Typography variant="h4" component="h2" gutterBottom>
-        Welcome to Planventure! 
+        Welcome to Car Keep! 
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '600px', mb: 3 }}>
         Ready to start planning your next adventure? Create your first trip and let us help you organize everything from destinations to activities.

@@ -13,8 +13,8 @@ def repo_create_vehicle(db: Session, user_id, vehicle_data: VehicleCreate) -> Ve
 
     return vehicle
 
-def get_vehicle_by_user_id(db: Session, user_id: int) -> Vehicle | None:
-    return db.query(Vehicle).filter(Vehicle.user_id == user_id).first()
+def get_vehicle_by_email(db: Session, email: str) -> Vehicle | None:
+    return db.query(Vehicle).join(User).filter(User.email == email).first()
 
 def check_duplicate_plate(db: Session, plate) -> bool:
     return db.query(Vehicle).filter(Vehicle.plate == plate).first()
