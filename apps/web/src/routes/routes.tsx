@@ -3,6 +3,7 @@ import LoginPage from '../pages/login-page';
 import SignUpPage from '../pages/signup-page.tsx';
 import Dashboard from '../pages/dashboard-page';
 import DashboardLayout from '../layouts/dashboard-layout';
+import { AddCarPage } from '../pages/add-car-page.tsx';
 // import NewTripPage from '../pages/NewTripPage';
 // import TripDetailsPage from '../pages/TripDetailsPage';
 // import EditTripPage from '../pages/EditTripPage';
@@ -31,13 +32,13 @@ export const protectedRoutes = [
   //   path: '/trips',
   //   element: <DashboardLayout><Dashboard /></DashboardLayout>,
   // },
+  {
+    path: '/cars/new',
+    element: <DashboardLayout><AddCarPage /></DashboardLayout>,
+  },
   // {
-  //   path: '/trips/new',
-  //   element: <DashboardLayout><NewTripPage /></DashboardLayout>,
-  // },
-  // {
-  //   path: '/trips/:tripId',
-  //   element: <DashboardLayout><TripDetailsPage /></DashboardLayout>,
+  //   path: '/cars/:carId',
+  //   element: <DashboardLayout><CarDetailsPage /></DashboardLayout>,
   // },
   // {
   //   path: '/trips/:tripId/edit',
