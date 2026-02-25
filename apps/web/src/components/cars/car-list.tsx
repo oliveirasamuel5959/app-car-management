@@ -13,25 +13,18 @@ import { carService } from '../../services/car-service';
 import CarCard from './car-card';
 
 const CarList = ({ WelcomeMessage, ErrorState }) => {
-  const [cars, setCars] = useState([]);
+  const [car, setCar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCars = async () => {
+    const fetchCar = async () => {
       try {
         setLoading(true);
         const data = await carService.getAllCars();
-        console.log('CarList received data:', data); // Debug log
         
-        if (!data || !data.cars) {
-          console.error('Invalid data format:', data);
-          setError('Unexpected data format received');
-          return;
-        }
-        
-        setCars(data.cars);
+        setCar(data);
       } catch (err) {
         console.error('CarList error:', err);
         setError(err.message);
@@ -40,7 +33,7 @@ const CarList = ({ WelcomeMessage, ErrorState }) => {
       }
     };
 
-    fetchCars();
+    fetchCar();
   }, []);
 
   // Loading state with skeleton cards
@@ -62,37 +55,13 @@ const CarList = ({ WelcomeMessage, ErrorState }) => {
   }
 
   // Empty state
-  if (cars.length === 0) {
+  if (car.length === 0) {
     return <WelcomeMessage />;
   }
 
   // Loaded state with cars
   return (
-    <Grid container spacing={3}>
-      {cars.map((car) => (
-        <Grid item xs={12} sm={6} md={4} key={car.id}>
-          <CarCard car={car} />
-        </Grid>
-      ))}
-      <Grid item xs={12} sm={6} md={4}>
-        <Button
-          variant="outlined"
-          fullWidth
-          sx={{ 
-            height: '100%', 
-            minHeight: 200,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          onClick={() => navigate('/trips/new')}
-        >
-          <AddIcon sx={{ mb: 1 }} />
-          <Typography>Add New Trip</Typography>
-        </Button>
-      </Grid>
-    </Grid>
+    <CarCard car={car} />
   );
 };
 

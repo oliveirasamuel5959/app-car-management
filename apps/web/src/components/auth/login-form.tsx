@@ -93,17 +93,14 @@ const LoginForm = () => {
 
     try {
       const response = await api.auth.login(formData);
-      console.log('Login response:', response);
 
       if (response.access_token) {
         login(response); // Pass the entire response
-        console.log('Login successful, redirecting to dashboard...');
         navigate('/dashboard', { replace: true });
       } else {
         setError('Invalid login response');
       }
     } catch (err) {
-      console.error('Login error:', err);
       setError(err.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);

@@ -1,7 +1,8 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Request
+from sqlalchemy.orm import Session
 from app.src.core.exceptions import DuplicateVehiclePlateError
 from app.src.schemas import vehicle
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from app.src.db.database import get_session
 from app.src.schemas.vehicle import VehicleRead, VehicleCreate
 from app.src.services.vehicle import VehicleService
@@ -62,37 +63,21 @@ def create_vehicle(
     description="Get the vehicle associated with the authenticated user"
 )
 def get_vehicle(
+    request: Request,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_session)
 ):
-    """
-    Get the vehicle associated with the authenticated user.
-
-    ### Requirements:
-    - User must be authenticated (valid JWT token required)
-
-    ### Returns:
-    - Vehicle object associated with the user, or null if no vehicle exists
-    """
     vehicle_service = VehicleService(db)
 
-    try:
-      user_email = current_user.get("sub")
-      res = vehicle_service.get_vehicle_by_email(user_email)
-      
-      print("Vehicle service response:", res)  # Debug log
-      
-      if res is None:
-          raise HTTPException(
-              status_code=status.HTTP_404_NOT_FOUND,
-              detail="No vehicle found for the user"
-          )
-          
-      return res
-      
-    except Exception as e:
+    user_email = current_user.get("sub")
+
+    res = vehicle_service.get_vehicle_by_email(user_email)
+
+    if res is None:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while retrieving the vehicle"
-        ) 
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No vehicle found for the user"
+        )
+
+    return res
         

@@ -15,7 +15,7 @@ class VehicleService:
     if not user:
       raise ValueError("User not found")
     
-    vehicle = get_vehicle_by_user_id(self.db, user.id)
+    vehicle = get_vehicle_by_email(self.db, user.email)
     
     duplicate_plate = check_duplicate_plate(self.db, vehicle_in.plate)
 

@@ -112,11 +112,8 @@ const SignupForm = () => {
         role: formData.role
       };
 
-      console.log('Registering user with data:', userData); // Debug log
-
       const response = await api.auth.register(userData);
-      console.log('Signup response:', response); // Debug log
-
+      
       // Don't check for accessToken, just redirect after successful registration
       navigate('/login', {
         replace: true,
