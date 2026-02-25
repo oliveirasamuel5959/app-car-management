@@ -28,7 +28,9 @@ const DRAWER_WIDTH = 240;
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Find Workshops', icon: <ListAltIcon />, path: '/workshops' },
+  { text: 'My Car', icon: <DashboardIcon />, path: '/dashboard' },
+  { text: 'My Workshops', icon: <DashboardIcon />, path: '/my-workshops' },
+  { text: 'Find Workshops', icon: <ListAltIcon />, path: '/search-workshops' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 

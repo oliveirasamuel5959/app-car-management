@@ -418,6 +418,36 @@ Returns protected data
 
 ### 3. Token Expiration
 ```
+
+## Workshop Search & Google Maps
+
+The `WorkshopsPage` displays a Google Map centered on your current location or a
+searched address and plots nearby workshops returned by the backend.
+
+### Setup
+1. Install the new dependency:
+   ```bash
+   cd apps/web
+   npm install @react-google-maps/api
+   # or yarn add @react-google-maps/api
+   ```
+2. Create a `.env` (or use your existing Vite env) with:
+   ```env
+   VITE_GOOGLE_MAPS_API_KEY=YOUR_API_KEY_HERE
+   ```
+3. The map component (`WorkshopMapGoogle`) uses `useJsApiLoader` so no
+   additional `<script>` tags are needed; the key is loaded automatically.
+
+### Usage
+* Click **Use My Location** to center the map on your GPS coordinates (prompt
+grabbed from the browser).
+* Type an address and hit **Search** to geocode with Google and view nearby
+workshops.
+
+---
+
+### 3. Token Expiration
+```
 Token expired (24 hours)
     ↓
 Request returns 401 Unauthorized
