@@ -14,17 +14,23 @@ const getAuthHeaders = () => {
 /**
  * Get headers for form data (multipart)
  */
-const getFormDataHeaders = () => {
-  const token = localStorage.getItem('access_token');
-  return {
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-  };
-};
+// const getFormDataHeaders = () => {
+//   const token = localStorage.getItem('access_token');
+//   return {
+//     ...(token && { 'Authorization': `Bearer ${token}` }),
+//   };
+// };
 
 /**
  * Handle API response and error handling
  */
 const handleResponse = async (response: Response) => {
+
+  // const res_data = await response.json();
+
+  console.log("API Response Status:", response);
+  // console.log("API Response Body:", res_data); // ← IMPORTANT
+
   // Handle 401 Unauthorized - redirect to login
   if (response.status === 401) {
     localStorage.removeItem('access_token');
@@ -165,6 +171,7 @@ export const api = {
     // Login user
     login: async (credentials: { email: string; password: string }) => {
       const response = await api.post('/auth/login', credentials);
+
       // Save token and user after login
       if (response.access_token) {
         localStorage.setItem('access_token', response.access_token);

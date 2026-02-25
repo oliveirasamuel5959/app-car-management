@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  Typography, 
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
   Alert,
   InputAdornment,
-  IconButton
+  IconButton,
+  Grid2,
+  MenuItem
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useAuth } from '../../context/auth-context';
@@ -21,14 +23,22 @@ const SignupForm = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    name: '',
+    age: '',
+    sex: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'CLIENT'
   });
   const [formErrors, setFormErrors] = useState({
+    name: '',
+    age: '',
+    sex: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'CLIENT'
   });
 
   const validateEmail = (email) => {
@@ -56,7 +66,7 @@ const SignupForm = () => {
       ...prev,
       [name]: value
     }));
-    
+
     setFormErrors(prev => ({
       ...prev,
       [name]: ''
@@ -65,21 +75,26 @@ const SignupForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate form
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
     const confirmPasswordError = validateConfirmPassword(
-      formData.confirmPassword, 
+      formData.confirmPassword,
       formData.password
     );
-    
-    if (emailError || passwordError || confirmPasswordError) {
+
+    if (formData.name === '' || emailError || passwordError || confirmPasswordError) {
       setFormErrors({
+        name: formData.name === '' ? 'Name is required' : '',
+        age: formData.age === '' ? 'Age is required' : '',
+        sex: formData.sex === '' ? 'Sex is required' : '',
         email: emailError,
         password: passwordError,
-        confirmPassword: confirmPasswordError
+        confirmPassword: confirmPasswordError,
+        role: formData.role === '' ? 'Role is required' : ''
       });
+
       return;
     }
 
@@ -88,22 +103,29 @@ const SignupForm = () => {
 
     try {
       const userData = {
+        name: formData.name,
+        age: parseInt(formData.age),
+        sex: formData.sex,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        password_confirm: formData.confirmPassword,
+        role: formData.role
       };
+
+      console.log('Registering user with data:', userData); // Debug log
 
       const response = await api.auth.register(userData);
       console.log('Signup response:', response); // Debug log
-      
+
       // Don't check for accessToken, just redirect after successful registration
-      navigate('/login', { 
+      navigate('/login', {
         replace: true,
-        state: { 
+        state: {
           message: 'Registration successful! Please log in.',
           email: formData.email
         }
       });
-      
+
     } catch (err) {
       console.error('Signup error:', err); // Debug log
       setError(err.message || 'Registration failed. Please try again.');
@@ -139,6 +161,48 @@ const SignupForm = () => {
 
       <TextField
         fullWidth
+        label="Name"
+        name="name"
+        type="text"
+        value={formData.name}
+        onChange={handleChange}
+        error={!!formErrors.name}
+        helperText={formErrors.name}
+        disabled={isLoading}
+        required
+      />
+
+      <TextField
+        fullWidth
+        label="Age"
+        name="age"
+        type="number"
+        value={formData.age}
+        onChange={handleChange}
+        error={!!formErrors.age}
+        helperText={formErrors.age}
+        disabled={isLoading}
+        required
+      />
+
+      <TextField
+        fullWidth
+        select
+        label="Sex"
+        name="sex"
+        value={formData.sex}
+        onChange={handleChange}
+        error={!!formErrors.sex}
+        helperText={formErrors.sex}
+        disabled={isLoading}
+        required
+      >
+        <MenuItem value="M">M</MenuItem>
+        <MenuItem value="F">F</MenuItem>
+      </TextField>
+
+      <TextField
+        fullWidth
         label="Email"
         name="email"
         type="email"
@@ -149,6 +213,21 @@ const SignupForm = () => {
         disabled={isLoading}
         required
       />
+
+      <TextField
+        fullWidth
+        select
+        label="Role"
+        name="role"
+        value={formData.role}
+        onChange={handleChange}
+        error={!!formErrors.role}
+        helperText={formErrors.role}
+        disabled={isLoading}
+      >
+        <MenuItem value="CLIENT">Client</MenuItem>
+        <MenuItem value="ADMIN">Admin</MenuItem>
+      </TextField>
 
       <TextField
         fullWidth

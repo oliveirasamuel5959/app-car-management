@@ -236,16 +236,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
             self.PUBLIC_ROUTES.update(public_routes)
 
     async def dispatch(self, request: Request, call_next: Callable) -> JSONResponse:
-        """
-        Process incoming requests to validate authentication.
+        
+        if request.method == "OPTIONS":
+            return await call_next(request)
 
-        Args:
-            request: Incoming HTTP request
-            call_next: Next middleware/route handler
-
-        Returns:
-            Response from next handler or error response
-        """
+        # Public routes
+        if any(request.url.path.startswith(route) for route in self.public_routes):
+            return await call_next(request)
+    
         # Check if route requires authentication
         if self._is_public_route(request.url.path):
             return await call_next(request)
@@ -307,7 +305,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # Check prefix matches
         public_prefixes = ["/docs", "/redoc", "/openapi"]
         return any(path.startswith(prefix) for prefix in public_prefixes)
-
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """
