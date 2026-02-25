@@ -7,10 +7,10 @@ class WorkshopCreate(BaseModel):
     description: str | None
     latitude: float
     longitude: float
-
+    rating_avg: float
 
 class WorkshopRead(BaseModel):
-    id: UUID
+    id: int
     name: str
     description: str | None
     latitude: float
