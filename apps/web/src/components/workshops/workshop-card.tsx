@@ -42,9 +42,6 @@ export function WorkshopCard({
               </span>
             </div>
           </div>
-          <div className="bg-blue-500 rounded-full px-3 py-1">
-            <span className="text-xs font-bold text-white">ID: {id}</span>
-          </div>
         </div>
       </div>
 
