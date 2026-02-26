@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { WorkshopCard } from "../components/workshops/workshop-card";
+import { WorkshopCard } from "../../components/workshops/workshop-card";
 
 interface Workshop {
   id: number;

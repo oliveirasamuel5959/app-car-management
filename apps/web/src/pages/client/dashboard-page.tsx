@@ -1,9 +1,9 @@
-import { CheckInCard } from "../components/workshops/services-status-card";
-import { CheckoutEstimatedCard } from "../components/workshops/services-status-card";
-import { ServiceProgressCard } from "../components/workshops/services-status-card";
-import { ServiceInProgressCard } from "../components/workshops/services-status-card";
-import { ServicesTimeline } from "../components/workshops/services-timeline";
-import { VehicleInfo } from "../components/workshops/vehicle-info";
+import { CheckInCard } from "../../components/workshops/services-status-card";
+import { CheckoutEstimatedCard } from "../../components/workshops/services-status-card";
+import { ServiceProgressCard } from "../../components/workshops/services-status-card";
+import { ServiceInProgressCard } from "../../components/workshops/services-status-card";
+import { ServicesTimeline } from "../../components/workshops/services-timeline";
+import { VehicleInfo } from "../../components/workshops/vehicle-info";
 interface CarInWorkshop {
   id: number;
   brand: string;

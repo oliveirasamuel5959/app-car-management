@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/auth-context";
-import travelingSvg from "../assets/undraw_traveling_yhxq.svg";
+import { useAuth } from "../../context/auth-context";
+import travelingSvg from "../../assets/undraw_traveling_yhxq.svg";
 import { useEffect, useState } from "react";
-import { carService } from "../services/car-service";
-import CarCard from "../components/cars/car-card";
+import { carService } from "../../services/car-service";
+import CarCard from "../../components/cars/car-card";
 
 export function CarPage() {
   const { user } = useAuth();
