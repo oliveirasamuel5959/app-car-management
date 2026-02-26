@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Button, Typography, Container, CircularProgress, Alert } from '@mui/material';
-import AddCarModal from '../components/cars/add-car-modal';
-import { carService } from '../services/car-service';
+import AddCarModal from '../../components/cars/add-car-modal';
+import { carService } from '../../services/car-service';
 import { useNavigate } from 'react-router-dom';
 
 export function AddCarPage() {
