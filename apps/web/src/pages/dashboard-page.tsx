@@ -240,7 +240,7 @@ export default function DashboardPage() {
           {/* Quick Stats */}
           <div className="space-y-4">
             {/* Total Services Card */}
-            <div className="bg-white rounded-lg shadow-lg p-6 border-t-4 border-purple-500">
+            {/* <div className="bg-white rounded-lg shadow-lg p-6 border-t-4 border-purple-500">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-semibold uppercase mb-1">
@@ -252,10 +252,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-4xl">🛠️</div>
               </div>
-            </div>
+            </div> */}
 
             {/* Pending Tasks */}
-            <div className="bg-white rounded-lg shadow-lg p-6 border-t-4 border-yellow-500">
+            {/* <div className="bg-white rounded-lg shadow-lg p-6 border-t-4 border-yellow-500">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-semibold uppercase mb-1">
@@ -267,7 +267,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-4xl">⏳</div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
