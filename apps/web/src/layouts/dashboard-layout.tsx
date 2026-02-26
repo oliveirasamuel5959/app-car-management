@@ -1,30 +1,31 @@
 import { useState } from 'react';
-import { 
-  Box, 
-  Drawer, 
-  List, 
-  ListItem,
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
+import {
+  Box,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   IconButton,
   useTheme,
   useMediaQuery,
   Divider,
   Typography
 } from '@mui/material';
+
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  Map as MapIcon,
   ListAlt as ListAltIcon,
   Settings as SettingsIcon,
   ChevronLeft as ChevronLeftIcon
 } from '@mui/icons-material';
+
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/navigation/navbar';
 
 const DRAWER_WIDTH = 240;
+const NAVBAR_HEIGHT = 64; // Keep consistent with your Navbar
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -42,27 +43,30 @@ const DashboardLayout = ({ children }) => {
   const location = useLocation();
 
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+    setMobileOpen((prev) => !prev);
   };
 
-  const drawer = (
+  const drawerContent = (
     <Box>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        p: 2
-      }}>
-        <Typography variant="h6" component="div">
-          CarKeep
-        </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          p: 2
+        }}
+      >
+        <Typography variant="h6">CarKeep</Typography>
+
         {isMobile && (
           <IconButton onClick={handleDrawerToggle}>
             <ChevronLeftIcon />
           </IconButton>
         )}
       </Box>
+
       <Divider />
+
       <List>
         {menuItems.map((item) => (
           <ListItemButton
@@ -81,9 +85,14 @@ const DashboardLayout = ({ children }) => {
               },
             }}
           >
-            <ListItemIcon sx={{ 
-              color: location.pathname === item.path ? 'primary.main' : 'inherit' 
-            }}>
+            <ListItemIcon
+              sx={{
+                color:
+                  location.pathname === item.path
+                    ? 'primary.main'
+                    : 'inherit',
+              }}
+            >
               {item.icon}
             </ListItemIcon>
             <ListItemText primary={item.text} />
@@ -94,24 +103,17 @@ const DashboardLayout = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Navbar>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={handleDrawerToggle}
-          sx={{ mr: 2, display: { sm: 'none' } }}
-        >
-          <MenuIcon />
-        </IconButton>
-      </Navbar>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       
+      {/* Sidebar */}
       <Box
         component="nav"
-        sx={{ width: { sm: DRAWER_WIDTH }, flexShrink: { sm: 0 } }}
+        sx={{
+          width: { sm: DRAWER_WIDTH },
+          flexShrink: { sm: 0 },
+        }}
       >
-        {/* Mobile drawer */}
+        {/* Mobile Drawer */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -119,47 +121,69 @@ const DashboardLayout = ({ children }) => {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { 
-              boxSizing: 'border-box', 
+            '& .MuiDrawer-paper': {
               width: DRAWER_WIDTH,
-              height: 'calc(100vh - 56px)', // Subtract footer height
-              marginTop: '64px' // Account for navbar
+              boxSizing: 'border-box',
+              top: `${NAVBAR_HEIGHT}px`,
+              height: `calc(100vh - ${NAVBAR_HEIGHT}px)`
             },
           }}
         >
-          {drawer}
+          {drawerContent}
         </Drawer>
-        
-        {/* Desktop drawer */}
+
+        {/* Desktop Drawer */}
         <Drawer
           variant="permanent"
+          open
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { 
-              boxSizing: 'border-box', 
+            '& .MuiDrawer-paper': {
               width: DRAWER_WIDTH,
-              borderRight: '1px solid rgba(0, 0, 0, 0.12)',
-              marginTop: '64px', // Navbar height
-              height: 'calc(100vh - 78px - 58px)', // Subtract navbar (64px) and footer (56px) heights
-              overflowY: 'auto' // Add scrolling for overflow content
+              boxSizing: 'border-box',
+              top: `${NAVBAR_HEIGHT}px`,
+              height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
+              borderRight: '1px solid rgba(0,0,0,0.12)',
+              overflowY: 'auto'
             },
           }}
-          open
         >
-          {drawer}
+          {drawerContent}
         </Drawer>
       </Box>
-      
+
+      {/* Right Side (Navbar + Content) */}
       <Box
-        component="main"
         sx={{
+          display: 'flex',
+          flexDirection: 'column',
           flexGrow: 1,
-          p: 3,
           width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
-          marginTop: '64px'
         }}
       >
-        {children}
+        {/* Navbar */}
+        <Navbar>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+        </Navbar>
+
+        {/* Main Content */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            mt: `${NAVBAR_HEIGHT}px`
+          }}
+        >
+          {children}
+        </Box>
       </Box>
     </Box>
   );
