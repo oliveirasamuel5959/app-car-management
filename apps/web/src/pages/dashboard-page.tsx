@@ -1,5 +1,9 @@
-import { useState } from "react";
-
+import { CheckInCard } from "../components/workshops/services-status-card";
+import { CheckoutEstimatedCard } from "../components/workshops/services-status-card";
+import { ServiceProgressCard } from "../components/workshops/services-status-card";
+import { ServiceInProgressCard } from "../components/workshops/services-status-card";
+import { ServicesTimeline } from "../components/workshops/services-timeline";
+import { VehicleInfo } from "../components/workshops/vehicle-info";
 interface CarInWorkshop {
   id: number;
   brand: string;
@@ -9,14 +13,6 @@ interface CarInWorkshop {
   checkInDate: string;
   status: "pending" | "in-progress" | "completed" | "ready-for-pickup";
   estimatedCompletion: string;
-}
-
-interface MaintenanceTip {
-  id: number;
-  title: string;
-  description: string;
-  category: "oil" | "tires" | "brakes" | "battery" | "general";
-  priority: "low" | "medium" | "high";
 }
 
 interface WorkshopService {
@@ -33,45 +29,11 @@ const sampleCarInWorkshop: CarInWorkshop = {
   model: "Corolla",
   year: 2022,
   licensePlate: "ABC-1234",
-  checkInDate: "2025-02-20",
+  checkInDate: "2026-02-10",
   status: "in-progress",
   estimatedCompletion: "2025-02-27",
 };
 
-const maintenanceTips: MaintenanceTip[] = [
-  {
-    id: 1,
-    title: "Troca de Óleo Necessária",
-    description:
-      "Seu veículo precisa de uma troca de óleo. Óleo sintético é recomendado para melhor desempenho do motor.",
-    category: "oil",
-    priority: "high",
-  },
-  {
-    id: 2,
-    title: "Rodízio de Pneus Agendado",
-    description:
-      "É hora de fazer o rodízio dos seus pneus para garantir desgaste uniforme e prolongar sua vida útil.",
-    category: "tires",
-    priority: "medium",
-  },
-  {
-    id: 3,
-    title: "Inspeção de Freios",
-    description:
-      "Agende uma inspeção de freios para garantir que seu veículo pare com segurança. Verifique os níveis de fluido de freio.",
-    category: "brakes",
-    priority: "high",
-  },
-  {
-    id: 4,
-    title: "Verificação de Saúde da Bateria",
-    description:
-      "Sua bateria tem 3 anos. Considere uma verificação de saúde para evitar falhas inesperadas.",
-    category: "battery",
-    priority: "medium",
-  },
-];
 
 const workshopServices: WorkshopService[] = [
   {
@@ -119,36 +81,8 @@ function getStatusColor(status: string) {
   }
 }
 
-function getPriorityColor(priority: string) {
-  switch (priority) {
-    case "high":
-      return "bg-red-100 text-red-800 border-red-300";
-    case "medium":
-      return "bg-orange-100 text-orange-800 border-orange-300";
-    case "low":
-      return "bg-green-100 text-green-800 border-green-300";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-300";
-  }
-}
-
-function getCategoryIcon(category: string) {
-  switch (category) {
-    case "oil":
-      return "🛢️";
-    case "tires":
-      return "🛞";
-    case "brakes":
-      return "🛑";
-    case "battery":
-      return "🔋";
-    default:
-      return "⚙️";
-  }
-}
 
 export default function DashboardPage() {
-  const [selectedTip, setSelectedTip] = useState<MaintenanceTip | null>(null);
 
   const daysInWorkshop = Math.floor(
     (new Date().getTime() - new Date(sampleCarInWorkshop.checkInDate).getTime()) /
@@ -206,125 +140,38 @@ export default function DashboardPage() {
 
             <div className="px-6 py-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {/* Check-in Info */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm text-gray-600 font-semibold mb-1">
-                    DATA DE ENTRADA
-                  </p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {new Date(sampleCarInWorkshop.checkInDate).toLocaleDateString()}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {daysInWorkshop} dias na oficina
-                  </p>
-                </div>
-
-                {/* Days Remaining */}
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-                  <p className="text-sm text-orange-700 font-semibold mb-1">
-                    CONCLUSÃO ESTIMADA
-                  </p>
-                  <p className="text-xl font-bold text-orange-900">
-                    {new Date(sampleCarInWorkshop.estimatedCompletion).toLocaleDateString()}
-                  </p>
-                  <p className="text-xs text-orange-600 mt-2">
-                    {daysRemaining > 0 ? `${daysRemaining} dias restantes` : "Prazo próximo!"}
-                  </p>
-                </div>
+                <CheckInCard
+                  title="DATA DE ENTRADA"
+                  sampleCarInWorkshop={sampleCarInWorkshop}
+                  daysInWorkshop={daysInWorkshop}
+                />
+                <CheckoutEstimatedCard
+                  title="CONCLUSÃO ESTIMADA"
+                  sampleCarInWorkshop={sampleCarInWorkshop}
+                  daysRemaining={daysRemaining}
+                />
 
                 {/* Services Progress */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                  <p className="text-sm text-green-700 font-semibold mb-1">
-                    PROGRESSO
-                  </p>
-                  <p className="text-xl font-bold text-green-900">
-                    {completedServices}/{workshopServices.length}
-                  </p>
-                  <p className="text-xs text-green-600 mt-2">Serviços concluídos</p>
-                </div>
+                <ServiceProgressCard
+                  title="PROGRESSO"
+                  completedServices={completedServices}
+                  workshopServices={workshopServices}
+                />
 
                 {/* In Progress */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-blue-700 font-semibold mb-1">
-                    EM PROGRESSO
-                  </p>
-                  <p className="text-xl font-bold text-blue-900">
-                    {inProgressServices}
-                  </p>
-                  <p className="text-xs text-blue-600 mt-2">Serviços em atendimento</p>
-                </div>
+                <ServiceInProgressCard
+                  title="EM ATENDIMENTO"
+                  inProgressServices={inProgressServices}
+                />
+                
               </div>
 
               {/* Timeline */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  📅 Cronograma desde Entrada
-                </h3>
-                <div className="relative">
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-blue-300" />
-                  <div className="ml-8 space-y-4">
-                    <div className="relative">
-                      <div className="absolute -left-6 top-1 w-5 h-5 bg-blue-500 rounded-full border-4 border-white" />
-                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                        <p className="font-semibold text-gray-900">
-                          Entrada do Veículo
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(sampleCarInWorkshop.checkInDate).toLocaleDateString("pt-BR", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="relative">
-                      <div className="absolute -left-6 top-1 w-5 h-5 bg-green-500 rounded-full border-4 border-white" />
-                      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                        <p className="font-semibold text-gray-900">
-                          {completedServices} Serviço(s) Concluído(s)
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {completedServices > 0 ? "Tarefas de manutenção inicial concluídas" : "Aguardando primeiro serviço"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {inProgressServices > 0 && (
-                      <div className="relative">
-                        <div className="absolute -left-6 top-1 w-5 h-5 bg-yellow-500 rounded-full border-4 border-white animate-pulse" />
-                        <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                          <p className="font-semibold text-gray-900">
-                            {inProgressServices} Serviço(s) em Progresso
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Atualmente em atendimento
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="relative">
-                      <div className="absolute -left-6 top-1 w-5 h-5 bg-blue-400 rounded-full border-4 border-white" />
-                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                        <p className="font-semibold text-gray-900">
-                          Data Prevista de Conclusão
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(sampleCarInWorkshop.estimatedCompletion).toLocaleDateString("pt-BR", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* <ServicesTimeline
+                sampleCarInWorkshop={sampleCarInWorkshop}
+                completedServices={completedServices}
+                inProgressServices={inProgressServices}
+              /> */}
             </div>
           </div>
         )}
@@ -421,133 +268,14 @@ export default function DashboardPage() {
                 <div className="text-4xl">⏳</div>
               </div>
             </div>
-
-            {/* Maintenance Alerts */}
-            <div className="bg-white rounded-lg shadow-lg p-6 border-t-4 border-red-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 font-semibold uppercase mb-1">
-                    Alta Prioridade
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {maintenanceTips.filter((t) => t.priority === "high").length}
-                  </p>
-                </div>
-                <div className="text-4xl">⚠️</div>
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Maintenance Tips Section */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-50 to-amber-100 px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">
-              💡 Dicas de Manutenção e Alertas
-            </h2>
-          </div>
-
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {maintenanceTips.map((tip) => (
-                <div
-                  key={tip.id}
-                  onClick={() => setSelectedTip(selectedTip?.id === tip.id ? null : tip)}
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                    selectedTip?.id === tip.id
-                      ? "border-blue-500 bg-blue-50 shadow-md"
-                      : getPriorityColor(tip.priority)
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">{getCategoryIcon(tip.category)}</span>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 mb-1">{tip.title}</h3>
-                      <p
-                        className={`text-xs leading-relaxed ${
-                          selectedTip?.id === tip.id
-                            ? "text-blue-900"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {selectedTip?.id === tip.id
-                          ? tip.description
-                          : tip.description.substring(0, 50) + "..."}
-                      </p>
-                      <div className="mt-2 flex gap-2">
-                        <span
-                          className={`text-xs font-bold px-2 py-1 rounded ${
-                            tip.priority === "high"
-                              ? "bg-red-200 text-red-800"
-                              : tip.priority === "medium"
-                              ? "bg-orange-200 text-orange-800"
-                              : "bg-green-200 text-green-800"
-                          }`}
-                        >
-                          {tip.priority.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {selectedTip && (
-              <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
-                <h3 className="font-bold text-lg text-gray-900 mb-2">
-                  {selectedTip.title}
-                </h3>
-                <p className="text-gray-700 mb-3">{selectedTip.description}</p>
-                <div className="flex gap-3">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-bold ${getPriorityColor(
-                      selectedTip.priority
-                    )}`}
-                  >
-                    {selectedTip.priority.toUpperCase()} PRIORIDADE
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-800">
-                    {selectedTip.category.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Footer Info */}
-        <div className="mt-8 bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6">
-          <h3 className="font-bold text-gray-900 mb-2">ℹ️ Informações do Veículo</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-gray-600 text-xs uppercase font-semibold">Marca</p>
-              <p className="font-bold text-gray-900">
-                {sampleCarInWorkshop.brand}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600 text-xs uppercase font-semibold">Modelo</p>
-              <p className="font-bold text-gray-900">
-                {sampleCarInWorkshop.model}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600 text-xs uppercase font-semibold">Ano</p>
-              <p className="font-bold text-gray-900">
-                {sampleCarInWorkshop.year}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-600 text-xs uppercase font-semibold">
-                Placa
-              </p>
-              <p className="font-bold text-gray-900 font-mono">
-                {sampleCarInWorkshop.licensePlate}
-              </p>
-            </div>
-          </div>
-        </div>
+        <VehicleInfo sampleCarInWorkshop={sampleCarInWorkshop} />
+
       </div>
     </div>
   );
