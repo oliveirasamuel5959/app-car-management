@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from uuid import UUID
 
-
 class WorkshopCreate(BaseModel):
     name: str
     description: str | None

@@ -12,6 +12,12 @@ def repo_create_workshop(db: Session, user_id: int, workshop_data: dict) -> Work
     db.refresh(workshop)
     return workshop
 
+
+def repo_get_workshop_by_id(db: Session, workshop_id: int) -> Workshop | None:
+    """Get a workshop by its ID."""
+    return db.query(Workshop).filter(Workshop.id == workshop_id).first()
+
+
 def repo_get_workshops_nearby(
     db: Session,
     lat: float,

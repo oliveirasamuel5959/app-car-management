@@ -10,6 +10,7 @@ load_dotenv()
 
 from app.src.db.base import Base
 from app.src.models import User, Vehicle, Workshop
+from app.src.models.services import Service
 
 config = context.config
 

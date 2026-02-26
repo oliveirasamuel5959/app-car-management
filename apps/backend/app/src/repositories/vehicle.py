@@ -17,7 +17,7 @@ def repo_get_vehicle_by_email(db: Session, email: str) -> Vehicle | None:
     return db.query(Vehicle).join(User).filter(User.email == email).all()
 
 def repo_get_vehicle_by_id(db: Session, vehicle_id: int) -> Vehicle | None:
-    return db.query(Vehicle).filter(Vehicle.id == vehicle_id).all()
+    return db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
 
 def check_duplicate_plate(db: Session, plate) -> bool:
     return db.query(Vehicle).filter(Vehicle.plate == plate).first()
