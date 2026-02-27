@@ -24,7 +24,7 @@ function App() {
                 key={route.path}
                 path={route.path}
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRole={route.role}>
                     {route.element}
                   </ProtectedRoute>
                 }
