@@ -4,11 +4,22 @@ import { useAuth } from '../../context/auth-context';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleLogoClick = () => {
+    if (isAuthenticated) {
+      const dashboardPath = user?.role === 'WORKSHOP' 
+        ? '/workshop/dashboard' 
+        : '/dashboard';
+      navigate(dashboardPath);
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -18,7 +29,7 @@ const Navbar = () => {
           variant="h6" 
           component="div" 
           sx={{ flexGrow: 1, cursor: 'pointer', textAlign: 'left' }}
-          onClick={() => navigate('/dashboard')}
+          onClick={handleLogoClick}
         >
           Car Management System
         </Typography>

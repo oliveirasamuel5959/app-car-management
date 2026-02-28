@@ -3,6 +3,7 @@ from typing import List, Optional
 from app.src.repositories.services import (
     repo_create_service,
     repo_get_service_by_id,
+    repo_get_services_by_user_id,
     repo_get_services_by_workshop_id,
     repo_get_services_by_vehicle_id,
     repo_get_all_services,
@@ -54,6 +55,10 @@ class ServiceService:
     def get_services_by_vehicle_id(self, vehicle_id: int) -> List[Service]:
         """Get all services for a vehicle."""
         return repo_get_services_by_vehicle_id(self.db, vehicle_id)
+    
+    def get_services_by_user_id(self, user_id: int) -> List[Service]:
+        """Get all services that belong to a specific user via vehicles."""
+        return repo_get_services_by_user_id(self.db, user_id)   
 
     def get_all_services(self) -> List[Service]:
         """Get all services."""

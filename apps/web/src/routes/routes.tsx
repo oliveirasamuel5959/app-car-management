@@ -14,6 +14,7 @@ import { Navigate } from 'react-router-dom';
 import WorkshopDashboardPage from '../pages/workshop/dashboard-page';
 import WorkshopOrdersPage from '../pages/workshop/orders-page';
 import WorkshopServicesPage from '../pages/workshop/services-page';
+import ServicesPage from '../pages/client/services-page.tsx';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -62,6 +63,11 @@ export const protectedRoutes = [
     path: '/my-workshops',
     role: 'CLIENT',
     element: <AppLayout><WorkshopPage /></AppLayout>,
+  },
+  {
+    path: '/services/:serviceId',
+    role: 'CLIENT',
+    element: <AppLayout><ServicesPage /></AppLayout>,
   },
 
   // WORKSHOP ROUTES

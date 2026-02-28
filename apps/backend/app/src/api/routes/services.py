@@ -70,6 +70,31 @@ def get_services(
 
 
 @router.get(
+    "/my",
+    response_model=List[ServiceRead],
+    status_code=status.HTTP_200_OK,
+    summary="Get services of current user",
+    description="Get all services that belong to the authenticated user"
+)
+def get_my_services(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    """Get all services that belong to the logged-in user."""
+    service = ServiceService(db)
+
+    try:
+        user_id = current_user.get("user_id")
+        result = service.get_services_by_user_id(user_id)
+        return result
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch services"
+        )
+
+@router.get(
     "/{service_id}",
     response_model=ServiceRead,
     status_code=status.HTTP_200_OK,
@@ -99,3 +124,4 @@ def get_service(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch service"
         )
+        

@@ -28,7 +28,7 @@ class UserService:
             ValueError: If email already exists or validation fails
         """
         # Check if email already exists
-        if email_exists(self.db, register_data.email):
+        if repo_email_exists(self.db, register_data.email):
             raise ValueError(f"Email {register_data.email} is already registered")
 
         # Create user using the UserCreate schema

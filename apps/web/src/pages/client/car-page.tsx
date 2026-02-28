@@ -9,7 +9,7 @@ export function CarPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [carData, setCarData] = useState(null);
+  const [carData, setCarData] = useState([]);
   const [loadingState, setLoadingState] = useState(true);
   const [error, setError] = useState(null);
 
@@ -19,7 +19,7 @@ export function CarPage() {
         setLoadingState(true);
         const data = await carService.getAllCars();
         console.log("Fetched cars:", data);
-        setCarData(data[0] || null);
+        setCarData(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("CarList error:", err);
         setError(err.message || "Failed to load cars");
@@ -98,7 +98,7 @@ export function CarPage() {
       <div className="max-w-7xl mx-auto px-6 py-12">
 
         {/* Header only appears if user has cars */}
-        {!loadingState && !error && carData.length > 0 && (
+        {!loadingState && !error && carData && carData.length > 0 && (
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
             <div>
               <h1 className="text-4xl font-bold text-gray-900">
@@ -118,11 +118,11 @@ export function CarPage() {
             <LoadingState />
           ) : error ? (
             <ErrorState />
-          ) : carData.length === 0 ? (
+          ) : !carData || carData.length === 0 ? (
             <WelcomeMessage />
           ) : (
             <CarCard
-              carData={carData}
+              carData={carData[0]}
               loading={loadingState}
             />
           )}
