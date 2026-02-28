@@ -1,16 +1,9 @@
-import enum
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from typing import List, Optional
 from app.src.db.base import Base
-
-
-class UserRole(str, enum.Enum):
-    CLIENT = "CLIENT"
-    WORKSHOP = "WORKSHOP"
-
 
 class User(Base):
     __tablename__ = "users"
@@ -27,3 +20,7 @@ class User(Base):
         DateTime(timezone=True),
         server_default=func.now(),
     )
+    
+    vehicles = relationship("Vehicle", back_populates="user")
+    workshops: Mapped[list["Workshop"]] = relationship("Workshop", back_populates="user")
+    

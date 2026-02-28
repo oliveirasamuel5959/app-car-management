@@ -9,7 +9,15 @@ from app.src.models.workshop import Workshop
 
 
 def repo_create_workshop(db: Session, user_id: int, workshop_data: dict) -> Workshop:
-    workshop = Workshop(**workshop_data)
+    # Explicitly pass user_id to the Workshop constructor
+    workshop = Workshop(
+        user_id=user_id,
+        name=workshop_data.get("name"),
+        description=workshop_data.get("description"),
+        latitude=workshop_data.get("latitude"),
+        longitude=workshop_data.get("longitude"),
+        rating_avg=workshop_data.get("rating_avg", 0.0)
+    )
     db.add(workshop)
     db.commit()
     db.refresh(workshop)
