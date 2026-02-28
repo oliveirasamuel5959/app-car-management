@@ -1,3 +1,6 @@
+from app.src.models.user import User
+from app.src.models.vehicle import Vehicle
+from app.src.models.services import Service
 from sqlalchemy.orm import Session
 from typing import List
 from math import radians, cos
@@ -17,6 +20,24 @@ def repo_get_workshop_by_id(db: Session, workshop_id: int) -> Workshop | None:
     """Get a workshop by its ID."""
     return db.query(Workshop).filter(Workshop.id == workshop_id).first()
 
+
+def repo_get_workshop_all_clients(db: Session, workshop_id: int) -> List[User]:
+    """
+    Return all distinct users with role 'client'
+    that have services in a given workshop.
+    """
+
+    return (
+        db.query(User)
+        .join(Vehicle, Vehicle.user_id == User.id)
+        .join(Service, Service.vehicle_id == Vehicle.id)
+        .filter(
+            Service.workshop_id == workshop_id,
+            User.role == "CLIENT"
+        )
+        .distinct()
+        .all()
+    )
 
 def repo_get_workshops_nearby(
     db: Session,

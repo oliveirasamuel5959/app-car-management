@@ -19,6 +19,9 @@ def repo_create_user(db: Session, user: UserCreate) -> User:
 
     return db_user
 
+def repo_get_all_users(db: Session) -> list[User]:
+    return db.query(User).all()
+
 def repo_get_user_by_email(db: Session, email: str) -> User | None:
     return db.query(User).filter(User.email == email).first()
 

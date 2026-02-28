@@ -69,6 +69,8 @@ export default function WorkshopOrdersPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [editStatus, setEditStatus] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetchServices();
@@ -95,6 +97,7 @@ export default function WorkshopOrdersPage() {
   const handleViewOrder = (service: Service) => {
     setSelectedService(service);
     setEditStatus(service.status);
+    setEditNotes(service.workshop_notes || '');
     setOpenDialog(true);
   };
 
@@ -106,16 +109,41 @@ export default function WorkshopOrdersPage() {
 
   const handleUpdateStatus = async () => {
     if (!selectedService) return;
-    
+
     try {
-      // In a real app, you would call an update endpoint here
-      // For now, just close the dialog
+      setUpdating(true);
+
+      await serviceService.updateService(selectedService.id, {
+        status: editStatus,
+        workshop_notes: editNotes,
+      });
+
+      // Update local state
+      setServices((prev) =>
+        prev.map((service) =>
+          service.id === selectedService.id
+            ? {
+              ...service,
+              status: editStatus,
+              workshop_notes: editNotes,
+            }
+            : service
+        )
+      );
+
       handleCloseDialog();
-      // Show success message
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating service:', err);
+    } finally {
+      setUpdating(false);
     }
   };
+
+
+  // if (editStatus === selectedService.status) {
+  //   handleCloseDialog();
+  //   return;
+  // }
 
   if (loading) {
     return (
@@ -218,18 +246,20 @@ export default function WorkshopOrdersPage() {
 
       {/* View/Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Order Details
-        </DialogTitle>
+        <DialogTitle>Order Details</DialogTitle>
         <Divider />
+
         <DialogContent sx={{ mt: 2 }}>
           {selectedService && (
             <Grid container spacing={2}>
+
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="textSecondary">
                   Service Name
                 </Typography>
-                <Typography variant="body1">{selectedService.name}</Typography>
+                <Typography variant="body1">
+                  {selectedService.name}
+                </Typography>
               </Grid>
 
               <Grid item xs={12}>
@@ -241,6 +271,7 @@ export default function WorkshopOrdersPage() {
                 </Typography>
               </Grid>
 
+              {/* Editable Status */}
               <Grid item xs={12}>
                 <TextField
                   select
@@ -258,37 +289,42 @@ export default function WorkshopOrdersPage() {
                 </TextField>
               </Grid>
 
+              {/* Editable Workshop Notes */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  label="Workshop Notes"
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                />
+              </Grid>
+
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="textSecondary">
                   Progress
                 </Typography>
-                <Typography variant="body1">{selectedService.progress_percentage}%</Typography>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Estimated Cost
-                </Typography>
                 <Typography variant="body1">
-                  {selectedService.estimated_cost ? `$${selectedService.estimated_cost}` : 'Not set'}
+                  {selectedService.progress_percentage}%
                 </Typography>
               </Grid>
 
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Check-in Date
-                </Typography>
-                <Typography variant="body1">
-                  {new Date(selectedService.checkin_date).toLocaleDateString()}
-                </Typography>
-              </Grid>
             </Grid>
           )}
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleUpdateStatus} variant="contained" color="primary">
-            Update
+          <Button onClick={handleCloseDialog}>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleUpdateStatus}
+            variant="contained"
+            disabled={updating}
+          >
+            {updating ? 'Updating...' : 'Update'}
           </Button>
         </DialogActions>
       </Dialog>

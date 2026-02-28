@@ -43,18 +43,37 @@ def repo_get_all_services(db: Session) -> List[Service]:
     """Get all services."""
     return db.query(Service).all()
 
+def repo_update_service_by_user_id(
+    db: Session,
+    user_id: int,
+    service_id: int,
+    update_data: dict
+) -> Optional[Service]:
+    """
+    Update a service only if it belongs to the user via vehicle.
+    """
 
-def repo_update_service(db: Session, service_id: int, service_data: dict) -> Optional[Service]:
-    """Update a service."""
-    service = repo_get_service_by_id(db, service_id)
+    service = (
+        db.query(Service)
+        .join(Vehicle, Service.vehicle_id == Vehicle.id)
+        .filter(
+            Service.id == service_id,
+            Vehicle.user_id == user_id
+        )
+        .first()
+    )
+    
+    print(f"Found service: {service}, for user_id: {user_id} and service_id: {service_id}")
+
     if not service:
         return None
-    
-    for key, value in service_data.items():
-        setattr(service, key, value)
-    
+
+    for field, value in update_data.items():
+        setattr(service, field, value)
+
     db.commit()
     db.refresh(service)
+
     return service
 
 

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 
 from app.src.db.database import get_session
-from app.src.schemas.services import ServiceRead, ServiceCreate
+from app.src.schemas.services import ServiceRead, ServiceCreate, ServiceUpdate
 from app.src.services.services import ServiceService
 from app.src.core.auth import get_current_user
 
@@ -93,6 +93,29 @@ def get_my_services(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch services"
         )
+
+
+@router.put("/my/{service_id}")
+def update_my_service(
+    service_id: int,
+    service_update: ServiceUpdate,
+    db: Session = Depends(get_session),
+    current_user: dict = Depends(get_current_user),
+):
+    service_service = ServiceService(db)
+    
+    user_id = current_user.get("user_id")
+
+    updated_service = service_service.update_service_by_user_id(
+        user_id=user_id,
+        service_id=service_id,
+        service_data=service_update
+    )
+
+    if not updated_service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    return updated_service
 
 @router.get(
     "/{service_id}",

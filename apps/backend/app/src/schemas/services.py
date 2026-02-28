@@ -40,3 +40,7 @@ class ServiceRead(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class ServiceUpdate(BaseModel):
+    workshop_notes: Optional[str]
+    status: Optional[str]

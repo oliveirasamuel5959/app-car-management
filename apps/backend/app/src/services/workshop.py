@@ -1,8 +1,10 @@
 from typing import List
+from app.src.models.user import User
 from sqlalchemy.orm import Session
 
 from app.src.repositories.workshop import (
     repo_create_workshop,
+    repo_get_workshop_all_clients,
     repo_get_workshops_nearby,
 )
 from app.src.schemas.workshop import WorkshopCreate
@@ -20,3 +22,15 @@ class WorkshopService:
     def get_nearby_workshops(self, lat: float, lng: float, radius_km: float = 10.0) -> List[Workshop]:
         # service handled radius calculation (defaults to 10km)
         return repo_get_workshops_nearby(self.db, lat, lng, radius_km)
+
+    def get_all_clients(self, workshop_id: int) -> List[User]:
+        """
+        Return all distinct CLIENT users that have services
+        in the specified workshop.
+        """
+        clients = repo_get_workshop_all_clients(self.db, workshop_id)
+
+        if not clients:
+            return []
+
+        return clients

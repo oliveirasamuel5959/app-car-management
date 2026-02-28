@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { serviceService } from '../../services/service-service';
-import { useParams } from 'react-router-dom';
 
 interface Service {
   id: number;
@@ -21,17 +20,14 @@ interface Service {
 }
 
 export default function ServicesPage() {
-  const { serviceId } = useParams<{ serviceId: string }>();
-  const [service, setService] = useState<Service | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchService = async () => {
+    const fetchServices = async () => {
       try {
-        const response = await serviceService.getServiceById(
-          Number(serviceId)
-        );
-        setService(response);
+        const response = await serviceService.getMyServices();
+        setServices(response);
       } catch (err) {
         console.error(err);
       } finally {
@@ -39,8 +35,8 @@ export default function ServicesPage() {
       }
     };
 
-    fetchService();
-  }, [serviceId]);
+    fetchServices();
+  }, []);
 
   if (loading) {
     return (
@@ -50,141 +46,153 @@ export default function ServicesPage() {
     );
   }
 
-  if (!service) {
-    return <div className="p-10 text-red-500">Service not found</div>;
+  if (services.length === 0) {
+    return <div className="p-10 text-gray-500">Nenhum serviço encontrado</div>;
   }
 
   const statusColor = {
     pending: 'bg-yellow-100 text-yellow-700',
     in_progress: 'bg-blue-100 text-blue-700',
     completed: 'bg-green-100 text-green-700',
+    approved: 'bg-green-100 text-green-700',
+  };
+
+  const statusLabel: Record<string, string> = {
+    pending: 'Pendente',
+    in_progress: 'Em andamento',
+    completed: 'Concluído',
+    approved: 'Aprovado',
   };
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-8">
-      
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">
-          Service Timeline
+          Meus Serviços
         </h1>
         <p className="text-gray-500 mt-2">
-          Track your vehicle repair progress in real-time
+          Acompanhe o andamento do reparo do seu veículo
         </p>
       </div>
 
-      {/* Main Card */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
+      <div className="space-y-8">
+        {services.map((service) => (
+          <div
+            key={service.id}
+            className="bg-white rounded-2xl shadow-lg p-8"
+          >
+            {/* Header */}
+            <div className="flex justify-between items-start flex-wrap gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  {service.name}
+                </h2>
+                <p className="text-gray-500 mt-2">
+                  {service.description}
+                </p>
+              </div>
 
-        {/* Top Section */}
-        <div className="flex justify-between items-start flex-wrap gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-800">
-              {service.name}
-            </h2>
-            <p className="text-gray-500 mt-2">
-              {service.description}
-            </p>
-          </div>
-
-          <span className={`px-4 py-2 rounded-full text-sm font-medium ${statusColor[service.status]}`}>
-            {service.status.replace('_', ' ').toUpperCase()}
-          </span>
-        </div>
-
-        {/* Progress */}
-        <div className="mt-8">
-          <div className="flex justify-between mb-2 text-sm text-gray-600">
-            <span>Progress</span>
-            <span>{service.progress_percentage}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
-            <div
-              className="bg-blue-600 h-3 rounded-full transition-all duration-500"
-              style={{ width: `${service.progress_percentage}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Timeline */}
-        <div className="mt-12 relative border-l-2 border-gray-200 pl-8 space-y-10">
-
-          {/* Check-in */}
-          <div className="relative">
-            <div className="absolute -left-10 w-8 h-8 bg-blue-600 rounded-full"></div>
-            <h3 className="font-semibold text-gray-800">
-              Vehicle Check-in
-            </h3>
-            <p className="text-gray-500 text-sm">
-              {new Date(service.checkin_date).toLocaleString()}
-            </p>
-          </div>
-
-          {/* In Progress */}
-          {service.status !== 'pending' && (
-            <div className="relative">
-              <div className="absolute -left-10 w-8 h-8 bg-blue-400 rounded-full"></div>
-              <h3 className="font-semibold text-gray-800">
-                Repair In Progress
-              </h3>
-              <p className="text-gray-500 text-sm">
-                Estimated Hours: {service.estimated_hours}h
-              </p>
+              <span
+                className={`px-4 py-2 rounded-full text-sm font-medium ${statusColor[service.status]}`}
+              >
+                {statusLabel[service.status]}
+              </span>
             </div>
-          )}
 
-          {/* Completed */}
-          {service.status === 'completed' && (
-            <div className="relative">
-              <div className="absolute -left-4 w-8 h-8 bg-green-600 rounded-full"></div>
-              <h3 className="font-semibold text-gray-800">
-                Repair Completed
-              </h3>
-              <p className="text-gray-500 text-sm">
-                {service.finished_at
-                  ? new Date(service.finished_at).toLocaleString()
-                  : 'Completed'}
-              </p>
+            {/* Progress */}
+            <div className="mt-8">
+              <div className="flex justify-between mb-2 text-sm text-gray-600">
+                <span>Progresso</span>
+                <span>{service.progress_percentage}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${service.progress_percentage}%` }}
+                />
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Details Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mt-12">
+            {/* Timeline */}
+            <div className="mt-12 relative border-l-2 border-gray-200 pl-8 space-y-10">
+              <div className="relative">
+                <div className="absolute -left-10 w-8 h-8 bg-blue-600 rounded-full"></div>
+                <h3 className="font-semibold text-gray-800">
+                  Entrada do Veículo
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  {new Date(service.checkin_date).toLocaleString('pt-BR')}
+                </p>
+              </div>
 
-          <div className="bg-gray-50 rounded-xl p-6">
-            <h4 className="text-sm text-gray-500 mb-2">Estimated Finish</h4>
-            <p className="font-semibold text-gray-800">
-              {new Date(service.estimated_finish_date).toLocaleString()}
-            </p>
+              {service.status !== 'pending' && (
+                <div className="relative">
+                  <div className="absolute -left-10 w-8 h-8 bg-blue-400 rounded-full"></div>
+                  <h3 className="font-semibold text-gray-800">
+                    Reparo em Andamento
+                  </h3>
+                  <p className="text-gray-500 text-sm">
+                    Horas Estimadas: {service.estimated_hours}h
+                  </p>
+                </div>
+              )}
+
+              {service.status === 'completed' && (
+                <div className="relative">
+                  <div className="absolute -left-10 w-8 h-8 bg-green-600 rounded-full"></div>
+                  <h3 className="font-semibold text-gray-800">
+                    Reparo Concluído
+                  </h3>
+                  <p className="text-gray-500 text-sm">
+                    {service.finished_at
+                      ? new Date(service.finished_at).toLocaleString('pt-BR')
+                      : 'Concluído'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Details */}
+            <div className="grid md:grid-cols-3 gap-6 mt-12">
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h4 className="text-sm text-gray-500 mb-2">
+                  Previsão de Conclusão
+                </h4>
+                <p className="font-semibold text-gray-800">
+                  {new Date(service.estimated_finish_date).toLocaleString('pt-BR')}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h4 className="text-sm text-gray-500 mb-2">
+                  Custo Estimado
+                </h4>
+                <p className="font-semibold text-gray-800">
+                  R$ {service.estimated_cost}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h4 className="text-sm text-gray-500 mb-2">
+                  Custo Final
+                </h4>
+                <p className="font-semibold text-gray-800">
+                  {service.final_cost ? `R$ ${service.final_cost}` : '—'}
+                </p>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="mt-10">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                Observações da Oficina
+              </h3>
+              <div className="bg-gray-50 p-6 rounded-xl text-gray-600">
+                {service.workshop_notes}
+              </div>
+            </div>
           </div>
-
-          <div className="bg-gray-50 rounded-xl p-6">
-            <h4 className="text-sm text-gray-500 mb-2">Estimated Cost</h4>
-            <p className="font-semibold text-gray-800">
-              ${service.estimated_cost}
-            </p>
-          </div>
-
-          <div className="bg-gray-50 rounded-xl p-6">
-            <h4 className="text-sm text-gray-500 mb-2">Final Cost</h4>
-            <p className="font-semibold text-gray-800">
-              {service.final_cost ? `$${service.final_cost}` : '—'}
-            </p>
-          </div>
-
-        </div>
-
-        {/* Notes */}
-        <div className="mt-10">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">
-            Workshop Notes
-          </h3>
-          <div className="bg-gray-50 p-6 rounded-xl text-gray-600">
-            {service.workshop_notes}
-          </div>
-        </div>
-
+        ))}
       </div>
     </div>
   );

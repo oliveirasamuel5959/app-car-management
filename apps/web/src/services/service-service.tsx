@@ -86,4 +86,36 @@ export const serviceService = {
       throw new Error(error.response?.data?.detail || 'Failed to fetch vehicle services');
     }
   },
+
+  getMyServices: async () => {
+    try {
+      const response = await api.get('/services/my');
+      console.log('Fetched my services:', response);
+      return response;
+    } catch (error) {
+      throw new Error(error.response?.data?.detail || 'Failed to fetch your services');
+    }
+  },
+
+  updateService: async (
+  serviceId: number,
+  serviceData: {
+    name?: string;
+    description?: string;
+    status?: string;
+    workshop_notes?: string;
+  }
+  ) => {
+    try {
+      const response = await api.put(
+        `/services/my/${serviceId}`,
+        serviceData
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.detail || 'Failed to update service'
+      );
+    }
+  },
 };

@@ -7,8 +7,9 @@ from app.src.repositories.services import (
     repo_get_services_by_workshop_id,
     repo_get_services_by_vehicle_id,
     repo_get_all_services,
-    repo_update_service,
+    repo_update_service_by_user_id,
     repo_delete_service,
+    repo_update_service_by_user_id,
 )
 from app.src.repositories.workshop import repo_get_workshop_by_id
 from app.src.repositories.vehicle import repo_get_vehicle_by_id
@@ -64,7 +65,7 @@ class ServiceService:
         """Get all services."""
         return repo_get_all_services(self.db)
 
-    def update_service(self, service_id: int, service_data: dict) -> Optional[Service]:
+    def update_service_by_user_id(self, user_id: int, service_id: int, service_data: dict) -> Optional[Service]:
         """Update a service."""
         # Validate status if provided
         if "status" in service_data:
@@ -77,7 +78,9 @@ class ServiceService:
             if not (0 <= service_data["progress_percentage"] <= 100):
                 raise ValueError("Progress percentage must be between 0 and 100")
         
-        return repo_update_service(self.db, service_id, service_data)
+        update_dict = service_data.model_dump(exclude_unset=True)
+        
+        return repo_update_service_by_user_id(self.db, user_id, service_id, update_dict)
 
     def delete_service(self, service_id: int) -> bool:
         """Delete a service."""
