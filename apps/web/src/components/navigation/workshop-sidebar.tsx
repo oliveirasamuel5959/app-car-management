@@ -28,21 +28,26 @@ interface WorkshopSidebarProps {
   pendingOrders?: number;
 }
 
-export const WorkshopSidebar = ({ 
-  onMobileClose, 
+export const WorkshopSidebar = ({
+  onMobileClose,
   isMobile = false,
-  pendingOrders = 0 
+  pendingOrders = 0
 }: WorkshopSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/workshop/dashboard' },
-    { 
-      text: 'Orders', 
-      icon: <OrdersIcon />, 
+    {
+      text: 'Orders',
+      icon: <OrdersIcon />,
       path: '/workshop/orders',
       badge: pendingOrders > 0 ? pendingOrders : undefined
+    },
+    {
+      text: 'Clients',
+      icon: <OrdersIcon />,
+      path: `/workshop/1/clients`,
     },
     { text: 'Services', icon: <ServicesIcon />, path: '/workshop/services' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/workshop/settings' },

@@ -1,3 +1,4 @@
+from app.src.schemas.user import UserRead
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -62,4 +63,39 @@ def create_workshop(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
+        )
+
+@router.get(
+    "/{workshop_id}/clients",
+    response_model=list[UserRead],
+    status_code=status.HTTP_200_OK,
+    summary="Get all clients of a workshop",
+    description="Returns all distinct users with role CLIENT that have services in this workshop."
+)
+def get_workshop_clients(
+    workshop_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    service = WorkshopService(db)
+
+    try:
+        # # Optional: restrict access to workshop role
+        # print("Current user role:", current_user.get("role"))
+        # if current_user.get("role") != "WORKSHOP":
+        #     raise HTTPException(
+        #         status_code=status.HTTP_403_FORBIDDEN,
+        #         detail="Only workshop users can access this resource"
+        #     )
+
+        clients = service.get_all_clients(workshop_id)
+        return clients
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch workshop clients"
         )

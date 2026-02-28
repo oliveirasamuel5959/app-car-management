@@ -1,4 +1,4 @@
-from app.src.repositories.user import repo_create_user, repo_get_user_by_email
+from app.src.repositories.user import repo_create_user, repo_get_all_users, repo_get_user_by_email
 from app.src.repositories.user import repo_email_exists, repo_get_user_by_id
 from app.src.models.user import User
 from app.src.core.security import verify_password, create_access_token
@@ -79,6 +79,9 @@ class UserService:
         )
 
         return user, access_token
+    
+    def get_all_users(self) -> list[User]:
+        return repo_get_all_users(self.db)
     
     def get_user_by_id(self, user_id: int) -> User:
         user = repo_get_user_by_id(self.db, user_id)

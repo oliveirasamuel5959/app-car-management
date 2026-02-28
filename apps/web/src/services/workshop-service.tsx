@@ -14,4 +14,17 @@ export const workshopService = {
       throw new Error(error.message || 'Failed to fetch workshops');
     }
   },
+
+  getWorkshopUsers: async (workshopId: number) => {
+    const response = await api.get(`/workshops/${workshopId}/clients`);
+    console.log('getWorkshopUsers response:', response);
+    return response;
+  },
+
+  getServicesByUser: async (userId: string | undefined) => {
+    const response = await api.get(
+      `/workshop/users/${userId}/services`
+    );
+    return response.data;
+  },
 };
