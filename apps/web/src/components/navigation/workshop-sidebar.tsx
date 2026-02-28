@@ -41,7 +41,7 @@ export const WorkshopSidebar = ({
     {
       text: 'Orders',
       icon: <OrdersIcon />,
-      path: '/workshop/orders',
+      path: '/workshop/5/users/1/orders',
       badge: pendingOrders > 0 ? pendingOrders : undefined
     },
     {
