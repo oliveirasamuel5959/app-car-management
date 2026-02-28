@@ -78,7 +78,7 @@ export const protectedRoutes = [
     element: <AppLayout><WorkshopDashboardPage /></AppLayout>,
   },
   {
-    path: '/workshop/orders',
+    path: '/workshop/5/users/1/orders',
     role: 'WORKSHOP',
     element: <AppLayout><WorkshopOrdersPage /></AppLayout>,
   },
