@@ -47,7 +47,7 @@ export const WorkshopSidebar = ({
     {
       text: 'Clients',
       icon: <OrdersIcon />,
-      path: `/workshop/1/clients`,
+      path: `/workshop/5/clients`,
     },
     { text: 'Services', icon: <ServicesIcon />, path: '/workshop/services' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/workshop/settings' },

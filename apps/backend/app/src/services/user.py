@@ -2,6 +2,7 @@ from app.src.repositories.user import repo_create_user, repo_get_all_users, repo
 from app.src.repositories.user import repo_email_exists, repo_get_user_by_id
 from app.src.models.user import User
 from app.src.core.security import verify_password, create_access_token
+from app.src.schemas.user import UserCreate
 from sqlalchemy.orm import Session
 
 
@@ -32,7 +33,7 @@ class UserService:
             raise ValueError(f"Email {register_data.email} is already registered")
 
         # Create user using the UserCreate schema
-        from app.src.schemas.user import UserCreate
+
         user_create = UserCreate(
             name=register_data.name,
             age=register_data.age,
@@ -46,7 +47,11 @@ class UserService:
 
         # Create JWT token
         access_token = create_access_token(
-            data={"sub": user.email, "user_id": user.id}
+            data={
+                "sub": user.email, 
+                "user_id": user.id,
+                "user_role": user.role
+            }
         )
 
         return user, access_token

@@ -3,19 +3,13 @@ from uuid import UUID
 from enum import Enum
 from datetime import datetime
 
-
-class UserRole(str, Enum):
-    CLIENT = "CLIENT"
-    WORKSHOP = "WORKSHOP"
-
-
 class UserCreate(BaseModel):
     name: str
     age: int
     sex: str
     email: EmailStr
     password: str
-    role: UserRole
+    role: str
 
 
 class UserRead(BaseModel):
@@ -24,7 +18,7 @@ class UserRead(BaseModel):
     name: str
     age: int
     sex: str
-    role: UserRole
+    role: str
     created_at: datetime
 
     class Config:
@@ -40,7 +34,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     password_confirm: str
-    role: UserRole = UserRole.CLIENT
+    role: str
 
     @field_validator('age')
     @classmethod
@@ -88,7 +82,7 @@ class UserResponse(BaseModel):
     name: str
     age: int
     sex: str
-    role: UserRole
+    role: str
     created_at: datetime
 
     class Config:

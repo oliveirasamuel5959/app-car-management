@@ -7,9 +7,9 @@ from app.src.repositories.services import (
     repo_get_services_by_workshop_id,
     repo_get_services_by_vehicle_id,
     repo_get_all_services,
-    repo_update_service_by_user_id,
+    repo_update_service_by_current_workshop,
     repo_delete_service,
-    repo_update_service_by_user_id,
+    repo_update_service_by_current_workshop,
 )
 from app.src.repositories.workshop import repo_get_workshop_by_id
 from app.src.repositories.vehicle import repo_get_vehicle_by_id
@@ -80,7 +80,7 @@ class ServiceService:
         
         update_dict = service_data.model_dump(exclude_unset=True)
         
-        return repo_update_service_by_user_id(self.db, user_id, service_id, update_dict)
+        return repo_update_service_by_current_workshop(self.db, user_id, service_id, update_dict)
 
     def delete_service(self, service_id: int) -> bool:
         """Delete a service."""

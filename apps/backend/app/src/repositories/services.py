@@ -1,4 +1,5 @@
 from app.src.models.vehicle import Vehicle
+from app.src.models.workshop import Workshop
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.src.models.services import Service
@@ -43,31 +44,39 @@ def repo_get_all_services(db: Session) -> List[Service]:
     """Get all services."""
     return db.query(Service).all()
 
-def repo_update_service_by_user_id(
+def repo_update_service_by_current_workshop(
     db: Session,
-    user_id: int,
+    user_id: int,        # currently logged-in user
     service_id: int,
     update_data: dict
 ) -> Optional[Service]:
     """
-    Update a service only if it belongs to the user via vehicle.
+    Update a service only if it belongs to the workshop
+    of the current logged-in user.
     """
 
+    # Get the workshop linked to this user
+    workshop = db.query(Workshop).filter(Workshop.user_id == user_id).first()
+    if not workshop:
+        print(f"No workshop found for user_id: {user_id}")
+        return None
+
+    # Get the service that belongs to this workshop
     service = (
         db.query(Service)
-        .join(Vehicle, Service.vehicle_id == Vehicle.id)
         .filter(
             Service.id == service_id,
-            Vehicle.user_id == user_id
+            Service.workshop_id == workshop.id
         )
         .first()
     )
-    
-    print(f"Found service: {service}, for user_id: {user_id} and service_id: {service_id}")
+
+    print(f"Found service: {service}, for workshop_id: {workshop.id} and service_id: {service_id}")
 
     if not service:
         return None
 
+    # Update the fields
     for field, value in update_data.items():
         setattr(service, field, value)
 
