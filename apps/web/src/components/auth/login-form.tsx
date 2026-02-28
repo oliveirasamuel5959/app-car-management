@@ -96,7 +96,11 @@ const LoginForm = () => {
 
       if (response.access_token) {
         login(response); // Pass the entire response
-        navigate('/dashboard', { replace: true });
+        // Redirect based on user role
+        const redirectPath = response.user?.role === 'WORKSHOP' 
+          ? '/workshop/dashboard' 
+          : '/dashboard';
+        navigate(redirectPath, { replace: true });
       } else {
         setError('Invalid login response');
       }

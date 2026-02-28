@@ -30,6 +30,7 @@ const NAVBAR_HEIGHT = 64; // Keep consistent with your Navbar
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'My Car', icon: <DashboardIcon />, path: '/my-car' },
+  { text: 'My Services', icon: <DashboardIcon />, path: '/services/:serviceId' },
   { text: 'My Workshops', icon: <DashboardIcon />, path: '/my-workshops' },
   { text: 'Find Workshops', icon: <ListAltIcon />, path: '/search-workshops' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },

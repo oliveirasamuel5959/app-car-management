@@ -1,3 +1,4 @@
+from app.src.models.vehicle import Vehicle
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.src.models.services import Service
@@ -26,6 +27,16 @@ def repo_get_services_by_workshop_id(db: Session, workshop_id: int) -> List[Serv
 def repo_get_services_by_vehicle_id(db: Session, vehicle_id: int) -> List[Service]:
     """Get all services for a specific vehicle."""
     return db.query(Service).filter(Service.vehicle_id == vehicle_id).all()
+
+
+def repo_get_services_by_user_id(db: Session, user_id: int) -> List[Service]:
+    """Get all services that belong to a specific user via vehicles."""
+    return (
+        db.query(Service)
+        .join(Vehicle, Service.vehicle_id == Vehicle.id)
+        .filter(Vehicle.user_id == user_id)
+        .all()
+    )
 
 
 def repo_get_all_services(db: Session) -> List[Service]:
