@@ -109,7 +109,7 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
         }}
       >
         {/* Navbar */}
-        <Navbar>
+        {/* <Navbar> */}
           <IconButton
             color="inherit"
             edge="start"
@@ -118,7 +118,7 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
           >
             <MenuIcon />
           </IconButton>
-        </Navbar>
+        {/* </Navbar> */}
 
         {/* Main Content */}
         <Box
