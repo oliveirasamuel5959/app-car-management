@@ -1,6 +1,7 @@
 import { Box, Container } from '@mui/material';
 import Navbar from '../components/navigation/navbar';
 import Footer from '../components/navigation/footer';
+import Header from '../components/navigation/header';
 
 const MainLayout = ({ children }) => {
   return (
@@ -11,7 +12,7 @@ const MainLayout = ({ children }) => {
       width: '100%',
       position: 'relative'
     }}>
-      <Navbar />
+      <Header />
       <Container 
         component="main" 
         maxWidth="lg"

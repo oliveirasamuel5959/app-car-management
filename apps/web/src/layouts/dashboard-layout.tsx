@@ -23,6 +23,7 @@ import {
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/navigation/navbar';
+import Header from '../components/navigation/header';
 
 const DRAWER_WIDTH = 240;
 const NAVBAR_HEIGHT = 64; // Keep consistent with your Navbar
@@ -163,7 +164,7 @@ const DashboardLayout = ({ children }) => {
         }}
       >
         {/* Navbar */}
-        <Navbar>
+        <Header />
           <IconButton
             color="inherit"
             edge="start"
@@ -172,7 +173,7 @@ const DashboardLayout = ({ children }) => {
           >
             <MenuIcon />
           </IconButton>
-        </Navbar>
+        {/* </Header> */}
 
         {/* Main Content */}
         <Box

@@ -1,12 +1,14 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import CarKeepLogo from '../assets/carkeep-logo.svg';
+import Header from '../components/navigation/header';
 
 const Home = () => {
   const navigate = useNavigate();
 
   return (
-    <Container maxWidth="sm">
+    <>
+      <Container maxWidth="sm" sx={{ pt: 10 }}>
       <Box 
         sx={{
           display: 'flex',
@@ -54,6 +56,7 @@ const Home = () => {
         </Button>
       </Box>
     </Container>
+    </>
   );
 };
 

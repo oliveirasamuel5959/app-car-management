@@ -1,6 +1,7 @@
 import { Box, Container } from '@mui/material';
 import Navbar from '../components/navigation/navbar';
 import Footer from '../components/navigation/footer';
+import Header from '../components/navigation/header';
 
 const AuthLayout = ({ children }) => {
   return (
@@ -12,7 +13,6 @@ const AuthLayout = ({ children }) => {
       position: 'relative',
       bgcolor: 'background.default'
     }}>
-      <Navbar />
       <Container 
         component="main" 
         maxWidth="xs"

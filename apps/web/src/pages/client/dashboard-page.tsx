@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/auth-context";
 import { useEffect, useState } from "react";
 import { serviceService } from "../../services/service-service";
+import Header from "../../components/navigation/header";
 
 interface Service {
   id: number;
@@ -45,7 +46,6 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-8">
-
       {/* Header */}
       <div className="mb-10">
         <h1 className="text-3xl font-semibold text-gray-900">
