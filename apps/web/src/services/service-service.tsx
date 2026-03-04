@@ -5,8 +5,8 @@ export const serviceService = {
    * Create a new service
    */
   createService: async (serviceData: {
-    workshop_id: number;
-    vehicle_id: number;
+    workshop_client_id?: number;
+    vehicle_id?: number;
     name: string;
     description?: string;
     status?: string;

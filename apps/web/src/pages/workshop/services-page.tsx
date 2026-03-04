@@ -24,10 +24,11 @@ import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
 
 import { useAuth } from '../../context/auth-context';
 import { serviceService } from '../../services/service-service';
+import { workshopClientService } from '../../services/workshop-client-service';
+import type { WorkshopClient } from '../../services/workshop-client-service';
 
 interface FormData {
-  workshop_id: number;
-  vehicle_id: number;
+  workshop_client_id: number | '';
   name: string;
   description: string;
   status: string;
@@ -40,8 +41,7 @@ interface FormData {
 }
 
 const initialFormData: FormData = {
-  workshop_id: 1,
-  vehicle_id: 1,
+  workshop_client_id: '',
   name: '',
   description: '',
   status: 'pending',
@@ -60,6 +60,19 @@ export default function WorkshopServicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [clients, setClients] = useState<WorkshopClient[]>([]);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const data = await workshopClientService.getClients();
+        setClients(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load clients:', err);
+      }
+    };
+    fetchClients();
+  }, []);
 
   const handleOpenDialog = () => {
     setOpenDialog(true);
@@ -76,7 +89,7 @@ export default function WorkshopServicesPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
 
-    if (name === 'progress_percentage' || name === 'estimated_hours' || name === 'estimated_cost') {
+    if (name === 'progress_percentage' || name === 'estimated_hours' || name === 'estimated_cost' || name === 'workshop_client_id') {
       setFormData((prev) => ({
         ...prev,
         [name]: value === '' ? '' : Number(value),
@@ -90,6 +103,10 @@ export default function WorkshopServicesPage() {
   };
 
   const validateForm = () => {
+    if (!formData.workshop_client_id) {
+      setError('Please select a client');
+      return false;
+    }
     if (!formData.name.trim()) {
       setError('Service name is required');
       return false;
@@ -114,11 +131,17 @@ export default function WorkshopServicesPage() {
       setLoading(true);
       setError(null);
 
-      // Prepare data for submission
       const submitData = {
-        ...formData,
-        estimated_hours: formData.estimated_hours === '' ? null : formData.estimated_hours,
-        estimated_cost: formData.estimated_cost === '' ? null : formData.estimated_cost,
+        workshop_client_id: formData.workshop_client_id as number,
+        name: formData.name,
+        description: formData.description || undefined,
+        status: formData.status,
+        progress_percentage: formData.progress_percentage,
+        checkin_date: formData.checkin_date,
+        estimated_finish_date: formData.estimated_finish_date || undefined,
+        estimated_hours: formData.estimated_hours === '' ? undefined : formData.estimated_hours,
+        estimated_cost: formData.estimated_cost === '' ? undefined : formData.estimated_cost,
+        workshop_notes: formData.workshop_notes || undefined,
       };
 
       await serviceService.createService(submitData);
@@ -127,7 +150,6 @@ export default function WorkshopServicesPage() {
       setOpenDialog(false);
       setFormData(initialFormData);
 
-      // Refresh services list after creation
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -191,24 +213,25 @@ export default function WorkshopServicesPage() {
             {error && <Alert severity="error">{error}</Alert>}
 
             <TextField
-              label="Workshop ID"
-              type="number"
+              label="Client*"
+              select
               fullWidth
-              value={formData.workshop_id}
+              required
+              value={formData.workshop_client_id}
               onChange={handleInputChange}
-              name="workshop_id"
-              InputProps={{ inputProps: { min: 1 } }}
-            />
-
-            <TextField
-              label="Vehicle ID"
-              type="number"
-              fullWidth
-              value={formData.vehicle_id}
-              onChange={handleInputChange}
-              name="vehicle_id"
-              InputProps={{ inputProps: { min: 1 } }}
-            />
+              name="workshop_client_id"
+            >
+              {clients.length === 0 && (
+                <MenuItem value="" disabled>
+                  No clients found. Add clients first.
+                </MenuItem>
+              )}
+              {clients.map((client) => (
+                <MenuItem key={client.id} value={client.id}>
+                  {client.name} - {client.vehicle_brand} {client.vehicle_model} ({client.vehicle_plate})
+                </MenuItem>
+              ))}
+            </TextField>
 
             <TextField
               label="Service Name*"

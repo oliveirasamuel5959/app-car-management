@@ -17,7 +17,12 @@ class Service(Base):
 
     vehicle_id: Mapped[int] = mapped_column(
         ForeignKey("vehicles.id", ondelete="CASCADE"),
-        nullable=False
+        nullable=True
+    )
+
+    workshop_client_id: Mapped[int] = mapped_column(
+        ForeignKey("workshop_clients.id", ondelete="CASCADE"),
+        nullable=True
     )
 
     # Basic Information
@@ -55,4 +60,5 @@ class Service(Base):
     # Relationships (ORM)
     workshop = relationship("Workshop", backref="services")
     vehicle = relationship("Vehicle", backref="services")
+    workshop_client = relationship("WorkshopClient", backref="services")
     

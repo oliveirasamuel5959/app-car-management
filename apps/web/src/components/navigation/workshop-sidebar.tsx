@@ -14,6 +14,7 @@ import {
 import {
   Dashboard as DashboardIcon,
   Assignment as OrdersIcon,
+  People as PeopleIcon,
   BuildCircle as ServicesIcon,
   Settings as SettingsIcon,
   ChevronLeft as ChevronLeftIcon,
@@ -41,13 +42,13 @@ export const WorkshopSidebar = ({
     {
       text: 'Orders',
       icon: <OrdersIcon />,
-      path: '/workshop/5/users/1/orders',
+      path: '/workshop/orders',
       badge: pendingOrders > 0 ? pendingOrders : undefined
     },
     {
       text: 'Clients',
-      icon: <OrdersIcon />,
-      path: `/workshop/5/clients`,
+      icon: <PeopleIcon />,
+      path: '/workshop/clients',
     },
     { text: 'Services', icon: <ServicesIcon />, path: '/workshop/services' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/workshop/settings' },
