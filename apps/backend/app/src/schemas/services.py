@@ -2,10 +2,11 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+
 class ServiceCreate(BaseModel):
     """Schema for creating a new service."""
-    workshop_id: int
-    vehicle_id: int
+    workshop_client_id: Optional[int] = None
+    vehicle_id: Optional[int] = None
     name: str
     description: Optional[str] = None
     status: str = "pending"
@@ -24,7 +25,8 @@ class ServiceRead(BaseModel):
     """Schema for reading service information."""
     id: int
     workshop_id: int
-    vehicle_id: int
+    workshop_client_id: Optional[int] = None
+    vehicle_id: Optional[int] = None
     name: str
     description: Optional[str] = None
     status: str
@@ -40,7 +42,8 @@ class ServiceRead(BaseModel):
 
     class Config:
         from_attributes = True
-        
+
+
 class ServiceUpdate(BaseModel):
-    workshop_notes: Optional[str]
-    status: Optional[str]
+    workshop_notes: Optional[str] = None
+    status: Optional[str] = None
