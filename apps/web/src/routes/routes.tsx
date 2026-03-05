@@ -42,7 +42,7 @@ export const publicRoutes = [
 export const protectedRoutes = [
   // CLIENT ROUTES
   {
-    path: '/dashboard',
+    path: '/client/dashboard',
     role: 'CLIENT',
     element: <AppLayout><Dashboard /></AppLayout>,
   },

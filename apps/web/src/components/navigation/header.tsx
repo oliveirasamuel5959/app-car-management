@@ -68,7 +68,7 @@ const Header = () => {
              </Link>
 
              {isAuthenticated && (
-               <Link to="/dashboard" className={navLinkClasses("/dashboard")}>
+               <Link to="/client/dashboard" className={navLinkClasses("/client/dashboard")}>
                  Dashboard
                </Link>
              )}
@@ -105,13 +105,13 @@ const Header = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
+                      <Link to="/client/dashboard" className="cursor-pointer">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/cliente/agendamentos" className="cursor-pointer">Meus Agendamentos</Link>
+                      <Link to="/client/appointments" className="cursor-pointer">Meus Agendamentos</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="cursor-pointer">Meu Perfil</Link>
+                      <Link to="/client/profile" className="cursor-pointer">Meu Perfil</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer focus:text-red-600">
