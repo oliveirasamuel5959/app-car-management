@@ -45,7 +45,7 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 w-full z-50 glass border-b border-white/20 transition-all duration-300 shadow-md">
+    <header className="fixed top-0 w-full z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-all duration-300 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
