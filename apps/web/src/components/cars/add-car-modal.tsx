@@ -119,7 +119,7 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
       onSuccess?.();
       onClose();
 
-      navigate('/dashboard'); // Redirect to dashboard after adding a car
+      navigate('/client/dashboard'); // Redirect to dashboard after adding a car
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add car';

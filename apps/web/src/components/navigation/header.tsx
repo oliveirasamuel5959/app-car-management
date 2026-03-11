@@ -47,7 +47,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          <Link to="/dashboard" aria-label="Home DrivePluss" className="flex items-center space-x-2 group focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg outline-none mr-4">
+          <Link to="/client/dashboard" aria-label="Home DrivePluss" className="flex items-center space-x-2 group focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg outline-none mr-4">
             <div className="bg-blue-600 rounded-lg p-1.5 shadow-lg group-hover:scale-105 transition-transform duration-300 hover-glow">
               <Car className="w-6 h-6 text-white" aria-hidden="true" />
             </div>

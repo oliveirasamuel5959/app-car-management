@@ -47,27 +47,27 @@ export const protectedRoutes = [
     element: <AppLayout><Dashboard /></AppLayout>,
   },
   {
-    path: '/my-car',
+    path: '/client/my-car',
     role: 'CLIENT',
     element: <AppLayout><CarPage /></AppLayout>,
   },
   {
-    path: '/cars/new',
+    path: 'cars/new',
     role: 'CLIENT',
     element: <AppLayout><AddCarPage /></AppLayout>,
   },
   {
-    path: '/search-workshops',
+    path: '/client/search-workshops',
     role: 'CLIENT',
     element: <AppLayout><SearchWorkshopsPage /></AppLayout>,
   },
   {
-    path: '/my-workshops',
+    path: '/client/my-workshops',
     role: 'CLIENT',
     element: <AppLayout><WorkshopPage /></AppLayout>,
   },
   {
-    path: '/services/:serviceId',
+    path: '/client/services/:serviceId',
     role: 'CLIENT',
     element: <AppLayout><ServicesPage /></AppLayout>,
   },

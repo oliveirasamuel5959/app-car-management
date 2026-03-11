@@ -11,7 +11,7 @@ from app.src.repositories.services import (
     repo_delete_service,
 )
 from app.src.repositories.workshop_client import repo_get_workshop_client_by_id
-from app.src.repositories.vehicle import repo_get_vehicle_by_id
+from app.src.repositories.vehicle import repo_get_vehicle_by_id, repo_get_vehicles_by_user_id
 from app.src.models.workshop import Workshop
 from app.src.schemas.services import ServiceCreate
 from app.src.models.services import Service
@@ -25,6 +25,8 @@ class ServiceService:
         """Create a new service with validation."""
         # Derive workshop from current user
         workshop = self.db.query(Workshop).filter(Workshop.user_id == user_id).first()
+        client = repo_get_workshop_client_by_id(self.db, service_in.workshop_client_id)
+        
         if not workshop:
             raise ValueError("No workshop found for current user")
 
@@ -36,7 +38,6 @@ class ServiceService:
 
         # Validate the referenced entity
         if service_in.workshop_client_id:
-            client = repo_get_workshop_client_by_id(self.db, service_in.workshop_client_id)
             if not client or client.workshop_id != workshop.id:
                 raise ValueError("Workshop client not found or does not belong to your workshop")
 
@@ -57,7 +58,8 @@ class ServiceService:
         # Build service data with workshop_id
         service_data = service_in.dict()
         service_data["workshop_id"] = workshop.id
-        return repo_create_service(self.db, service_data)
+        
+        return repo_create_service(self.db, service_data=service_data)
 
     def get_service_by_id(self, service_id: int) -> Optional[Service]:
         """Get a service by ID."""

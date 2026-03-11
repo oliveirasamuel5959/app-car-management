@@ -1,17 +1,20 @@
 from app.src.models.vehicle import Vehicle
 from app.src.models.workshop import Workshop
+from app.src.models import User
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.src.models.services import Service
-from app.src.schemas.services import ServiceCreate
+from app.src.models.vehicle import Vehicle
 
 
 def repo_create_service(db: Session, service_data: dict) -> Service:
-    """Create a new service in the database."""
+    """ Create a new service in the database. """
+    
     service = Service(**service_data)
     db.add(service)
     db.commit()
     db.refresh(service)
+    
     return service
 
 
@@ -32,13 +35,14 @@ def repo_get_services_by_vehicle_id(db: Session, vehicle_id: int) -> List[Servic
 
 def repo_get_services_by_user_id(db: Session, user_id: int) -> List[Service]:
     """Get all services that belong to a specific user via vehicles."""
+    vehicle_id = db.query(Vehicle.id).filter(Vehicle.user_id == user_id).subquery()
+    
     return (
         db.query(Service)
         .join(Vehicle, Service.vehicle_id == Vehicle.id)
         .filter(Vehicle.user_id == user_id)
         .all()
     )
-
 
 def repo_get_all_services(db: Session) -> List[Service]:
     """Get all services."""

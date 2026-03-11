@@ -29,10 +29,10 @@ export const ClientSidebar = ({ onMobileClose, isMobile = false }: ClientSidebar
   const location = useLocation();
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'My Car', icon: <CarIcon />, path: '/my-car' },
-    { text: 'Find Workshops', icon: <WorkshopIcon />, path: '/search-workshops' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/client/dashboard' },
+    { text: 'My Car', icon: <CarIcon />, path: '/client/my-car' },
+    { text: 'Find Workshops', icon: <WorkshopIcon />, path: '/client/search-workshops' },
+    { text: 'Settings', icon: <SettingsIcon />, path: '/client/settings' },
   ];
 
   const handleNavigate = (path: string) => {
