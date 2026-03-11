@@ -44,6 +44,10 @@ def repo_get_services_by_user_id(db: Session, user_id: int) -> List[Service]:
         .all()
     )
 
+def repo_get_services_by_workshop_client_id(db: Session, workshop_client_id: int) -> List[Service]:
+    """Get all services for a specific workshop client."""
+    return db.query(Service).filter(Service.workshop_client_id == workshop_client_id).all()
+
 def repo_get_all_services(db: Session) -> List[Service]:
     """Get all services."""
     return db.query(Service).all()

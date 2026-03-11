@@ -50,6 +50,7 @@ def create_service(
 def get_services(
     workshop_id: Optional[int] = Query(None),
     vehicle_id: Optional[int] = Query(None),
+    workshop_client_id: Optional[int] = Query(None),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_session)
 ):
@@ -57,7 +58,9 @@ def get_services(
     service = ServiceService(db)
     
     try:
-        if workshop_id is not None:
+        if workshop_client_id is not None:
+            return service.get_services_by_workshop_client_id(workshop_client_id)
+        elif workshop_id is not None:
             return service.get_services_by_workshop_id(workshop_id)
         elif vehicle_id is not None:
             return service.get_services_by_vehicle_id(vehicle_id)

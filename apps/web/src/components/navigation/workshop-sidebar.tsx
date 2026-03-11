@@ -39,12 +39,12 @@ export const WorkshopSidebar = ({
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/workshop/dashboard' },
-    {
-      text: 'Orders',
-      icon: <OrdersIcon />,
-      path: '/workshop/orders',
-      badge: pendingOrders > 0 ? pendingOrders : undefined
-    },
+    // {
+    //   text: 'Orders',
+    //   icon: <OrdersIcon />,
+    //   path: '/workshop/orders',
+    //   badge: pendingOrders > 0 ? pendingOrders : undefined
+    // },
     {
       text: 'Clients',
       icon: <PeopleIcon />,

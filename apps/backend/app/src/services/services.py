@@ -6,6 +6,7 @@ from app.src.repositories.services import (
     repo_get_services_by_user_id,
     repo_get_services_by_workshop_id,
     repo_get_services_by_vehicle_id,
+    repo_get_services_by_workshop_client_id,
     repo_get_all_services,
     repo_update_service_by_current_workshop,
     repo_delete_service,
@@ -78,6 +79,10 @@ class ServiceService:
     def get_services_by_vehicle_id(self, vehicle_id: int) -> List[Service]:
         """Get all services for a vehicle."""
         return repo_get_services_by_vehicle_id(self.db, vehicle_id)
+
+    def get_services_by_workshop_client_id(self, workshop_client_id: int) -> List[Service]:
+        """Get all services for a workshop client."""
+        return repo_get_services_by_workshop_client_id(self.db, workshop_client_id)
 
     def get_services_by_user_id(self, user_id: int) -> List[Service]:
         """Get all services that belong to a specific user via vehicles."""

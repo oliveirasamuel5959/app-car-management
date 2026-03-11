@@ -23,6 +23,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { workshopClientService } from '../../services/workshop-client-service';
 import type { WorkshopClient, WorkshopClientCreate } from '../../services/workshop-client-service';
 
@@ -37,6 +38,7 @@ const initialFormData: WorkshopClientCreate = {
 };
 
 export default function WorkshopClientsPage() {
+  const navigate = useNavigate();
   const [clients, setClients] = useState<WorkshopClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
@@ -155,7 +157,12 @@ export default function WorkshopClientsPage() {
           </TableHead>
           <TableBody>
             {clients.map((client) => (
-              <TableRow key={client.id} hover>
+              <TableRow
+                key={client.id}
+                hover
+                onClick={() => navigate(`/workshop/clients/${client.id}/orders`)}
+                sx={{ cursor: 'pointer' }}
+              >
                 <TableCell>{client.name}</TableCell>
                 <TableCell>{client.email || '-'}</TableCell>
                 <TableCell>{client.phone || '-'}</TableCell>
@@ -164,7 +171,7 @@ export default function WorkshopClientsPage() {
                 </TableCell>
                 <TableCell>{client.vehicle_plate}</TableCell>
                 <TableCell align="right">
-                  <IconButton size="small" color="error" onClick={() => handleDelete(client.id)}>
+                  <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}>
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
