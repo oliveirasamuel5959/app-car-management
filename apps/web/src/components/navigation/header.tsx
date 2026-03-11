@@ -20,6 +20,8 @@ const Header = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const dashboardPath = user?.role === 'WORKSHOP' ? '/workshop/dashboard' : '/client/dashboard';
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -47,7 +49,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          <Link to="/client/dashboard" aria-label="Home DrivePluss" className="flex items-center space-x-2 group focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg outline-none mr-4">
+          <Link to={dashboardPath} aria-label="Home DrivePluss" className="flex items-center space-x-2 group focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg outline-none mr-4">
             <div className="bg-blue-600 rounded-lg p-1.5 shadow-lg group-hover:scale-105 transition-transform duration-300 hover-glow">
               <Car className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
@@ -68,7 +70,7 @@ const Header = () => {
              </Link>
 
              {isAuthenticated && (
-               <Link to="/client/dashboard" className={navLinkClasses("/client/dashboard")}>
+               <Link to={dashboardPath} className={navLinkClasses(dashboardPath)}>
                  Dashboard
                </Link>
              )}
@@ -105,7 +107,7 @@ const Header = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/client/dashboard" className="cursor-pointer">Dashboard</Link>
+                      <Link to={dashboardPath} className="cursor-pointer">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/client/appointments" className="cursor-pointer">Meus Agendamentos</Link>
@@ -180,7 +182,7 @@ const Header = () => {
               
               {isAuthenticated ? (
                 <>
-                   <Link to="/dashboard" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+                   <Link to={dashboardPath} className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
                    <Link to="/cliente/agendamentos" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200" onClick={() => setIsMobileMenuOpen(false)}>Meus Agendamentos</Link>
                    <Link to="/profile" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200" onClick={() => setIsMobileMenuOpen(false)}>Meu Perfil</Link>
                    <button 

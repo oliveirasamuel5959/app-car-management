@@ -28,7 +28,7 @@ export const serviceService = {
   /**
    * Get all services with optional filters
    */
-  getServices: async (filters?: { workshop_id?: number; vehicle_id?: number }) => {
+  getServices: async (filters?: { workshop_id?: number; vehicle_id?: number; workshop_client_id?: number }) => {
     try {
       let url = '/services';
       const params = new URLSearchParams();
@@ -38,6 +38,9 @@ export const serviceService = {
       }
       if (filters?.vehicle_id) {
         params.append('vehicle_id', filters.vehicle_id.toString());
+      }
+      if (filters?.workshop_client_id) {
+        params.append('workshop_client_id', filters.workshop_client_id.toString());
       }
       
       if (params.toString()) {

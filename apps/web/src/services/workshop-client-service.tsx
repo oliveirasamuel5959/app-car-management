@@ -1,6 +1,6 @@
 import { api } from './api';
 
-interface WorkshopClient {
+export interface WorkshopClient {
   id: number;
   workshop_id: number;
   name: string;
@@ -14,7 +14,7 @@ interface WorkshopClient {
   created_at: string;
 }
 
-interface WorkshopClientCreate {
+export interface WorkshopClientCreate {
   name: string;
   email?: string;
   phone?: string;
