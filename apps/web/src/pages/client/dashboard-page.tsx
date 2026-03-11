@@ -41,7 +41,7 @@ export default function DashboardPage() {
 
   const handleGoToService = () => {
     if (!activeService) return;
-    navigate(`/services/${activeService.id}`);
+    navigate(`/client/services/${activeService.id}`);
   };
 
   return (
