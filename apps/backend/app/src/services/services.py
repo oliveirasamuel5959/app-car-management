@@ -11,7 +11,7 @@ from app.src.repositories.services import (
     repo_delete_service,
 )
 from app.src.repositories.workshop_client import repo_get_workshop_client_by_id
-from app.src.repositories.vehicle import repo_get_vehicle_by_id, repo_get_vehicles_by_user_id
+from app.src.repositories.vehicle import repo_get_vehicle_by_id, repo_get_vehicles_by_user_id, check_duplicate_plate
 from app.src.models.workshop import Workshop
 from app.src.schemas.services import ServiceCreate
 from app.src.models.services import Service
@@ -58,6 +58,12 @@ class ServiceService:
         # Build service data with workshop_id
         service_data = service_in.dict()
         service_data["workshop_id"] = workshop.id
+
+        # Derive vehicle_id from workshop client's plate
+        if service_in.workshop_client_id and not service_in.vehicle_id:
+            vehicle = check_duplicate_plate(self.db, client.vehicle_plate)
+            if vehicle:
+                service_data["vehicle_id"] = vehicle.id
         
         return repo_create_service(self.db, service_data=service_data)
 
