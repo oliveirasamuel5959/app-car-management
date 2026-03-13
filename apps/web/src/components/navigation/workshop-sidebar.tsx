@@ -66,7 +66,15 @@ export const WorkshopSidebar = ({
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: '#0F172A',
+        color: '#F1F5F9',
+      }}
+    >
       {/* Header with hamburger toggle */}
       <Box
         sx={{
@@ -84,10 +92,7 @@ export const WorkshopSidebar = ({
             sx={{
               fontWeight: 700,
               fontSize: '1.1rem',
-              background: 'linear-gradient(135deg, #1976d2, #42a5f5)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              color: '#FFFFFF',
             }}
           >
             CarKeep Workshop
@@ -97,8 +102,10 @@ export const WorkshopSidebar = ({
           onClick={onToggleCollapse}
           sx={{
             borderRadius: 2,
+            color: '#94A3B8',
             '&:hover': {
-              backgroundColor: 'action.hover',
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              color: '#FFFFFF',
             },
           }}
         >
@@ -106,7 +113,7 @@ export const WorkshopSidebar = ({
         </IconButton>
       </Box>
 
-      <Divider />
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
 
       {/* Navigation items */}
       <List sx={{ px: collapsed ? 0.5 : 1, py: 1, flexGrow: 1 }}>
@@ -124,18 +131,20 @@ export const WorkshopSidebar = ({
                 justifyContent: collapsed ? 'center' : 'flex-start',
                 px: collapsed ? 1.5 : 2,
                 transition: 'all 0.2s ease',
+                color: '#94A3B8',
                 '&.Mui-selected': {
-                  backgroundColor: 'primary.main',
-                  color: 'primary.contrastText',
+                  backgroundColor: '#2563EB',
+                  color: '#FFFFFF',
                   '&:hover': {
-                    backgroundColor: 'primary.dark',
+                    backgroundColor: '#1D4ED8',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: 'primary.contrastText',
+                    color: '#FFFFFF',
                   },
                 },
                 '&:hover': {
-                  backgroundColor: 'action.hover',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  color: '#FFFFFF',
                 },
               }}
             >
@@ -143,7 +152,7 @@ export const WorkshopSidebar = ({
                 sx={{
                   minWidth: collapsed ? 0 : 40,
                   justifyContent: 'center',
-                  color: isSelected ? 'primary.contrastText' : 'text.secondary',
+                  color: isSelected ? '#FFFFFF' : '#94A3B8',
                   transition: 'all 0.2s ease',
                 }}
               >
