@@ -92,7 +92,9 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
               width: DRAWER_WIDTH,
               boxSizing: 'border-box',
               top: `${NAVBAR_HEIGHT}px`,
-              height: `calc(100vh - ${NAVBAR_HEIGHT}px)`
+              height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
+              bgcolor: '#0F172A',
+              borderRight: 'none',
             },
           }}
         >
@@ -110,8 +112,8 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
               boxSizing: 'border-box',
               top: `${NAVBAR_HEIGHT}px`,
               height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-              borderRight: '1px solid',
-              borderColor: 'divider',
+              bgcolor: '#0F172A',
+              borderRight: 'none',
               overflowX: 'hidden',
               overflowY: 'auto',
               transition: theme.transitions.create('width', {

@@ -81,7 +81,7 @@ export function AddCarPage() {
           sx={{
             textAlign: 'center',
             py: 8,
-            backgroundColor: '#F9FAFB',
+            backgroundColor: '#F8FAFC',
             borderRadius: 2,
             border: '1px solid #E5E7EB',
           }}
@@ -96,8 +96,8 @@ export function AddCarPage() {
             variant="contained"
             onClick={handleOpenModal}
             sx={{
-              backgroundColor: '#4F46E5',
-              '&:hover': { backgroundColor: '#3730A3' },
+              backgroundColor: '#2563EB',
+              '&:hover': { backgroundColor: '#1D4ED8' },
               textTransform: 'none',
             }}
           >

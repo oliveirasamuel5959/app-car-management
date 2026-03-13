@@ -37,24 +37,24 @@ const Header = () => {
       : location.pathname.includes(path);
     
     return cn(
-      "relative flex items-center gap-1.5 text-sm font-medium transition-all duration-300 px-3 py-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+      "relative flex items-center gap-1.5 text-sm font-medium transition-all duration-300 px-3 py-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
       isActive 
-        ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20" 
-        : "text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
+        ? "text-white bg-blue-600/20" 
+        : "text-slate-300 hover:text-white hover:bg-white/10"
     );
   };
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-all duration-300 shadow-md">
+    <header className="fixed top-0 w-full z-50 bg-[#0F172A] border-b border-white/10 transition-all duration-300 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          <Link to={dashboardPath} aria-label="Home DrivePluss" className="flex items-center space-x-2 group focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg outline-none mr-4">
-            <div className="bg-blue-600 rounded-lg p-1.5 shadow-lg group-hover:scale-105 transition-transform duration-300 hover-glow">
+          <Link to={dashboardPath} aria-label="Home DrivePluss" className="flex items-center space-x-2 group focus-visible:ring-2 focus-visible:ring-blue-400 rounded-lg outline-none mr-4">
+            <div className="bg-blue-600 rounded-lg p-1.5 shadow-lg group-hover:scale-105 transition-transform duration-300">
               <Car className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white font-display tracking-tight hidden sm:block">
-              Drive<span className="text-blue-600">Pluss</span>
+            <span className="text-xl font-bold text-white font-display tracking-tight hidden sm:block">
+              Drive<span className="text-blue-400">Pluss</span>
             </span>
           </Link>
 
@@ -82,38 +82,38 @@ const Header = () => {
             {isAuthenticated ? (
               <>
                 <Link to="/favorites" aria-label="Favoritos">
-                  <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors">
+                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-400 transition-colors">
                     <Heart className="w-5 h-5" aria-hidden="true" />
                   </Button>
                 </Link>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" aria-label="Menu do Usuário" className="flex items-center space-x-2 pl-2 pr-4 rounded-full border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700 transition-all focus-visible:ring-2 focus-visible:ring-blue-500">
-                      <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                    <Button variant="ghost" aria-label="Menu do Usuário" className="flex items-center space-x-2 pl-2 pr-4 rounded-full border border-transparent hover:bg-white/10 hover:border-white/20 transition-all focus-visible:ring-2 focus-visible:ring-blue-400">
+                      <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold shadow-md">
                         {user?.name?.charAt(0) || <User className="w-4 h-4" aria-hidden="true" />}
                       </div>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <span className="text-sm font-medium text-slate-200">
                         {user?.name?.split(' ')[0] || 'Usuário'}
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+                  <DropdownMenuContent align="end" className="w-56 mt-2 bg-white border border-gray-200 shadow-lg">
                     <DropdownMenuLabel>
                       <div className="flex flex-col">
-                        <span className="font-bold">{user?.name || 'Usuário'}</span>
+                        <span className="font-bold text-gray-900">{user?.name || 'Usuário'}</span>
                         <span className="text-xs text-gray-500">{user?.email || 'email@exemplo.com'}</span>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to={dashboardPath} className="cursor-pointer">Dashboard</Link>
+                      <Link to={dashboardPath} className="cursor-pointer text-gray-700 hover:text-gray-900">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/client/appointments" className="cursor-pointer">Meus Agendamentos</Link>
+                      <Link to="/client/appointments" className="cursor-pointer text-gray-700 hover:text-gray-900">Meus Agendamentos</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/client/profile" className="cursor-pointer">Meu Perfil</Link>
+                      <Link to="/client/profile" className="cursor-pointer text-gray-700 hover:text-gray-900">Meu Perfil</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer focus:text-red-600">
@@ -126,10 +126,10 @@ const Header = () => {
             ) : (
               <div className="flex items-center space-x-2">
                 <Link to="/login">
-                  <Button variant="ghost" className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Login</Button>
+                  <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10">Login</Button>
                 </Link>
                 <Link to="/signup">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all hover:scale-105">
+                  <Button className="bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 transition-all hover:scale-105">
                     Criar Conta
                   </Button>
                 </Link>
@@ -147,13 +147,13 @@ const Header = () => {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden glass border-t border-gray-200 dark:border-gray-800 animate-slide-up">
+        <div className="md:hidden bg-[#0F172A] border-t border-white/10 animate-slide-up">
            <nav className="flex flex-col px-4 py-4 space-y-1" aria-label="Mobile Navigation">
               <Link 
                 to="/" 
                 className={cn(
                   "flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors",
-                  location.pathname === "/" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "text-gray-700 dark:text-gray-200"
+                  location.pathname === "/" ? "bg-blue-600/20 text-white" : "text-slate-300"
                 )} 
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -163,7 +163,7 @@ const Header = () => {
                 to="/agendamento/novo" 
                 className={cn(
                   "flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors",
-                  location.pathname.includes("/agendamento") ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "text-gray-700 dark:text-gray-200"
+                  location.pathname.includes("/agendamento") ? "bg-blue-600/20 text-white" : "text-slate-300"
                 )} 
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -173,7 +173,7 @@ const Header = () => {
                 to="/workshops/map" 
                 className={cn(
                   "flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors",
-                  location.pathname.includes("/workshops") ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "text-gray-700 dark:text-gray-200"
+                  location.pathname.includes("/workshops") ? "bg-blue-600/20 text-white" : "text-slate-300"
                 )} 
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -182,11 +182,11 @@ const Header = () => {
               
               {isAuthenticated ? (
                 <>
-                   <Link to={dashboardPath} className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
-                   <Link to="/cliente/agendamentos" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200" onClick={() => setIsMobileMenuOpen(false)}>Meus Agendamentos</Link>
-                   <Link to="/profile" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200" onClick={() => setIsMobileMenuOpen(false)}>Meu Perfil</Link>
+                   <Link to={dashboardPath} className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+                   <Link to="/cliente/agendamentos" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Meus Agendamentos</Link>
+                   <Link to="/profile" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Meu Perfil</Link>
                    <button 
-                     className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-red-600 dark:text-red-400 text-left"
+                     className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-red-400 text-left"
                      onClick={() => {
                        handleLogout();
                        setIsMobileMenuOpen(false);
@@ -201,7 +201,7 @@ const Header = () => {
                     <Button variant="outline" className="w-full">Login</Button>
                   </Link>
                   <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full bg-blue-600 text-white">Cadastrar</Button>
+                    <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white">Cadastrar</Button>
                   </Link>
                 </div>
               )}

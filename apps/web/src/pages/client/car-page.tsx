@@ -41,17 +41,17 @@ export function CarPage() {
       />
 
       <h2 className="text-3xl font-bold text-gray-900 mb-4">
-        Welcome to Car Keep
+        Welcome to DrivePluss
       </h2>
 
       <p className="text-gray-500 max-w-xl mb-8">
-        You haven’t registered any vehicles yet. Add your first car and start
+        You haven't registered any vehicles yet. Add your first car and start
         managing everything in one place.
       </p>
 
       <button
         onClick={() => navigate("/cars/new")}
-        className="bg-black text-white px-8 py-3 rounded-xl font-semibold hover:bg-gray-800 transition"
+        className="bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow-md shadow-blue-500/20"
       >
         + Add Your First Car
       </button>
@@ -94,25 +94,25 @@ export function CarPage() {
   /* ---------------- RENDER ---------------- */
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto px-6 py-10">
 
         {/* Header only appears if user has cars */}
         {!loadingState && !error && carData && carData.length > 0 && (
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">
-                My Cars
+              <h1 className="text-3xl font-bold text-gray-900">
+                My Car
               </h1>
-              <p className="text-gray-500 mt-2">
-                Welcome back{user?.name ? `, ${user.name}` : ""}.
+              <p className="text-gray-500 mt-1">
+                Welcome back{user?.name ? `, ${user.name}` : ""}. Here's your vehicle overview.
               </p>
             </div>
           </div>
         )}
 
         {/* Main Container */}
-        <div className="bg-white rounded-3xl shadow-lg p-8 min-h-[60vh] flex flex-col justify-center">
+        <div className="min-h-[60vh] flex flex-col justify-center">
 
           {loadingState ? (
             <LoadingState />

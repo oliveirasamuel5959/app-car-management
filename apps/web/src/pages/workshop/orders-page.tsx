@@ -188,7 +188,7 @@ export default function WorkshopOrdersPage() {
       ) : (
         <TableContainer component={Paper}>
           <Table>
-            <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+            <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell>Service</TableCell>
                 <TableCell>Status</TableCell>

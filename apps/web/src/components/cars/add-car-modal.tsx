@@ -234,8 +234,8 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
           variant="contained"
           disabled={loading}
           sx={{
-            backgroundColor: '#4F46E5',
-            '&:hover': { backgroundColor: '#3730A3' },
+            backgroundColor: '#2563EB',
+            '&:hover': { backgroundColor: '#1D4ED8' },
           }}
         >
           {loading ? <CircularProgress size={24} /> : 'Add Car'}
