@@ -8,7 +8,7 @@ import {
   Typography,
   IconButton,
   Badge,
-  Chip
+  Tooltip
 } from '@mui/material';
 
 import {
@@ -17,7 +17,7 @@ import {
   People as PeopleIcon,
   BuildCircle as ServicesIcon,
   Settings as SettingsIcon,
-  ChevronLeft as ChevronLeftIcon,
+  Menu as MenuIcon,
   Notifications as NotificationsIcon
 } from '@mui/icons-material';
 
@@ -27,12 +27,16 @@ interface WorkshopSidebarProps {
   onMobileClose?: () => void;
   isMobile?: boolean;
   pendingOrders?: number;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const WorkshopSidebar = ({
   onMobileClose,
   isMobile = false,
-  pendingOrders = 0
+  pendingOrders = 0,
+  collapsed = false,
+  onToggleCollapse
 }: WorkshopSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,60 +66,115 @@ export const WorkshopSidebar = ({
   };
 
   return (
-    <Box>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Header with hamburger toggle */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          p: 2
+          justifyContent: collapsed ? 'center' : 'space-between',
+          p: collapsed ? 1 : 2,
+          minHeight: 56,
         }}
       >
-        <Typography variant="h6">CarKeep Workshop</Typography>
-
-        {isMobile && onMobileClose && (
-          <IconButton onClick={onMobileClose}>
-            <ChevronLeftIcon />
-          </IconButton>
+        {!collapsed && (
+          <Typography
+            variant="h6"
+            noWrap
+            sx={{
+              fontWeight: 700,
+              fontSize: '1.1rem',
+              background: 'linear-gradient(135deg, #1976d2, #42a5f5)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            CarKeep Workshop
+          </Typography>
         )}
+        <IconButton
+          onClick={onToggleCollapse}
+          sx={{
+            borderRadius: 2,
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
       </Box>
 
       <Divider />
 
-      <List>
-        {menuItems.map((item) => (
-          <ListItemButton
-            key={item.text}
-            onClick={() => handleNavigate(item.path)}
-            selected={location.pathname === item.path}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: 'primary.light',
-                '&:hover': {
-                  backgroundColor: 'primary.light',
-                },
-              },
-            }}
-          >
-            <ListItemIcon
+      {/* Navigation items */}
+      <List sx={{ px: collapsed ? 0.5 : 1, py: 1, flexGrow: 1 }}>
+        {menuItems.map((item) => {
+          const isSelected = location.pathname === item.path;
+          const button = (
+            <ListItemButton
+              key={item.text}
+              onClick={() => handleNavigate(item.path)}
+              selected={isSelected}
               sx={{
-                color:
-                  location.pathname === item.path
-                    ? 'primary.main'
-                    : 'inherit',
+                borderRadius: 2,
+                mb: 0.5,
+                minHeight: 48,
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                px: collapsed ? 1.5 : 2,
+                transition: 'all 0.2s ease',
+                '&.Mui-selected': {
+                  backgroundColor: 'primary.main',
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: 'primary.contrastText',
+                  },
+                },
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
               }}
             >
-              {item.badge ? (
-                <Badge badgeContent={item.badge} color="error">
-                  {item.icon}
-                </Badge>
-              ) : (
-                item.icon
+              <ListItemIcon
+                sx={{
+                  minWidth: collapsed ? 0 : 40,
+                  justifyContent: 'center',
+                  color: isSelected ? 'primary.contrastText' : 'text.secondary',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {item.badge ? (
+                  <Badge badgeContent={item.badge} color="error">
+                    {item.icon}
+                  </Badge>
+                ) : (
+                  item.icon
+                )}
+              </ListItemIcon>
+              {!collapsed && (
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontSize: '0.9rem',
+                    fontWeight: isSelected ? 600 : 400,
+                  }}
+                />
               )}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItemButton>
-        ))}
+            </ListItemButton>
+          );
+
+          return collapsed ? (
+            <Tooltip key={item.text} title={item.text} placement="right" arrow>
+              {button}
+            </Tooltip>
+          ) : (
+            button
+          );
+        })}
       </List>
     </Box>
   );
