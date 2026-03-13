@@ -141,13 +141,21 @@ const SignupForm = () => {
       onSubmit={handleSubmit}
       sx={{
         width: '100%',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        gap: 2
+        justifyContent: 'center',
+        gap: 2.5,
+        '& .MuiInputBase-input': { fontSize: '1.2rem' },
+        '& .MuiInputLabel-root': { fontSize: '1.2rem' },
+        '& .MuiFormHelperText-root': { fontSize: '0.95rem' },
       }}
     >
-      <Typography variant="h5" component="h1" gutterBottom textAlign="center">
+      <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: 'center', fontWeight: 700, color: '#111827' }}>
         Create Account
+      </Typography>
+      <Typography variant="body1" sx={{ textAlign: 'center', color: '#6B7280', mb: 2 }}>
+        Get started with DrivePluss today
       </Typography>
 
       {error && (
@@ -268,18 +276,27 @@ const SignupForm = () => {
       <Button
         type="submit"
         variant="contained"
-        color="primary"
         size="large"
         disabled={isLoading}
-        sx={{ mt: 2 }}
+        sx={{
+          mt: 2,
+          bgcolor: '#2563EB',
+          '&:hover': { bgcolor: '#1D4ED8' },
+          textTransform: 'none',
+          fontWeight: 600,
+          fontSize: '1.1rem',
+          borderRadius: 2,
+          py: 1.8,
+          boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
+        }}
       >
-        {isLoading ? 'Creating Account...' : 'Sign Up'}
+        {isLoading ? 'Creating Account...' : 'Create Account'}
       </Button>
 
-      <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>
+      <Typography variant="body1" textAlign="center" sx={{ mt: 2, color: '#6B7280' }}>
         Already have an account?{' '}
-        <RouterLink to="/login" style={{ textDecoration: 'none' }}>
-          Login
+        <RouterLink to="/login" style={{ textDecoration: 'none', color: '#2563EB', fontWeight: 600 }}>
+          Sign in
         </RouterLink>
       </Typography>
     </Box>
