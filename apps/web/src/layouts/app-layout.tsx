@@ -15,6 +15,7 @@ import { ClientSidebar } from '../components/navigation/client-sidebar';
 import { WorkshopSidebar } from '../components/navigation/workshop-sidebar';
 
 const DRAWER_WIDTH = 240;
+const COLLAPSED_WIDTH = 64;
 const NAVBAR_HEIGHT = 64;
 
 interface AppLayoutProps {
@@ -24,6 +25,7 @@ interface AppLayoutProps {
 
 export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
@@ -34,6 +36,16 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
     setMobileOpen((prev) => !prev);
   };
 
+  const handleCollapseToggle = () => {
+    if (isMobile) {
+      handleDrawerToggle();
+    } else {
+      setCollapsed((prev) => !prev);
+    }
+  };
+
+  const currentWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
+
   // Determine which sidebar to show based on user role
   const isWorkshop = user?.role === 'WORKSHOP';
 
@@ -42,11 +54,15 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
       onMobileClose={handleDrawerToggle} 
       isMobile={isMobile}
       pendingOrders={pendingOrders}
+      collapsed={isMobile ? false : collapsed}
+      onToggleCollapse={handleCollapseToggle}
     />
   ) : (
     <ClientSidebar 
       onMobileClose={handleDrawerToggle} 
       isMobile={isMobile}
+      collapsed={isMobile ? false : collapsed}
+      onToggleCollapse={handleCollapseToggle}
     />
   );
 
@@ -56,8 +72,12 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
       <Box
         component="nav"
         sx={{
-          width: { sm: DRAWER_WIDTH },
+          width: { sm: currentWidth },
           flexShrink: { sm: 0 },
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
         }}
       >
         {/* Mobile Drawer */}
@@ -86,12 +106,18 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
           sx={{
             display: { xs: 'none', sm: 'block' },
             '& .MuiDrawer-paper': {
-              width: DRAWER_WIDTH,
+              width: currentWidth,
               boxSizing: 'border-box',
               top: `${NAVBAR_HEIGHT}px`,
               height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-              borderRight: '1px solid rgba(0,0,0,0.12)',
-              overflowY: 'auto'
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              overflowX: 'hidden',
+              overflowY: 'auto',
+              transition: theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
             },
           }}
         >
@@ -105,20 +131,23 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
           display: 'flex',
           flexDirection: 'column',
           flexGrow: 1,
-          width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
+          width: { sm: `calc(100% - ${currentWidth}px)` },
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
         }}
       >
-        {/* Navbar */}
-        {/* <Navbar> */}
+        {/* Mobile hamburger button */}
+        <Box sx={{ display: { xs: 'flex', sm: 'none' }, p: 1 }}>
           <IconButton
             color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
-        {/* </Navbar> */}
+        </Box>
 
         {/* Main Content */}
         <Box

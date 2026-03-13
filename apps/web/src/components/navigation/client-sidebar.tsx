@@ -6,7 +6,8 @@ import {
   ListItemText,
   Divider,
   Typography,
-  IconButton
+  IconButton,
+  Tooltip
 } from '@mui/material';
 
 import {
@@ -14,7 +15,7 @@ import {
   DirectionsCar as CarIcon,
   BuildCircle as WorkshopIcon,
   Settings as SettingsIcon,
-  ChevronLeft as ChevronLeftIcon
+  Menu as MenuIcon
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -22,9 +23,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 interface ClientSidebarProps {
   onMobileClose?: () => void;
   isMobile?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export const ClientSidebar = ({ onMobileClose, isMobile = false }: ClientSidebarProps) => {
+export const ClientSidebar = ({
+  onMobileClose,
+  isMobile = false,
+  collapsed = false,
+  onToggleCollapse
+}: ClientSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,54 +51,108 @@ export const ClientSidebar = ({ onMobileClose, isMobile = false }: ClientSidebar
   };
 
   return (
-    <Box>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Header with hamburger toggle */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          p: 2
+          justifyContent: collapsed ? 'center' : 'space-between',
+          p: collapsed ? 1 : 2,
+          minHeight: 56,
         }}
       >
-        <Typography variant="h6">CarKeep</Typography>
-
-        {isMobile && onMobileClose && (
-          <IconButton onClick={onMobileClose}>
-            <ChevronLeftIcon />
-          </IconButton>
+        {!collapsed && (
+          <Typography
+            variant="h6"
+            noWrap
+            sx={{
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #1976d2, #42a5f5)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            DrivePluss
+          </Typography>
         )}
+        <IconButton
+          onClick={onToggleCollapse}
+          sx={{
+            borderRadius: 2,
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
       </Box>
 
       <Divider />
 
-      <List>
-        {menuItems.map((item) => (
-          <ListItemButton
-            key={item.text}
-            onClick={() => handleNavigate(item.path)}
-            selected={location.pathname === item.path}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: 'primary.light',
-                '&:hover': {
-                  backgroundColor: 'primary.light',
-                },
-              },
-            }}
-          >
-            <ListItemIcon
+      {/* Navigation items */}
+      <List sx={{ px: collapsed ? 0.5 : 1, py: 1, flexGrow: 1 }}>
+        {menuItems.map((item) => {
+          const isSelected = location.pathname === item.path;
+          const button = (
+            <ListItemButton
+              key={item.text}
+              onClick={() => handleNavigate(item.path)}
+              selected={isSelected}
               sx={{
-                color:
-                  location.pathname === item.path
-                    ? 'primary.main'
-                    : 'inherit',
+                borderRadius: 2,
+                mb: 0.5,
+                minHeight: 48,
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                px: collapsed ? 1.5 : 2,
+                transition: 'all 0.2s ease',
+                '&.Mui-selected': {
+                  backgroundColor: 'primary.main',
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: 'primary.contrastText',
+                  },
+                },
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
               }}
             >
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItemButton>
-        ))}
+              <ListItemIcon
+                sx={{
+                  minWidth: collapsed ? 0 : 40,
+                  justifyContent: 'center',
+                  color: isSelected ? 'primary.contrastText' : 'text.secondary',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              {!collapsed && (
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontSize: '0.9rem',
+                    fontWeight: isSelected ? 600 : 400,
+                  }}
+                />
+              )}
+            </ListItemButton>
+          );
+
+          return collapsed ? (
+            <Tooltip key={item.text} title={item.text} placement="right" arrow>
+              {button}
+            </Tooltip>
+          ) : (
+            button
+          );
+        })}
       </List>
     </Box>
   );
