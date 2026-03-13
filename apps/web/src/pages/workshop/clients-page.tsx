@@ -120,16 +120,16 @@ export default function WorkshopClientsPage() {
 
   if (loading) {
     return (
-      <Container maxWidth="lg">
+      <Box sx={{ width: '100%' }}>
         <Box display="flex" justifyContent="center" mt={10}>
           <CircularProgress />
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg">
+    <Box sx={{ width: '100%' }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4">Clients</Typography>
         <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleOpenDialog}>
@@ -143,8 +143,8 @@ export default function WorkshopClientsPage() {
         </Alert>
       )}
 
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ width: '100%', overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
@@ -282,6 +282,6 @@ export default function WorkshopClientsPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 }
