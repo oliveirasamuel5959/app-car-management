@@ -156,8 +156,11 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
-            mt: `${NAVBAR_HEIGHT}px`
+            p: { xs: 2, sm: 3 },
+            mt: `${NAVBAR_HEIGHT}px`,
+            width: '100%',
+            minWidth: 0,
+            overflow: 'auto',
           }}
         >
           {children}
