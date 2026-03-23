@@ -15,7 +15,7 @@ import { WorkshopSidebar } from '../components/navigation/workshop-sidebar';
 
 const DRAWER_WIDTH = 240;
 const COLLAPSED_WIDTH = 64;
-const NAVBAR_HEIGHT = 64;
+const NAVBAR_HEIGHT = 65;
 
 interface AppLayoutProps {
   children: React.ReactNode;

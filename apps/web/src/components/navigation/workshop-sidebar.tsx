@@ -43,12 +43,6 @@ export const WorkshopSidebar = ({
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/workshop/dashboard' },
-    // {
-    //   text: 'Orders',
-    //   icon: <OrdersIcon />,
-    //   path: '/workshop/orders',
-    //   badge: pendingOrders > 0 ? pendingOrders : undefined
-    // },
     {
       text: 'Clientes Oficina',
       icon: <PeopleIcon />,
@@ -73,6 +67,7 @@ export const WorkshopSidebar = ({
         flexDirection: 'column',
         bgcolor: '#FFFFFF',
         color: '#1E293B',
+        fontSize: '13px'
       }}
     >
       {/* Header with hamburger toggle */}
@@ -152,7 +147,7 @@ export const WorkshopSidebar = ({
                 sx={{
                   minWidth: collapsed ? 0 : 40,
                   justifyContent: 'center',
-                  color: isSelected ? '#0E71AE' : '#64748B',
+                  color: isSelected ? '#0E71AE' : '#475569',
                   transition: 'all 0.2s ease',
                 }}
               >
@@ -167,8 +162,9 @@ export const WorkshopSidebar = ({
               {!collapsed && (
                 <ListItemText
                   primary={item.text}
+                  sx={{ padding: '0 0 0 28px' }}
                   primaryTypographyProps={{
-                    fontSize: '0.9rem',
+                    fontSize: '13px',
                     fontWeight: isSelected ? 600 : 400,
                   }}
                 />
