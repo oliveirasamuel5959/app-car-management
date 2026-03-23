@@ -50,12 +50,12 @@ export const WorkshopSidebar = ({
     //   badge: pendingOrders > 0 ? pendingOrders : undefined
     // },
     {
-      text: 'Clients',
+      text: 'Clientes Oficina',
       icon: <PeopleIcon />,
       path: '/workshop/clients',
     },
-    { text: 'Services', icon: <ServicesIcon />, path: '/workshop/services' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/workshop/settings' },
+    { text: 'Criar Serviços', icon: <ServicesIcon />, path: '/workshop/services' },
+    { text: 'Configurações', icon: <SettingsIcon />, path: '/workshop/settings' },
   ];
 
   const handleNavigate = (path: string) => {
