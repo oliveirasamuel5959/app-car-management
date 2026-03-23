@@ -147,7 +147,7 @@ export const ClientSidebar = ({
                   primary={item.text}
                   sx={{ padding: '0 0 0 28px' }}
                   primaryTypographyProps={{
-                    fontSize: '0.9rem',
+                    fontSize: '13px',
                     fontWeight: isSelected ? 600 : 400,
                   }}
                 />
