@@ -1,222 +1,159 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  Typography, 
-  Alert,
-  InputAdornment,
-  IconButton
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
 import { api } from '../../services/api';
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, setIsAuthenticated } = useAuth();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState(location.state?.message || '');
   const [isLoading, setIsLoading] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
 
-  const [formErrors, setFormErrors] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formErrors, setFormErrors] = useState({ email: '', password: '' });
 
-  // Add state for success message
-  const [successMessage, setSuccessMessage] = useState(
-    location.state?.message || ''
-  );
-
-  // Pre-fill email if coming from signup
   useEffect(() => {
     if (location.state?.email) {
-      setFormData(prev => ({
-        ...prev,
-        email: location.state.email
-      }));
+      setFormData(prev => ({ ...prev, email: location.state.email }));
     }
   }, [location.state]);
 
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const validateEmail = (email: string) => {
     if (!email) return 'Email is required';
-    if (!re.test(email)) return 'Invalid email format';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Invalid email format';
     return '';
   };
 
-  const validatePassword = (password) => {
+  const validatePassword = (password: string) => {
     if (!password) return 'Password is required';
     if (password.length < 6) return 'Password must be at least 6 characters';
     return '';
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear errors when user types
-    setFormErrors(prev => ({
-      ...prev,
-      [name]: ''
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
-    
     if (emailError || passwordError) {
-      setFormErrors({
-        email: emailError,
-        password: passwordError
-      });
+      setFormErrors({ email: emailError, password: passwordError });
       return;
     }
-
     setIsLoading(true);
     setError('');
-
     try {
       const response = await api.auth.login(formData);
-
       if (response.access_token) {
-        login(response); // Pass the entire response
-        // Redirect based on user role
-        const redirectPath = response.user?.role === 'WORKSHOP' 
-          ? '/workshop/dashboard' 
-          : '/client/dashboard';
-        navigate(redirectPath, { replace: true });
+        login(response);
+        navigate(response.user?.role === 'WORKSHOP' ? '/workshop/dashboard' : '/client/dashboard', { replace: true });
       } else {
         setError('Invalid login response');
       }
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        gap: 2.5,
-        '& .MuiInputBase-root': { height: '54px' },
-        '& .MuiInputBase-input': { fontSize: '18px' },
-        '& .MuiInputLabel-root': { fontSize: '18px' },
-        '& .MuiFormHelperText-root': { fontSize: '0.85rem' },
-      }}
-    >
-      <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: 'center', fontWeight: 700, color: '#111827' }}>
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 w-full">
+      <h1 className="text-3xl font-bold text-gray-900 text-center">
         Sign in to Drive Plus
-      </Typography>
+      </h1>
 
       {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <div className="rounded-lg bg-green-50 border border-green-200 px-5 py-3.5 text-base text-green-700">
           {successMessage}
-        </Alert>
+        </div>
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <div className="rounded-lg bg-red-50 border border-red-200 px-5 py-3.5 text-base text-red-700">
           {error}
-        </Alert>
+        </div>
       )}
 
-      <TextField
-        fullWidth
-        label="Email"
-        name="email"
-        type="email"
-        value={formData.email}
-        onChange={handleChange}
-        error={!!formErrors.email}
-        helperText={formErrors.email}
-        disabled={isLoading}
-        required
-      />
+      {/* Email */}
+      <div className="flex flex-col gap-1">
+        <label className="text-base font-medium text-gray-700">
+          Email<span className="text-red-500 ml-0.5">*</span>
+        </label>
+        <input
+          type="email"
+          name="email"
+          placeholder="jean.dupont@company.com"
+          value={formData.email}
+          onChange={handleChange}
+          disabled={isLoading}
+          required
+          className={`w-full rounded-lg border px-5 py-3.5 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            formErrors.email ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
+          }`}
+        />
+        {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
+      </div>
 
-      <TextField
-        fullWidth
-        label="Password"
-        name="password"
-        type={showPassword ? 'text' : 'password'}
-        value={formData.password}
-        onChange={handleChange}
-        error={!!formErrors.password}
-        helperText={formErrors.password}
-        disabled={isLoading}
-        required
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                aria-label="toggle password visibility"
-                onClick={togglePasswordVisibility}
-                edge="end"
-              >
-                {showPassword ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
+      {/* Password */}
+      <div className="flex flex-col gap-1">
+        <label className="text-base font-medium text-gray-700">
+          Password<span className="text-red-500 ml-0.5">*</span>
+        </label>
+        <div className="relative">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            name="password"
+            placeholder="••••••••"
+            value={formData.password}
+            onChange={handleChange}
+            disabled={isLoading}
+            required
+            className={`w-full rounded-lg border px-5 py-3.5 pr-12 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              formErrors.password ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(v => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
+        </div>
+        {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
+      </div>
 
-      <Button
-        type="submit"
-        variant="contained"
-        size="large"
-        disabled={isLoading}
-        sx={{
-          mt: 2,
-          bgcolor: '#2563EB',
-          '&:hover': { bgcolor: '#1D4ED8' },
-          textTransform: 'none',
-          fontWeight: 600,
-          fontSize: '1.1rem',
-          borderRadius: 2,
-          py: 1.8,
-          boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
-        }}
-      >
-        {isLoading ? 'Logging in...' : 'Sign In'}
-      </Button>
+      {/* Submit */}
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="rounded-lg bg-blue-600 px-10 py-3.5 text-base font-semibold text-white shadow transition hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isLoading ? 'Signing in…' : 'Sign In'}
+        </button>
+      </div>
 
-      <Typography variant="body1" textAlign="center" sx={{ mt: 2, color: '#6B7280' }}>
+      <p className="text-center text-base text-gray-500">
         Don't have an account?{' '}
-        <Button
+        <button
+          type="button"
           onClick={() => navigate('/signup')}
-          sx={{ textTransform: 'none', color: '#2563EB', fontWeight: 600, fontSize: '1rem', p: 0, minWidth: 'auto' }}
+          className="text-blue-600 font-semibold hover:underline"
         >
           Sign up
-        </Button>
-      </Typography>
-    </Box>
+        </button>
+      </p>
+    </form>
   );
 };
 
