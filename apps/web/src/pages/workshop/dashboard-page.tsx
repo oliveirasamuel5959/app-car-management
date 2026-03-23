@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -121,6 +122,7 @@ function extractServiceTypes(workshopNotes?: string | null) {
 
 export default function WorkshopDashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clientSummaries, setClientSummaries] = useState<ClientSummary[]>([]);
@@ -227,7 +229,11 @@ export default function WorkshopDashboardPage() {
       <Grid container spacing={2}>
         {clientSummaries.map((summary) => (
           <Grid item xs={12} key={summary.clientId}>
-            <Card variant="outlined">
+            <Card
+              variant="outlined"
+              onClick={() => navigate(`/workshop/clients/${summary.clientId}/orders`)}
+              sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
+            >
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
                   <Box>

@@ -23,7 +23,6 @@ import {
   IconButton,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import { workshopClientService } from '../../services/workshop-client-service';
 import type { WorkshopClient, WorkshopClientCreate } from '../../services/workshop-client-service';
 
@@ -38,7 +37,6 @@ const initialFormData: WorkshopClientCreate = {
 };
 
 export default function WorkshopClientsPage() {
-  const navigate = useNavigate();
   const [clients, setClients] = useState<WorkshopClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
@@ -160,8 +158,6 @@ export default function WorkshopClientsPage() {
               <TableRow
                 key={client.id}
                 hover
-                onClick={() => navigate(`/workshop/clients/${client.id}/orders`)}
-                sx={{ cursor: 'pointer' }}
               >
                 <TableCell>{client.name}</TableCell>
                 <TableCell>{client.email || '-'}</TableCell>
