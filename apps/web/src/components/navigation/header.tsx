@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Car, Menu, X, User, LogOut, Heart, Map, Calendar, Home } from 'lucide-react';
+import { Car, Menu, X, User, LogOut, Bell, Search, Home } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
 import { Button } from '../../components/ui/button';
-import ThemeToggle from '../../components/theme-toggle';
 import { cn } from '../../lib/utils';
 import {
   DropdownMenu,
@@ -19,8 +18,19 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const dashboardPath = user?.role === 'WORKSHOP' ? '/workshop/dashboard' : '/client/dashboard';
+  const isWorkshop = user?.role === 'WORKSHOP';
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/workshop/clients?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/workshop/clients');
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -31,61 +41,45 @@ const Header = () => {
     }
   };
 
-  const navLinkClasses = (path, exact = false) => {
-    const isActive = exact 
-      ? location.pathname === path 
-      : location.pathname.includes(path);
-    
-    return cn(
-      "relative flex items-center gap-1.5 text-sm font-medium transition-all duration-300 px-3 py-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
-      isActive 
-        ? "text-white bg-blue-600/20" 
-        : "text-slate-300 hover:text-white hover:bg-white/10"
-    );
-  };
-
   return (
-    <header className="fixed top-0 w-full z-50 bg-[#0F172A] border-b border-white/10 transition-all duration-300 shadow-lg">
+    <header className="fixed top-0 w-full z-50 bg-[#0E71AE] border-b border-white/10 transition-all duration-300 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
           <Link to={dashboardPath} aria-label="Home DrivePluss" className="flex items-center space-x-2 group focus-visible:ring-2 focus-visible:ring-blue-400 rounded-lg outline-none mr-4">
-            <div className="bg-blue-600 rounded-lg p-1.5 shadow-lg group-hover:scale-105 transition-transform duration-300">
+            <div className="bg-white/20 rounded-lg p-1.5 shadow-lg group-hover:scale-105 transition-transform duration-300">
               <Car className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
             <span className="text-xl font-bold text-white font-display tracking-tight hidden sm:block">
-              Drive<span className="text-blue-400">Pluss</span>
+              Drive<span className="text-cyan-200">Pluss</span>
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-1 flex-1 justify-center" aria-label="Main Navigation">
-             <Link to="/agendamento/novo" className={navLinkClasses("/agendamento")}>
-               <Calendar className="w-4 h-4" aria-hidden="true" />
-               Agenda de Oficina
-             </Link>
-             
-             <Link to="/workshops/map" className={navLinkClasses("/workshops")}>
-               <Map className="w-4 h-4" aria-hidden="true" />
-               Encontrar Oficinas
-             </Link>
-
-             {isAuthenticated && (
-               <Link to={dashboardPath} className={navLinkClasses(dashboardPath)}>
-                 Dashboard
-               </Link>
-             )}
+          <nav className="hidden md:flex items-center flex-1 justify-center" aria-label="Main Navigation">
+            {isWorkshop && isAuthenticated && (
+              <form onSubmit={handleSearch} className="flex items-center w-full max-w-md">
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+                  <input
+                    type="text"
+                    placeholder="Procurar cliente pelo nome..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-white border border-gray-200 text-gray-400 placeholder-gray-400 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+                  />
+                </div>
+              </form>
+            )}
           </nav>
 
           <div className="hidden md:flex items-center space-x-3 ml-4">
-            <ThemeToggle />
-
             {isAuthenticated ? (
               <>
-                <Link to="/favorites" aria-label="Favoritos">
-                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-400 transition-colors">
-                    <Heart className="w-5 h-5" aria-hidden="true" />
+                {isWorkshop && (
+                  <Button variant="ghost" size="icon" aria-label="Notificações" className="text-slate-400 hover:text-white relative transition-colors">
+                    <Bell className="w-5 h-5" aria-hidden="true" />
                   </Button>
-                </Link>
+                )}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -138,7 +132,11 @@ const Header = () => {
           </div>
 
           <div className="flex md:hidden items-center space-x-2">
-             <ThemeToggle />
+             {isWorkshop && isAuthenticated && (
+               <Button variant="ghost" size="icon" aria-label="Notificações" className="text-slate-400 hover:text-white relative transition-colors">
+                 <Bell className="w-5 h-5" aria-hidden="true" />
+               </Button>
+             )}
              <Button variant="ghost" size="icon" aria-label="Abrir Menu" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                 {isMobileMenuOpen ? <X className="w-6 h-6" aria-hidden="true" /> : <Menu className="w-6 h-6" aria-hidden="true" />}
              </Button>
@@ -147,42 +145,39 @@ const Header = () => {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-[#0F172A] border-t border-white/10 animate-slide-up">
+        <div className="md:hidden bg-[#0E71AE] border-t border-white/10 animate-slide-up">
            <nav className="flex flex-col px-4 py-4 space-y-1" aria-label="Mobile Navigation">
-              <Link 
-                to="/" 
-                className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors",
-                  location.pathname === "/" ? "bg-blue-600/20 text-white" : "text-slate-300"
-                )} 
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <Home className="w-5 h-5" /> Início
-              </Link>
-              <Link 
-                to="/agendamento/novo" 
-                className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors",
-                  location.pathname.includes("/agendamento") ? "bg-blue-600/20 text-white" : "text-slate-300"
-                )} 
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <Calendar className="w-5 h-5" /> Agenda de Oficina
-              </Link>
-              <Link 
-                to="/workshops/map" 
-                className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors",
-                  location.pathname.includes("/workshops") ? "bg-blue-600/20 text-white" : "text-slate-300"
-                )} 
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <Map className="w-5 h-5" /> Encontrar Oficinas
-              </Link>
-              
+              {!isWorkshop && (
+                <Link 
+                  to="/" 
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors",
+                    location.pathname === "/" ? "bg-blue-600/20 text-white" : "text-slate-300"
+                  )} 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Home className="w-5 h-5" /> Início
+                </Link>
+              )}
+
+              {isWorkshop && isAuthenticated && (
+                <form onSubmit={handleSearch} className="flex items-center px-1 pb-2">
+                  <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+                    <input
+                      type="text"
+                      placeholder="Procurar cliente pelo nome..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-white border border-gray-200 text-gray-400 placeholder-gray-400 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                    />
+                  </div>
+                </form>
+              )}
+
               {isAuthenticated ? (
                 <>
-                   <Link to={dashboardPath} className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+                   {!isWorkshop && <Link to={dashboardPath} className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>}
                    <Link to="/cliente/agendamentos" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Meus Agendamentos</Link>
                    <Link to="/profile" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Meu Perfil</Link>
                    <button 

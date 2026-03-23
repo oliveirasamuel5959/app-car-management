@@ -10,7 +10,6 @@ import { Menu as MenuIcon } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/auth-context';
-import Navbar from '../components/navigation/navbar';
 import { ClientSidebar } from '../components/navigation/client-sidebar';
 import { WorkshopSidebar } from '../components/navigation/workshop-sidebar';
 
@@ -93,8 +92,8 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
               boxSizing: 'border-box',
               top: `${NAVBAR_HEIGHT}px`,
               height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-              bgcolor: '#0F172A',
-              borderRight: 'none',
+              bgcolor: '#FFFFFF',
+              borderRight: '1px solid rgba(0,0,0,0.08)',
             },
           }}
         >
@@ -112,8 +111,8 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
               boxSizing: 'border-box',
               top: `${NAVBAR_HEIGHT}px`,
               height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-              bgcolor: '#0F172A',
-              borderRight: 'none',
+              bgcolor: '#FFFFFF',
+              borderRight: '1px solid rgba(0,0,0,0.08)',
               overflowX: 'hidden',
               overflowY: 'auto',
               transition: theme.transitions.create('width', {
