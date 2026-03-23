@@ -1,7 +1,6 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import CarKeepLogo from '../assets/carkeep-logo.svg';
-import Header from '../components/navigation/header';
 
 const Home = () => {
   const navigate = useNavigate();
