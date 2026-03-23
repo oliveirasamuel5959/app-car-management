@@ -31,6 +31,7 @@ import type { WorkshopClient } from '../../services/workshop-client-service';
 
 interface FormData {
   workshop_client_id: number | '';
+  title: string;
   description: string;
   checkin_date: string;
   checkin_time: string;
@@ -46,6 +47,7 @@ interface FormData {
 
 const initialFormData: FormData = {
   workshop_client_id: '',
+  title: '',
   description: '',
   checkin_date: '',
   checkin_time: '',
@@ -119,6 +121,10 @@ export default function WorkshopServicesPage() {
       setError('Selecione um cliente');
       return false;
     }
+    if (!formData.title.trim()) {
+      setError('Título do serviço é obrigatório');
+      return false;
+    }
     if (!formData.description.trim()) {
       setError('Descrição da tarefa é obrigatória');
       return false;
@@ -176,7 +182,7 @@ export default function WorkshopServicesPage() {
 
       await serviceService.createService({
         workshop_client_id: formData.workshop_client_id as number,
-        name: formData.description.slice(0, 100),
+        name: formData.title,
         description: formData.description || undefined,
         status: 'pending',
         progress_percentage: 0,
@@ -246,6 +252,16 @@ export default function WorkshopServicesPage() {
                 </MenuItem>
               ))}
             </TextField>
+
+            <TextField
+              label="Título do serviço"
+              fullWidth
+              required
+              value={formData.title}
+              onChange={handleInputChange}
+              name="title"
+              placeholder="Ex.: Troca de pastilha de freio"
+            />
 
             <TextField
               label="Descrição da tarefa"
@@ -384,6 +400,26 @@ export default function WorkshopServicesPage() {
               <ElectricIcon fontSize="small" />
               <Typography variant="body2" fontWeight={500}>
                 Elétrico
+              </Typography>
+            </ToggleButton>
+
+            <ToggleButton
+              value="preventiva"
+              aria-label="Preventiva"
+              sx={{ px: 3, py: 1.5, gap: 1, borderRadius: 2 }}
+            >
+              <Typography variant="body2" fontWeight={500}>
+                Preventiva
+              </Typography>
+            </ToggleButton>
+
+            <ToggleButton
+              value="periodico"
+              aria-label="Periódico"
+              sx={{ px: 3, py: 1.5, gap: 1, borderRadius: 2 }}
+            >
+              <Typography variant="body2" fontWeight={500}>
+                Periódico
               </Typography>
             </ToggleButton>
           </ToggleButtonGroup>
