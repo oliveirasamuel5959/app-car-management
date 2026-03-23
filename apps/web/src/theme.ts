@@ -46,6 +46,7 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: '"Inter", "system-ui", "Avenir", "Helvetica", "Arial", sans-serif',
+    fontSize: 18,
     h1: {
       fontWeight: 700,
     },
