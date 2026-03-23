@@ -126,16 +126,14 @@ const LoginForm = () => {
         flexDirection: 'column',
         justifyContent: 'center',
         gap: 2.5,
-        '& .MuiInputBase-input': { fontSize: '1.2rem' },
-        '& .MuiInputLabel-root': { fontSize: '1.2rem' },
-        '& .MuiFormHelperText-root': { fontSize: '0.95rem' },
+        '& .MuiInputBase-root': { height: '54px' },
+        '& .MuiInputBase-input': { fontSize: '18px' },
+        '& .MuiInputLabel-root': { fontSize: '18px' },
+        '& .MuiFormHelperText-root': { fontSize: '0.85rem' },
       }}
     >
       <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: 'center', fontWeight: 700, color: '#111827' }}>
-        Welcome Back
-      </Typography>
-      <Typography variant="body1" sx={{ textAlign: 'center', color: '#6B7280', mb: 2 }}>
-        Sign in to your account to continue
+        Sign in to Drive Plus
       </Typography>
 
       {successMessage && (
