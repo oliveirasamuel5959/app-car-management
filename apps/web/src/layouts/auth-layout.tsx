@@ -7,9 +7,8 @@ const AuthLayout = ({ children }) => {
     <Box
       sx={{
         display: 'flex',
-        height: '100vh',
+        minHeight: '100vh',
         width: '100%',
-        overflow: 'hidden',
       }}
     >
       {/* Left Panel — Branding */}
@@ -81,12 +80,12 @@ const AuthLayout = ({ children }) => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: { xs: 'flex-start', md: 'center' },
           flex: 1,
-          height: '100%',
+          minHeight: '100vh',
           bgcolor: '#FFFFFF',
           px: { xs: 3, sm: 6 },
-          py: { xs: 4, md: 6 },
+          py: { xs: 6, md: 6 },
           overflowY: 'auto',
         }}
       >
