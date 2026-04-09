@@ -23,4 +23,5 @@ class User(Base):
     
     vehicles = relationship("Vehicle", back_populates="user")
     workshops: Mapped[list["Workshop"]] = relationship("Workshop", back_populates="user")
-    
+    sent_messages = relationship("Message", foreign_keys="Message.sender_id", back_populates="sender")
+    received_messages = relationship("Message", foreign_keys="Message.receiver_id", back_populates="receiver")

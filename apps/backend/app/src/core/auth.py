@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, List
+from sqlalchemy.orm import Session
 from app.src.core.security import verify_token, create_access_token
 from app.src.schemas.user import UserResponse
 from app.src.services.user import UserService
@@ -65,4 +66,35 @@ def verify_user_id_ownership(user_id: int, current_user: dict) -> bool:
     )
 
   return True
+
+
+async def authenticate_websocket(token: str, db: Session):
+    """
+    Authenticate a WebSocket connection via a JWT token query parameter.
+    Returns the User ORM object or raises HTTPException.
+    """
+    from app.src.repositories.user import repo_get_user_by_id
+
+    payload = verify_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing user_id",
+        )
+
+    user = repo_get_user_by_id(db, int(user_id))
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+        )
+
+    return user
 

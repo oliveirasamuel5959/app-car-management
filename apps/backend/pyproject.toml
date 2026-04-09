@@ -24,7 +24,8 @@ dependencies = [
     "argon2-cffi (>=25.1.0,<26.0.0)",
     "pyjwt (>=2.11.0,<3.0.0)",
     "python-multipart (>=0.0.22,<0.0.23)",
-    "pytest (>=9.0.2,<10.0.0)"
+    "pytest (>=9.0.2,<10.0.0)",
+    "websockets (>=16.0,<17.0)"
 ]
 
 [build-system]
