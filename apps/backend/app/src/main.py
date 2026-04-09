@@ -63,7 +63,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
 
 # Add security middlewares
-app.add_middleware(AuthMiddleware, public_routes=["/", "/docs", "/redoc", "/openapi.json", "/auth/register", "/auth/login"])
+app.add_middleware(AuthMiddleware, public_routes=["/", "/docs", "/redoc", "/openapi.json", "/auth/register", "/auth/login", "/messages/ws"])
 
 app.include_router(api_router)
 
