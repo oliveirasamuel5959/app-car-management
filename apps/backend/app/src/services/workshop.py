@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.src.repositories.workshop import (
     repo_create_workshop,
+    repo_get_workshop_by_id,
     repo_get_workshop_all_clients,
     repo_get_workshops_nearby,
 )
@@ -18,6 +19,12 @@ class WorkshopService:
     def create_workshop(self, workshop_in: WorkshopCreate, user_id: int) -> Workshop:
         # additional business rules could be added here
         return repo_create_workshop(self.db, user_id=user_id, workshop_data=workshop_in.dict())
+
+    def get_workshop_by_id(self, workshop_id: int) -> Workshop:
+        workshop = repo_get_workshop_by_id(self.db, workshop_id)
+        if not workshop:
+            raise ValueError(f"Workshop {workshop_id} not found")
+        return workshop
 
     def get_nearby_workshops(self, lat: float, lng: float, radius_km: float = 10.0) -> List[Workshop]:
         # service handled radius calculation (defaults to 10km)

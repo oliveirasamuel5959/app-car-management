@@ -19,6 +19,12 @@ import WorkshopUsersPage from '../pages/workshop/users-page.tsx';
 import WorkshopClientsPage from '../pages/workshop/clients-page.tsx';
 import ClientOrdersPage from '../pages/workshop/client-orders-page.tsx';
 
+// Messages Pages
+import ClientMessagesPage from '../pages/client/messages-page.tsx';
+import ClientChatPage from '../pages/client/chat-page.tsx';
+import WorkshopMessagesPage from '../pages/workshop/messages-page.tsx';
+import WorkshopChatPage from '../pages/workshop/chat-page.tsx';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: 'CLIENT' | 'WORKSHOP';
@@ -103,7 +109,31 @@ export const protectedRoutes = [
     path: '/workshop/:workshopId/clients',
     role: 'WORKSHOP',
     element : <AppLayout><WorkshopUsersPage /></AppLayout>
-  }
+  },
+
+  // CLIENT MESSAGES
+  {
+    path: '/client/messages',
+    role: 'CLIENT',
+    element: <AppLayout><ClientMessagesPage /></AppLayout>,
+  },
+  {
+    path: '/client/messages/chat/:workshopUserId',
+    role: 'CLIENT',
+    element: <AppLayout><ClientChatPage /></AppLayout>,
+  },
+
+  // WORKSHOP MESSAGES
+  {
+    path: '/workshop/messages',
+    role: 'WORKSHOP',
+    element: <AppLayout><WorkshopMessagesPage /></AppLayout>,
+  },
+  {
+    path: '/workshop/messages/chat/:clientUserId',
+    role: 'WORKSHOP',
+    element: <AppLayout><WorkshopChatPage /></AppLayout>,
+  },
 ];
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {

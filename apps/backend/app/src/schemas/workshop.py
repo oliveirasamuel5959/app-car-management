@@ -16,6 +16,7 @@ class WorkshopRead(BaseModel):
     latitude: float
     longitude: float
     rating_avg: float
+    user_id: int
 
     class Config:
         from_attributes = True
