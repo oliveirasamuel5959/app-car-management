@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSoc
 from sqlalchemy.orm import Session
 from typing import List
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.src.db.database import get_session
 from app.src.core.auth import get_current_user, authenticate_websocket
@@ -70,6 +73,10 @@ async def websocket_endpoint(
                         "timestamp": db_message.created_at.isoformat(),
                         "message_type": db_message.message_type,
                     }
+                    logger.info(
+                        f"[WS] Routing message: sender={user.id} -> receiver={payload.receiver_id} | "
+                        f"online={list(manager.active_connections.keys())}"
+                    )
                     # Deliver to recipient (if online) and echo back to sender
                     await manager.send_to_user(payload.receiver_id, envelope)
                     await manager.send_to_user(user.id, envelope)

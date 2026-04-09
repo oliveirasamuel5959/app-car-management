@@ -66,6 +66,24 @@ def create_workshop(
         )
 
 @router.get(
+    "/{workshop_id}",
+    response_model=WorkshopRead,
+    status_code=status.HTTP_200_OK,
+    summary="Get workshop by ID",
+)
+def get_workshop_by_id(
+    workshop_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_session),
+):
+    service = WorkshopService(db)
+    try:
+        return service.get_workshop_by_id(workshop_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
     "/{workshop_id}/clients",
     response_model=list[UserRead],
     status_code=status.HTTP_200_OK,

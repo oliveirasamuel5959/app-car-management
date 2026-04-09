@@ -15,7 +15,8 @@ import {
   DirectionsCar as CarIcon,
   BuildCircle as WorkshopIcon,
   Settings as SettingsIcon,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Chat as ChatIcon,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -40,6 +41,7 @@ export const ClientSidebar = ({
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/client/dashboard' },
     { text: 'My Car', icon: <CarIcon />, path: '/client/my-car' },
     { text: 'Find Workshops', icon: <WorkshopIcon />, path: '/client/search-workshops' },
+    { text: 'Mensagens', icon: <ChatIcon />, path: '/client/messages' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/client/settings' },
   ];
 

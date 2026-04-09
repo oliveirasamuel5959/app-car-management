@@ -18,7 +18,8 @@ import {
   BuildCircle as ServicesIcon,
   Settings as SettingsIcon,
   Menu as MenuIcon,
-  Notifications as NotificationsIcon
+  Notifications as NotificationsIcon,
+  Chat as ChatIcon,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -49,6 +50,7 @@ export const WorkshopSidebar = ({
       path: '/workshop/clients',
     },
     { text: 'Criar Serviços', icon: <ServicesIcon />, path: '/workshop/services' },
+    { text: 'Mensagens', icon: <ChatIcon />, path: '/workshop/messages' },
     { text: 'Configurações', icon: <SettingsIcon />, path: '/workshop/settings' },
   ];
 

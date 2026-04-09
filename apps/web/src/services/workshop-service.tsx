@@ -27,4 +27,13 @@ export const workshopService = {
     );
     return response.data;
   },
+
+  getWorkshopById: async (workshopId: number) => {
+    try {
+      const response = await api.get(`/workshops/${workshopId}`);
+      return response;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch workshop');
+    }
+  },
 };
