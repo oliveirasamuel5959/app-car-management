@@ -2,7 +2,7 @@ import { api } from './api';
 
 export const serviceService = {
   /**
-   * Create a new service
+   * Create a new service order
    */
   createService: async (serviceData: {
     workshop_client_id?: number;
@@ -18,10 +18,10 @@ export const serviceService = {
     workshop_notes?: string;
   }) => {
     try {
-      const response = await api.post('/services', serviceData);
+      const response = await api.post('/create-services-orders', serviceData);
       return response;
     } catch (error) {
-      throw new Error(error.response?.data?.detail || 'Failed to create service');
+      throw new Error(error.response?.data?.detail || 'Failed to create service order');
     }
   },
 

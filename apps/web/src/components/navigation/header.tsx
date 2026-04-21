@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Car, Menu, X, User, LogOut, Bell, Search, Home } from 'lucide-react';
+import { Car, Menu, X, User, LogOut, Search, Home } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
 import { Button } from '../../components/ui/button';
 import { cn } from '../../lib/utils';
+import ThemeToggle from '../theme-toggle';
+import { NotificationBell } from './notification-bell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +44,7 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-[#0E71AE] border-b border-white/10 transition-all duration-300 shadow-lg">
+    <header className="fixed top-0 w-full z-50 bg-[#0E71AE] dark:bg-slate-900 border-b border-white/10 dark:border-slate-700 transition-all duration-300 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
@@ -65,7 +67,7 @@ const Header = () => {
                     placeholder="Procurar cliente pelo nome..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-white border border-gray-200 text-gray-400 placeholder-gray-400 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+                    className="w-full bg-gray border border-gray-200 text-gray-400 placeholder-gray-400 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
                   />
                 </div>
               </form>
@@ -75,11 +77,8 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-3 ml-4">
             {isAuthenticated ? (
               <>
-                {isWorkshop && (
-                  <Button variant="ghost" size="icon" aria-label="Notificações" className="text-slate-400 hover:text-white relative transition-colors">
-                    <Bell className="w-5 h-5" aria-hidden="true" />
-                  </Button>
-                )}
+                <ThemeToggle />
+                <NotificationBell />
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -132,10 +131,9 @@ const Header = () => {
           </div>
 
           <div className="flex md:hidden items-center space-x-2">
-             {isWorkshop && isAuthenticated && (
-               <Button variant="ghost" size="icon" aria-label="Notificações" className="text-slate-400 hover:text-white relative transition-colors">
-                 <Bell className="w-5 h-5" aria-hidden="true" />
-               </Button>
+             <ThemeToggle />
+             {isAuthenticated && (
+               <NotificationBell />
              )}
              <Button variant="ghost" size="icon" aria-label="Abrir Menu" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                 {isMobileMenuOpen ? <X className="w-6 h-6" aria-hidden="true" /> : <Menu className="w-6 h-6" aria-hidden="true" />}
@@ -145,7 +143,7 @@ const Header = () => {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-[#0E71AE] border-t border-white/10 animate-slide-up">
+        <div className="md:hidden bg-[#0E71AE] dark:bg-slate-800 border-t border-white/10 dark:border-slate-700 animate-slide-up">
            <nav className="flex flex-col px-4 py-4 space-y-1" aria-label="Mobile Navigation">
               {!isWorkshop && (
                 <Link 
