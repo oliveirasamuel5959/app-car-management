@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  Box,
   Container,
+  Box,
   Typography,
-  Grid,
   Card,
   CardContent,
-  Chip,
-  Alert,
+  Grid,
   CircularProgress,
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from '@mui/material';
-
 import { useAuth } from '../../context/auth-context';
 import { serviceService } from '../../services/service-service';
-import { workshopClientService } from '../../services/workshop-client-service';
 
 interface ServiceItem {
   id: number;
@@ -27,105 +30,49 @@ interface ServiceItem {
   created_at?: string | null;
 }
 
-interface ClientSummary {
-  clientId: number;
-  clientName: string;
-  latestService: ServiceItem;
-  openServicesCount: number;
-}
-
-const statusLabelMap: Record<string, string> = {
-  pending: 'Pendente',
-  approved: 'Aprovado',
-  in_progress: 'Em progresso',
-  waiting_parts: 'Aguardando peças',
-  completed: 'Concluído',
-  cancelled: 'Cancelado',
-};
-
-const statusColorMap: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
-  pending: 'warning',
-  approved: 'info',
-  in_progress: 'info',
-  waiting_parts: 'default',
-  completed: 'success',
-  cancelled: 'error',
-};
-
-function getServiceCreatedDate(service: ServiceItem) {
-  return service.created_at || service.checkin_date;
-}
-
-function formatFullDate(value?: string | null) {
-  if (!value) return 'Sem data prevista';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Sem data prevista';
+function formatDate(dateString?: string | null) {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '-';
 
   return new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long',
     day: '2-digit',
-    month: 'long',
+    month: '2-digit',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date);
 }
 
-function formatRelativeCreatedAt(value?: string | null) {
-  if (!value) return 'Agora - Uma nova tarefa foi criada';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Agora - Uma nova tarefa foi criada';
-
-  const diffMs = date.getTime() - Date.now();
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-  const rtf = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
-
-  let relativeText: string;
-  if (Math.abs(diffMs) < hour) {
-    relativeText = rtf.format(Math.round(diffMs / minute), 'minute');
-  } else if (Math.abs(diffMs) < day) {
-    relativeText = rtf.format(Math.round(diffMs / hour), 'hour');
-  } else {
-    relativeText = rtf.format(Math.round(diffMs / day), 'day');
-  }
-
-  const normalized = relativeText.charAt(0).toUpperCase() + relativeText.slice(1);
-  return `${normalized} - Uma nova tarefa foi criada`;
-}
-
-function extractServiceTypes(workshopNotes?: string | null) {
-  if (!workshopNotes) return 'Não informado';
-
-  const typeSection = workshopNotes
-    .split('|')
-    .map((part) => part.trim())
-    .find((part) => part.startsWith('Tipo:'));
-
-  if (!typeSection) return 'Não informado';
-
-  const rawTypes = typeSection.replace('Tipo:', '').trim();
-  if (!rawTypes) return 'Não informado';
-
-  return rawTypes
-    .split(',')
-    .map((type) => type.trim())
-    .filter(Boolean)
-    .map((type) => {
-      if (type === 'mecanico') return 'Mecânico';
-      if (type === 'eletrico') return 'Elétrico';
-      if (type === 'preventiva') return 'Preventiva';
-      if (type === 'periodico') return 'Periódico';
-      return type;
-    })
-    .join(', ');
+function StatCard({ title, value, loading }: { title: string; value: number; loading: boolean }) {
+  return (
+    <Card variant="outlined">
+      <CardContent>
+        <Typography color="textSecondary" gutterBottom>
+          {title}
+        </Typography>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : (
+          <Typography variant="h4" fontWeight={700} sx={{ color: 'primary.main' }}>
+            {value}
+          </Typography>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function WorkshopDashboardPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [clientSummaries, setClientSummaries] = useState<ClientSummary[]>([]);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
+  const [recentActivities, setRecentActivities] = useState<ServiceItem[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -133,61 +80,32 @@ export default function WorkshopDashboardPage() {
         setLoading(true);
         setError(null);
 
-        const [services, clients] = await Promise.all([
-          serviceService.getServices(),
-          workshopClientService.getClients(),
-        ]);
+        const servicesData = await serviceService.getServices();
 
-        const clientNameById = new Map<number, string>();
-        if (Array.isArray(clients)) {
-          clients.forEach((client) => {
-            clientNameById.set(client.id, client.name);
-          });
-        }
+        if (servicesData && Array.isArray(servicesData)) {
+          const allServices = servicesData as ServiceItem[];
+          setServices(allServices);
 
-        if (services && Array.isArray(services)) {
-          const openServices = (services as ServiceItem[]).filter(
-            (service) => service.status !== 'completed' && service.status !== 'cancelled'
-          );
+          // Calculate total orders
+          setTotalOrders(allServices.length);
 
-          const servicesByClient = new Map<number, ServiceItem[]>();
-          openServices.forEach((service) => {
-            if (!service.workshop_client_id) return;
+          // Calculate pending orders
+          const pending = allServices.filter((s) => s.status === 'pending').length;
+          setPendingOrders(pending);
 
-            const existing = servicesByClient.get(service.workshop_client_id) || [];
-            existing.push(service);
-            servicesByClient.set(service.workshop_client_id, existing);
-          });
+          // Get recent activities (last 5 created orders, sorted by created_at)
+          const recent = [...allServices]
+            .sort((a, b) => {
+              const aDate = new Date(a.created_at || a.checkin_date || '').getTime();
+              const bDate = new Date(b.created_at || b.checkin_date || '').getTime();
+              return bDate - aDate;
+            })
+            .slice(0, 5);
 
-          const summaries: ClientSummary[] = Array.from(servicesByClient.entries()).map(
-            ([clientId, clientServices]) => {
-              const sortedServices = [...clientServices].sort((a, b) => {
-                const aTime = new Date(getServiceCreatedDate(a) || '').getTime();
-                const bTime = new Date(getServiceCreatedDate(b) || '').getTime();
-                return bTime - aTime;
-              });
-
-              return {
-                clientId,
-                clientName: clientNameById.get(clientId) || `Cliente #${clientId}`,
-                latestService: sortedServices[0],
-                openServicesCount: clientServices.length,
-              };
-            }
-          );
-
-          summaries.sort((a, b) => {
-            const aTime = new Date(getServiceCreatedDate(a.latestService) || '').getTime();
-            const bTime = new Date(getServiceCreatedDate(b.latestService) || '').getTime();
-            return bTime - aTime;
-          });
-
-          setClientSummaries(summaries);
-        } else {
-          setClientSummaries([]);
+          setRecentActivities(recent);
         }
       } catch (err) {
-        console.error('Error fetching workshop data:', err);
+        console.error('Error fetching dashboard data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
       } finally {
         setLoading(false);
@@ -197,27 +115,12 @@ export default function WorkshopDashboardPage() {
     fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-          <CircularProgress />
-        </Box>
-      </Container>
-    );
-  }
-
   return (
     <Container maxWidth="lg">
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Dashboard
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
+          {user?.name || 'Oficina'}
         </Typography>
-        {user?.name && (
-          <Typography variant="body1" color="textSecondary">
-            Olá, {user.name}
-          </Typography>
-        )}
       </Box>
 
       {error && (
@@ -226,66 +129,96 @@ export default function WorkshopDashboardPage() {
         </Alert>
       )}
 
-      <Grid container spacing={2}>
-        {clientSummaries.map((summary) => (
-          <Grid item xs={12} key={summary.clientId}>
-            <Card
-              variant="outlined"
-              onClick={() => navigate(`/workshop/clients/${summary.clientId}/orders`)}
-              sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
-            >
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      {summary.clientName}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      {formatRelativeCreatedAt(getServiceCreatedDate(summary.latestService))}
-                    </Typography>
-                  </Box>
-
-                  <Chip
-                    label={statusLabelMap[summary.latestService.status] || summary.latestService.status}
-                    color={statusColorMap[summary.latestService.status] || 'default'}
-                    size="small"
-                  />
-                </Box>
-
-                <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {summary.latestService.name}
-                  </Typography>
-
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-                    Finalização prevista: {formatFullDate(summary.latestService.estimated_finish_date)}
-                  </Typography>
-
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    Tipo de serviço: {extractServiceTypes(summary.latestService.workshop_notes)}
-                  </Typography>
-
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    Serviços em aberto para este cliente: {summary.openServicesCount}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-
-        {clientSummaries.length === 0 && !error && (
-          <Grid item xs={12}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="body2" color="text.secondary">
-                  Nenhum cliente com serviços em aberto no momento.
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard title="Total de Ordens de Serviço" value={totalOrders} loading={loading} />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard title="Ordens Pendentes" value={pendingOrders} loading={loading} />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            title="Ordens em Progresso"
+            value={services.filter((s) => s.status === 'in_progress').length}
+            loading={loading}
+          />
+        </Grid>
       </Grid>
+
+      {/* Recent Activities */}
+      <Card variant="outlined">
+        <CardContent>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
+            Atividades Recentes
+          </Typography>
+
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : recentActivities.length === 0 ? (
+            <Typography color="textSecondary" sx={{ textAlign: 'center', py: 2 }}>
+              Nenhuma atividade recente
+            </Typography>
+          ) : (
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? '#212121' : '#F3F4F6' }}>
+                    <TableCell sx={{ fontWeight: 600 }}>Serviço</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Data/Hora</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {recentActivities.map((activity) => (
+                    <TableRow key={activity.id} hover>
+                      <TableCell>{activity.name}</TableCell>
+                      <TableCell>
+                        <Typography
+                          variant="body2"
+                          sx={(theme) => ({
+                            display: 'inline-block',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 1,
+                            backgroundColor:
+                              activity.status === 'pending'
+                                ? theme.palette.mode === 'dark' ? '#3d3d3d' : '#ffeaa7'
+                                : activity.status === 'in_progress'
+                                  ? theme.palette.mode === 'dark' ? '#2c3e50' : '#a8dadc'
+                                  : activity.status === 'completed'
+                                    ? theme.palette.mode === 'dark' ? '#2d5016' : '#c7e9c0'
+                                    : theme.palette.mode === 'dark' ? '#3d2d2d' : '#f8d7da',
+                            color:
+                              activity.status === 'pending'
+                                ? theme.palette.mode === 'dark' ? '#ffd700' : '#856404'
+                                : activity.status === 'in_progress'
+                                  ? theme.palette.mode === 'dark' ? '#5dade2' : '#084298'
+                                  : activity.status === 'completed'
+                                    ? theme.palette.mode === 'dark' ? '#82e0aa' : '#0f5132'
+                                    : theme.palette.mode === 'dark' ? '#f8b4b4' : '#842029',
+                          })}
+                        >
+                          {activity.status === 'pending'
+                            ? 'Pendente'
+                            : activity.status === 'in_progress'
+                              ? 'Em Progresso'
+                              : activity.status === 'completed'
+                                ? 'Concluído'
+                                : activity.status}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{formatDate(activity.created_at || activity.checkin_date)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
     </Container>
   );
 }

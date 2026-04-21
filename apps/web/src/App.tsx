@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/main-layout';
 import ProtectedRoute from './components/routing/protected-route';
 import { AuthProvider } from './context/auth-context';
+import { NotificationProvider } from './context/notifications-context';
 import { publicRoutes, protectedRoutes } from './routes/routes';
 import LoginPage from './pages/login-page';
 import HomePage from './pages/home-page';
@@ -11,7 +12,8 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <NotificationProvider>
+        <Router>
         <Routes>
           {/* Auth routes without MainLayout */}
           <Route path="/login" element={<LoginPage />} />
@@ -46,6 +48,7 @@ function App() {
           } />
         </Routes>
       </Router>
+    </NotificationProvider>
     </AuthProvider>
   );
 }

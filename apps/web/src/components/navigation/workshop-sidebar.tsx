@@ -44,12 +44,9 @@ export const WorkshopSidebar = ({
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/workshop/dashboard' },
-    {
-      text: 'Clientes Oficina',
-      icon: <PeopleIcon />,
-      path: '/workshop/clients',
-    },
-    { text: 'Criar Serviços', icon: <ServicesIcon />, path: '/workshop/services' },
+    { text: 'Clientes Oficina', icon: <PeopleIcon />, path: '/workshop/clients' },
+    { text: 'Ordens de Serviço', icon: <ServicesIcon />, path: '/workshop/services' },
+    { text: 'Criar Orçamento', icon: <ServicesIcon />, path: '/workshop/orders/new' },
     { text: 'Mensagens', icon: <ChatIcon />, path: '/workshop/messages' },
     { text: 'Configurações', icon: <SettingsIcon />, path: '/workshop/settings' },
   ];
@@ -67,8 +64,8 @@ export const WorkshopSidebar = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#FFFFFF',
-        color: '#1E293B',
+        bgcolor: 'background.paper',
+        color: 'text.primary',
         fontSize: '13px'
       }}
     >

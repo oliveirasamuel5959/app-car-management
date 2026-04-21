@@ -14,6 +14,7 @@ import { Navigate } from 'react-router-dom';
 import WorkshopDashboardPage from '../pages/workshop/dashboard-page';
 import WorkshopOrdersPage from '../pages/workshop/orders-page';
 import WorkshopServicesPage from '../pages/workshop/services-page';
+import CreateOrdersPage from '../pages/workshop/create-orders-page';
 import ServicesPage from '../pages/client/services-page.tsx';
 import WorkshopUsersPage from '../pages/workshop/users-page.tsx';
 import WorkshopClientsPage from '../pages/workshop/clients-page.tsx';
@@ -94,6 +95,11 @@ export const protectedRoutes = [
     path: '/workshop/services',
     role: 'WORKSHOP',
     element: <AppLayout><WorkshopServicesPage /></AppLayout>,
+  },
+  {
+    path: '/workshop/orders/new',
+    role: 'WORKSHOP',
+    element: <AppLayout><CreateOrdersPage /></AppLayout>,
   },
   {
     path: '/workshop/clients',

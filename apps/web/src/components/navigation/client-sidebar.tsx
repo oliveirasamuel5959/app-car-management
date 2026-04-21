@@ -58,8 +58,8 @@ export const ClientSidebar = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#FFFFFF',
-        color: '#1E293B',
+        bgcolor: 'background.paper',
+        color: 'text.primary',
       }}
     >
       {/* Header with hamburger toggle */}

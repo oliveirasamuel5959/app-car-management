@@ -5,9 +5,9 @@ import Header from '../components/navigation/header';
 
 const MainLayout = ({ children }) => {
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
       minHeight: '100vh',
       width: '100%',
       position: 'relative'
@@ -15,7 +15,7 @@ const MainLayout = ({ children }) => {
       <Header />
       <Box
         component="main"
-        sx={{ 
+        sx={{
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',

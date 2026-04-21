@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light Mode */
+:root {
+  color-scheme: light;
+}
+
+/* Dark Mode */
+.dark {
+  color-scheme: dark;
+}
+
 /* Reset mínimo seguro */
 html, body, #root {
   height: 100%;
@@ -11,6 +21,245 @@ html, body, #root {
 body {
   margin: 0;
   font-family: Arial, sans-serif;
+}
+
+/* Light Mode Styles */
+html:not(.dark) body {
   background-color: #F8FAFC;
   color: #111827;
+}
+
+html:not(.dark) #root {
+  background-color: #F8FAFC;
+  color: #111827;
+}
+
+/* Dark Mode Styles */
+html.dark body {
+  background-color: #131313;
+  color: #DDDDDD;
+}
+
+html.dark #root {
+  background-color: #131313;
+  color: #DDDDDD;
+}
+
+html.dark {
+  background-color: #131313;
+}
+
+/* Sidebar styling - Light Mode */
+body:not(.dark) .MuiDrawer-paper {
+  background-color: #FFFFFF !important;
+  color: #111827 !important;
+  border-right: 1px solid rgba(0,0,0,0.08) !important;
+}
+
+body:not(.dark) nav {
+  background-color: #FFFFFF !important;
+  color: #111827 !important;
+}
+
+/* Sidebar styling - Dark Mode */
+html.dark .MuiDrawer-paper,
+body.dark .MuiDrawer-paper {
+  background-color: #1a1a1a !important;
+  color: #DDDDDD !important;
+  border-right: 1px solid #333333 !important;
+}
+
+html.dark nav,
+body.dark nav {
+  background-color: #1a1a1a !important;
+  color: #DDDDDD !important;
+}
+
+/* Footer styling in dark mode */
+html.dark footer {
+  background-color: #131313;
+  color: #DDDDDD;
+  border-top-color: #333333;
+}
+
+html.dark [class*="Footer"] {
+  background-color: #131313;
+  color: #DDDDDD;
+}
+
+/* Card and container styling in dark mode */
+html.dark [role="main"],
+html.dark .MuiContainer-root {
+  background-color: transparent;
+  color: #DDDDDD;
+}
+
+html.dark .MuiCard-root {
+  background-color: #212121;
+  color: #DDDDDD;
+  border-color: #333333 !important;
+}
+
+/* Card header styling - Light mode */
+html:not(.dark) .MuiCardHeader-root {
+  background-color: #F3F4F6;
+  color: #111827;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+html:not(.dark) .MuiCardHeader-title {
+  color: #111827 !important;
+}
+
+html:not(.dark) .MuiCardHeader-subheader {
+  color: #6B7280 !important;
+}
+
+/* Card header styling - Dark mode */
+html.dark .MuiCardHeader-root {
+  background-color: #1a1a1a;
+  color: #DDDDDD;
+  border-bottom: 1px solid #333333;
+}
+
+html.dark .MuiCardHeader-title {
+  color: #DDDDDD !important;
+}
+
+html.dark .MuiCardHeader-subheader {
+  color: #999999 !important;
+}
+
+html.dark .MuiCard-outlined {
+  border-color: #333333 !important;
+}
+
+html.dark .MuiPaper-root {
+  background-color: #212121;
+  color: #DDDDDD;
+}
+
+html.dark .MuiTypography-root {
+  color: #DDDDDD;
+}
+
+/* Section header styling - Light mode */
+html:not(.dark) .MuiCardContent-root > .MuiTypography-h6,
+html:not(.dark) [role="heading"] {
+  color: #111827;
+  padding: 12px;
+  background-color: #F3F4F6;
+  margin: -16px -16px 12px -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+/* Section header styling - Dark mode */
+html.dark .MuiCardContent-root > .MuiTypography-h6,
+html.dark [role="heading"] {
+  color: #DDDDDD;
+  padding: 12px;
+  background-color: #1a1a1a;
+  margin: -16px -16px 12px -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-bottom: 1px solid #333333;
+}
+
+html.dark .MuiTableCell-root {
+  border-color: #333333;
+  color: #DDDDDD;
+}
+
+html.dark table tbody tr:hover {
+  background-color: #2a2a2a;
+}
+
+html.dark .MuiAlert-root {
+  background-color: #212121;
+  color: #DDDDDD;
+  border-color: #333333;
+}
+
+html.dark .MuiDialog-paper {
+  background-color: #212121;
+  color: #DDDDDD;
+}
+
+html.dark .MuiTextField-root .MuiOutlinedInput-root {
+  color: #DDDDDD;
+  background-color: #1a1a1a;
+}
+
+html.dark .MuiOutlinedInput-notchedOutline {
+  border-color: #333333;
+}
+
+html.dark .MuiInputBase-input {
+  color: #DDDDDD;
+}
+
+html.dark .MuiInputBase-input::placeholder {
+  color: #888888;
+  opacity: 1;
+}
+
+html.dark .MuiChip-root {
+  background-color: #2a2a2a;
+  color: #DDDDDD;
+}
+
+html.dark .MuiDivider-root {
+  border-color: #333333;
+}
+
+/* Keep buttons styled properly */
+html.dark .MuiButton-contained {
+  background-color: #2563EB;
+  color: #ffffff;
+}
+
+html.dark .MuiButton-contained:hover {
+  background-color: #1d4ed8;
+}
+
+html.dark .MuiButton-outlined {
+  color: #DDDDDD;
+  border-color: #333333;
+}
+
+html.dark .MuiButton-outlined:hover {
+  background-color: #2a2a2a;
+  border-color: #444444;
+}
+
+html.dark .MuiButton-text {
+  color: #DDDDDD;
+}
+
+html.dark .MuiButton-text:hover {
+  background-color: #2a2a2a;
+}
+
+/* Sidebar menu item styling */
+html.dark .MuiListItemButton-root {
+  color: #DDDDDD;
+}
+
+html.dark .MuiListItemButton-root:hover {
+  background-color: #2a2a2a;
+}
+
+html.dark .MuiListItemButton-root.Mui-selected {
+  background-color: #2563EB;
+  color: #ffffff;
+}
+
+html.dark .MuiListItemIcon-root {
+  color: #DDDDDD;
+}
+
+html.dark .MuiListItemText-root {
+  color: #DDDDDD;
 }

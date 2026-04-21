@@ -4,478 +4,292 @@ import {
   Typography,
   Card,
   CardContent,
-  Divider,
   Grid,
-  TextField,
-  Button,
   Alert,
   CircularProgress,
-  MenuItem,
-  Stack,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
-  ToggleButton,
-  ToggleButtonGroup,
+  Button,
+  Chip,
 } from '@mui/material';
 
 import {
   Add as AddIcon,
-  Build as BuildIcon,
-  FlashOn as ElectricIcon,
 } from '@mui/icons-material';
 
+import { useNavigate } from 'react-router-dom';
 import { serviceService } from '../../services/service-service';
 import { workshopClientService } from '../../services/workshop-client-service';
-import type { WorkshopClient } from '../../services/workshop-client-service';
 
-interface FormData {
-  workshop_client_id: number | '';
-  title: string;
-  description: string;
+interface ServiceItem {
+  id: number;
+  workshop_client_id?: number | null;
+  name: string;
+  status: string;
   checkin_date: string;
-  checkin_time: string;
-  estimated_finish_date: string;
-  estimated_finish_time: string;
-  planned_maintenance_hours: number | '';
-  planned_maintenance_minutes: number | '';
-  service_types: string[];
-  inspecao: boolean;
-  troca_periodica: boolean;
-  substituicao: boolean;
+  estimated_finish_date?: string | null;
+  workshop_notes?: string | null;
+  created_at?: string | null;
 }
 
-const initialFormData: FormData = {
-  workshop_client_id: '',
-  title: '',
-  description: '',
-  checkin_date: '',
-  checkin_time: '',
-  estimated_finish_date: '',
-  estimated_finish_time: '',
-  planned_maintenance_hours: '',
-  planned_maintenance_minutes: '',
-  service_types: [],
-  inspecao: false,
-  troca_periodica: false,
-  substituicao: false,
+interface ClientSummary {
+  clientId: number;
+  clientName: string;
+  latestService: ServiceItem;
+  openServicesCount: number;
+}
+
+const statusLabelMap: Record<string, string> = {
+  pending: 'Pendente',
+  approved: 'Aprovado',
+  in_progress: 'Em progresso',
+  waiting_parts: 'Aguardando peças',
+  completed: 'Concluído',
+  cancelled: 'Cancelado',
 };
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <Card variant="outlined">
-      <Box sx={{ px: 3, py: 1.5, bgcolor: 'action.hover' }}>
-        <Typography variant="subtitle1" fontWeight={600}>
-          {title}
-        </Typography>
-      </Box>
-      <Divider />
-      <CardContent sx={{ pt: 2.5 }}>{children}</CardContent>
-    </Card>
-  );
+const statusColorMap: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
+  pending: 'warning',
+  approved: 'info',
+  in_progress: 'info',
+  waiting_parts: 'default',
+  completed: 'success',
+  cancelled: 'error',
+};
+
+function getServiceCreatedDate(service: ServiceItem) {
+  return service.created_at || service.checkin_date;
+}
+
+function formatFullDate(value?: string | null) {
+  if (!value) return 'Sem data prevista';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Sem data prevista';
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+}
+
+function formatRelativeCreatedAt(value?: string | null) {
+  if (!value) return 'Agora - Uma nova tarefa foi criada';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Agora - Uma nova tarefa foi criada';
+
+  const diffMs = date.getTime() - Date.now();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const rtf = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
+
+  let relativeText: string;
+  if (Math.abs(diffMs) < hour) {
+    relativeText = rtf.format(Math.round(diffMs / minute), 'minute');
+  } else if (Math.abs(diffMs) < day) {
+    relativeText = rtf.format(Math.round(diffMs / hour), 'hour');
+  } else {
+    relativeText = rtf.format(Math.round(diffMs / day), 'day');
+  }
+
+  const normalized = relativeText.charAt(0).toUpperCase() + relativeText.slice(1);
+  return `${normalized} - Uma nova tarefa foi criada`;
+}
+
+function extractServiceTypes(workshopNotes?: string | null) {
+  if (!workshopNotes) return 'Não informado';
+
+  const typeSection = workshopNotes
+    .split('|')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('Tipo:'));
+
+  if (!typeSection) return 'Não informado';
+
+  const rawTypes = typeSection.replace('Tipo:', '').trim();
+  if (!rawTypes) return 'Não informado';
+
+  return rawTypes
+    .split(',')
+    .map((type) => type.trim())
+    .filter(Boolean)
+    .map((type) => {
+      if (type === 'mecanico') return 'Mecânico';
+      if (type === 'eletrico') return 'Elétrico';
+      if (type === 'preventiva') return 'Preventiva';
+      if (type === 'periodico') return 'Periódico';
+      return type;
+    })
+    .join(', ');
 }
 
 export default function WorkshopServicesPage() {
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [clients, setClients] = useState<WorkshopClient[]>([]);
+  const [clientSummaries, setClientSummaries] = useState<ClientSummary[]>([]);
 
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchOrdersData = async () => {
       try {
-        const data = await workshopClientService.getClients();
-        setClients(Array.isArray(data) ? data : []);
+        setLoading(true);
+        setError(null);
+
+        const [services, clientsList] = await Promise.all([
+          serviceService.getServices(),
+          workshopClientService.getClients(),
+        ]);
+
+        const clientNameById = new Map<number, string>();
+        if (Array.isArray(clientsList)) {
+          clientsList.forEach((client) => {
+            clientNameById.set(client.id, client.name);
+          });
+        }
+
+        if (services && Array.isArray(services)) {
+          const openServices = (services as ServiceItem[]).filter(
+            (service) => service.status !== 'completed' && service.status !== 'cancelled'
+          );
+
+          const servicesByClient = new Map<number, ServiceItem[]>();
+          openServices.forEach((service) => {
+            if (!service.workshop_client_id) return;
+
+            const existing = servicesByClient.get(service.workshop_client_id) || [];
+            existing.push(service);
+            servicesByClient.set(service.workshop_client_id, existing);
+          });
+
+          const summaries: ClientSummary[] = Array.from(servicesByClient.entries()).map(
+            ([clientId, clientServices]) => {
+              const sortedServices = [...clientServices].sort((a, b) => {
+                const aTime = new Date(getServiceCreatedDate(a) || '').getTime();
+                const bTime = new Date(getServiceCreatedDate(b) || '').getTime();
+                return bTime - aTime;
+              });
+
+              return {
+                clientId,
+                clientName: clientNameById.get(clientId) || `Cliente #${clientId}`,
+                latestService: sortedServices[0],
+                openServicesCount: clientServices.length,
+              };
+            }
+          );
+
+          summaries.sort((a, b) => {
+            const aTime = new Date(getServiceCreatedDate(a.latestService) || '').getTime();
+            const bTime = new Date(getServiceCreatedDate(b.latestService) || '').getTime();
+            return bTime - aTime;
+          });
+
+          setClientSummaries(summaries);
+        } else {
+          setClientSummaries([]);
+        }
       } catch (err) {
-        console.error('Failed to load clients:', err);
+        console.error('Error fetching workshop orders:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load orders');
+      } finally {
+        setLoading(false);
       }
     };
-    fetchClients();
+
+    fetchOrdersData();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    if (
-      name === 'planned_maintenance_hours' ||
-      name === 'planned_maintenance_minutes' ||
-      name === 'workshop_client_id'
-    ) {
-      setFormData((prev) => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleServiceTypeChange = (_: React.MouseEvent<HTMLElement>, newTypes: string[]) => {
-    setFormData((prev) => ({ ...prev, service_types: newTypes }));
-  };
-
-  const handleChecklistChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
-  };
-
-  const validateForm = () => {
-    if (!formData.workshop_client_id) {
-      setError('Selecione um cliente');
-      return false;
-    }
-    if (!formData.title.trim()) {
-      setError('Título do serviço é obrigatório');
-      return false;
-    }
-    if (!formData.description.trim()) {
-      setError('Descrição da tarefa é obrigatória');
-      return false;
-    }
-    if (!formData.checkin_date) {
-      setError('Data inicial é obrigatória');
-      return false;
-    }
-    if (
-      typeof formData.planned_maintenance_minutes === 'number' &&
-      (formData.planned_maintenance_minutes < 0 || formData.planned_maintenance_minutes > 59)
-    ) {
-      setError('Minutos deve ser entre 0 e 59');
-      return false;
-    }
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const checkinDatetime = formData.checkin_time
-        ? `${formData.checkin_date}T${formData.checkin_time}`
-        : formData.checkin_date;
-
-      const finishDatetime = formData.estimated_finish_date
-        ? formData.estimated_finish_time
-          ? `${formData.estimated_finish_date}T${formData.estimated_finish_time}`
-          : formData.estimated_finish_date
-        : undefined;
-
-      const plannedHours = formData.planned_maintenance_hours === '' ? 0 : Number(formData.planned_maintenance_hours);
-      const plannedMinutes = formData.planned_maintenance_minutes === '' ? 0 : Number(formData.planned_maintenance_minutes);
-      const estimatedHours =
-        formData.planned_maintenance_hours === '' && formData.planned_maintenance_minutes === ''
-          ? undefined
-          : Number((plannedHours + plannedMinutes / 60).toFixed(2));
-
-      const checklistNotes = [
-        formData.inspecao ? 'Inspeção' : '',
-        formData.troca_periodica ? 'Troca periódica' : '',
-        formData.substituicao ? 'Substituição' : '',
-      ]
-        .filter(Boolean)
-        .join(', ');
-
-      const noteParts = [
-        formData.service_types.length > 0 ? `Tipo: ${formData.service_types.join(', ')}` : '',
-        checklistNotes ? `Lista: ${checklistNotes}` : '',
-      ].filter(Boolean);
-
-      await serviceService.createService({
-        workshop_client_id: formData.workshop_client_id as number,
-        name: formData.title,
-        description: formData.description || undefined,
-        status: 'pending',
-        progress_percentage: 0,
-        checkin_date: checkinDatetime,
-        estimated_finish_date: finishDatetime,
-        estimated_hours: estimatedHours,
-        workshop_notes: noteParts.length > 0 ? noteParts.join(' | ') : undefined,
-      });
-
-      setSuccess('Tarefa de manutenção criada com sucesso!');
-      setFormData(initialFormData);
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create service');
-      console.error('Error creating service:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ width: '100%' }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" fontWeight={700}>
-          Tarefa de Manutenção
+          Ordens de Serviço
         </Typography>
-        {loading && <CircularProgress size={24} />}
+        <Button
+          onClick={() => navigate('/workshop/orders/new')}
+          variant="contained"
+          color="primary"
+          size="medium"
+          startIcon={<AddIcon />}
+        >
+          Criar Orçamento
+        </Button>
       </Box>
 
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          {success}
-        </Alert>
-      )}
-
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      <Stack spacing={3}>
-
-        {/* Section 1: Tarefa */}
-        <SectionCard title="Tarefa">
-          <Stack spacing={2}>
-            <TextField
-              label="Selecionar cliente"
-              select
-              fullWidth
-              required
-              value={formData.workshop_client_id}
-              onChange={handleInputChange}
-              name="workshop_client_id"
+      <Grid container spacing={2}>
+        {clientSummaries.map((summary) => (
+          <Grid item xs={12} key={summary.clientId}>
+            <Card
+              variant="outlined"
+              onClick={() => navigate(`/workshop/clients/${summary.clientId}/orders`)}
+              sx={{ cursor: 'pointer', '&:hover': { boxShadow: 3 } }}
             >
-              {clients.length === 0 && (
-                <MenuItem value="" disabled>
-                  Nenhum cliente encontrado. Adicione clientes primeiro.
-                </MenuItem>
-              )}
-              {clients.map((client) => (
-                <MenuItem key={client.id} value={client.id}>
-                  {client.name} — {client.vehicle_brand} {client.vehicle_model} ({client.vehicle_plate})
-                </MenuItem>
-              ))}
-            </TextField>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      {summary.clientName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {formatRelativeCreatedAt(getServiceCreatedDate(summary.latestService))}
+                    </Typography>
+                  </Box>
 
-            <TextField
-              label="Título do serviço"
-              fullWidth
-              required
-              value={formData.title}
-              onChange={handleInputChange}
-              name="title"
-              placeholder="Ex.: Troca de pastilha de freio"
-            />
-
-            <TextField
-              label="Descrição da tarefa"
-              fullWidth
-              required
-              multiline
-              rows={3}
-              value={formData.description}
-              onChange={handleInputChange}
-              name="description"
-              placeholder="Descreva a tarefa de manutenção..."
-            />
-          </Stack>
-        </SectionCard>
-
-        {/* Section 2: Planejamento */}
-        <SectionCard title="Planejamento">
-          <Stack spacing={3}>
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                Data inicial
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={7}>
-                  <TextField
-                    label="Data"
-                    type="date"
-                    fullWidth
-                    required
-                    value={formData.checkin_date}
-                    onChange={handleInputChange}
-                    name="checkin_date"
-                    InputLabelProps={{ shrink: true }}
+                  <Chip
+                    label={statusLabelMap[summary.latestService.status] || summary.latestService.status}
+                    color={statusColorMap[summary.latestService.status] || 'default'}
+                    size="small"
                   />
-                </Grid>
-                <Grid item xs={12} sm={5}>
-                  <TextField
-                    label="Hora"
-                    type="time"
-                    fullWidth
-                    value={formData.checkin_time}
-                    onChange={handleInputChange}
-                    name="checkin_time"
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
+                </Box>
 
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                Data final
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={7}>
-                  <TextField
-                    label="Data"
-                    type="date"
-                    fullWidth
-                    value={formData.estimated_finish_date}
-                    onChange={handleInputChange}
-                    name="estimated_finish_date"
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={5}>
-                  <TextField
-                    label="Hora"
-                    type="time"
-                    fullWidth
-                    value={formData.estimated_finish_time}
-                    onChange={handleInputChange}
-                    name="estimated_finish_time"
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
+                <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {summary.latestService.name}
+                  </Typography>
 
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                Tempo de manutenção planejado
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Horas"
-                    type="number"
-                    fullWidth
-                    value={formData.planned_maintenance_hours}
-                    onChange={handleInputChange}
-                    name="planned_maintenance_hours"
-                    inputProps={{ min: 0 }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Minutos"
-                    type="number"
-                    fullWidth
-                    value={formData.planned_maintenance_minutes}
-                    onChange={handleInputChange}
-                    name="planned_maintenance_minutes"
-                    inputProps={{ min: 0, max: 59 }}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
-          </Stack>
-        </SectionCard>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+                    Finalização prevista: {formatFullDate(summary.latestService.estimated_finish_date)}
+                  </Typography>
 
-        {/* Section 3: Tipo de serviço */}
-        <SectionCard title="Tipo de serviço">
-          <ToggleButtonGroup
-            value={formData.service_types}
-            onChange={handleServiceTypeChange}
-            aria-label="tipo de serviço"
-            sx={{ gap: 1, flexWrap: 'wrap' }}
-          >
-            <ToggleButton
-              value="mecanico"
-              aria-label="Mecânico"
-              sx={{ px: 3, py: 1.5, gap: 1, borderRadius: 2 }}
-            >
-              <BuildIcon fontSize="small" />
-              <Typography variant="body2" fontWeight={500}>
-                Mecânico
-              </Typography>
-            </ToggleButton>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Tipo de serviço: {extractServiceTypes(summary.latestService.workshop_notes)}
+                  </Typography>
 
-            <ToggleButton
-              value="eletrico"
-              aria-label="Elétrico"
-              sx={{ px: 3, py: 1.5, gap: 1, borderRadius: 2 }}
-            >
-              <ElectricIcon fontSize="small" />
-              <Typography variant="body2" fontWeight={500}>
-                Elétrico
-              </Typography>
-            </ToggleButton>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Serviços em aberto para este cliente: {summary.openServicesCount}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
 
-            <ToggleButton
-              value="preventiva"
-              aria-label="Preventiva"
-              sx={{ px: 3, py: 1.5, gap: 1, borderRadius: 2 }}
-            >
-              <Typography variant="body2" fontWeight={500}>
-                Preventiva
-              </Typography>
-            </ToggleButton>
-
-            <ToggleButton
-              value="periodico"
-              aria-label="Periódico"
-              sx={{ px: 3, py: 1.5, gap: 1, borderRadius: 2 }}
-            >
-              <Typography variant="body2" fontWeight={500}>
-                Periódico
-              </Typography>
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </SectionCard>
-
-        {/* Section 4: Lista de verificação */}
-        <SectionCard title="Lista de verificação">
-          <FormGroup>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.inspecao}
-                  onChange={handleChecklistChange}
-                  name="inspecao"
-                />
-              }
-              label="Inspeção"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.troca_periodica}
-                  onChange={handleChecklistChange}
-                  name="troca_periodica"
-                />
-              }
-              label="Troca periódica"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.substituicao}
-                  onChange={handleChecklistChange}
-                  name="substituicao"
-                />
-              }
-              label="Substituição"
-            />
-          </FormGroup>
-        </SectionCard>
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', pb: 4 }}>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            color="primary"
-            size="large"
-            startIcon={<AddIcon />}
-            disabled={loading}
-            sx={{ px: 4 }}
-          >
-            {loading ? 'Criando...' : 'Criar Tarefa'}
-          </Button>
-        </Box>
-
-      </Stack>
+        {clientSummaries.length === 0 && !error && (
+          <Grid item xs={12}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Nenhum cliente com serviços em aberto no momento.
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+      </Grid>
     </Box>
   );
 }

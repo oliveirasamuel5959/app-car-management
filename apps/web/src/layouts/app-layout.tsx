@@ -66,7 +66,10 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{
+      display: 'flex',
+      minHeight: '100vh'
+    }}>
       {/* Sidebar */}
       <Box
         component="nav"
