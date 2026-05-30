@@ -11,6 +11,25 @@ Functional requirements describe **what the system must do** from a business and
 
 ---
 
+### FR-00 – Multi-Tenancy & Tenant Management
+
+**Description:**  
+The system must isolate data and operations per tenant while sharing infrastructure.
+
+**Requirements:**
+- Each workshop is a separate tenant with isolated data
+- Tenant identified via path-based routing (e.g., `/oficina-xyz/`)
+- User can only access data within their assigned tenant
+- Tenant context validated on every request
+- All business entities linked to tenant via `tenant_id`
+
+**Actors:**
+- System (enforces isolation)
+- Workshop (tenant context holder)
+- Client (accesses via tenant-specific path)
+
+---
+
 ### FR-01 – Authentication
 
 **Description:**  
@@ -164,6 +183,29 @@ Non-functional requirements define **how the system operates**, focusing on qual
 - Rate limiting on authentication endpoints
 - Protection against IDOR (Insecure Direct Object Reference)
 - Validation of user ownership on all protected resources
+
+### Multi-Tenancy Security
+
+**Requirements:**
+- **Strict tenant isolation:** No cross-tenant data access under any circumstances
+- **Implicit filtering:** All database queries filtered by `tenant_id` at repository layer
+- **Tenant context validation:** Request tenant context verified against user's assigned tenant
+- **Ownership verification:** Services verify resource belongs to current tenant before returning
+- **No admin bypass:** Administrators cannot override tenant boundaries
+- **Audit trail:** Log access attempts across tenant boundaries for compliance
+- **Encryption at rest:** Sensitive data (payment info, PII) encrypted at column level
+
+---
+
+## 📊 Data Isolation
+
+**Requirements:**
+- Each tenant has complete data isolation at row level
+- Tenant context propagated through all service layers
+- No shared tables across tenants (all tables have `tenant_id`)
+- Database queries enforce implicit tenant filtering
+- Migrations must account for tenant_id in all relevant tables
+- Backup and restore operations maintain tenant boundaries
 
 ---
 
