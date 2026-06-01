@@ -66,9 +66,8 @@ class NotificationService:
         """Create a status change notification."""
         status_names = {
             "pending": "Pendente",
-            "approved": "Aprovado",
+            "confirmed": "Confirmado",
             "in_progress": "Em Progresso",
-            "waiting_parts": "Aguardando Peças",
             "completed": "Concluído",
             "cancelled": "Cancelado",
         }

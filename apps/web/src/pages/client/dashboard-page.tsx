@@ -2,11 +2,22 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/auth-context";
 import { useEffect, useState } from "react";
 import { serviceService } from "../../services/service-service";
-import Header from "../../components/navigation/header";
 
 interface Service {
   id: number;
-  status: "pending" | "in_progress" | "completed";
+  status: "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
+  name: string;
+}
+
+interface ServiceSummary {
+  total_orders: number;
+  active_orders: number;
+  pending_orders: number;
+  confirmed_orders: number;
+  in_progress_orders: number;
+  completed_orders: number;
+  cancelled_orders: number;
+  recent_orders: Service[];
 }
 
 export default function DashboardPage() {
@@ -14,21 +25,23 @@ export default function DashboardPage() {
   const { user } = useAuth();
 
   const [activeService, setActiveService] = useState<Service | null>(null);
+  const [summary, setSummary] = useState<ServiceSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const services = await serviceService.getMyServices();
+        const nextSummary = await serviceService.getClientSummary();
+        setSummary(nextSummary);
 
-        if (Array.isArray(services) && services.length > 0) {
-          // Prefer in_progress service
-          const inProgress = services.find(
-            (s) => s.status === "in_progress"
-          );
+        const recentOrders = Array.isArray(nextSummary.recent_orders) ? nextSummary.recent_orders : [];
+        const preferred = recentOrders.find((service) => service.status === "in_progress")
+          || recentOrders.find((service) => service.status === "confirmed")
+          || recentOrders.find((service) => service.status === "pending")
+          || recentOrders[0]
+          || null;
 
-          setActiveService(inProgress || services[0]);
-        }
+        setActiveService(preferred);
       } catch (err) {
         console.error("Failed to fetch services", err);
       } finally {
@@ -46,7 +59,6 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-8">
-      {/* Header */}
       <div className="mb-10">
         <h1 className="text-3xl font-semibold text-gray-900">
           Welcome back{user?.name ? `, ${user.name}` : ""} 👋
@@ -56,15 +68,28 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Main Card */}
+      <div className="grid gap-4 md:grid-cols-4 mb-8">
+        {[
+          { label: "Ativos", value: summary?.active_orders ?? 0 },
+          { label: "Pendentes", value: summary?.pending_orders ?? 0 },
+          { label: "Confirmados", value: summary?.confirmed_orders ?? 0 },
+          { label: "Em andamento", value: summary?.in_progress_orders ?? 0 },
+        ].map((item) => (
+          <div key={item.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p className="text-sm uppercase tracking-wide text-gray-500">{item.label}</p>
+            <p className="text-3xl font-semibold text-gray-900 mt-3">{loading ? '...' : item.value}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col md:flex-row items-center justify-between">
 
         <div>
           <h2 className="text-xl font-semibold text-gray-900">
-            View Current Service
+            Current Service Order
           </h2>
           <p className="text-gray-500 mt-2">
-            Check repair progress, timeline updates, and workshop notes.
+            {activeService ? `${activeService.name} is currently ${activeService.status.replace('_', ' ')}.` : 'Check repair progress, timeline updates, and workshop notes.'}
           </p>
         </div>
 
@@ -81,10 +106,34 @@ export default function DashboardPage() {
           {loading
             ? "Loading..."
             : activeService
-            ? "Go to Service"
+            ? "Open My Orders"
             : "No Active Services"}
         </button>
 
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8">
+        <h2 className="text-xl font-semibold text-gray-900">Recent Orders</h2>
+        <div className="mt-6 space-y-3">
+          {(summary?.recent_orders ?? []).slice(0, 5).map((service) => (
+            <button
+              key={service.id}
+              onClick={() => navigate(`/client/services/${service.id}`)}
+              className="w-full text-left border border-gray-100 rounded-xl px-4 py-3 hover:border-blue-200 hover:bg-blue-50 transition"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium text-gray-900">{service.name}</p>
+                  <p className="text-sm text-gray-500">Order #{service.id}</p>
+                </div>
+                <span className="text-sm font-medium text-blue-700 capitalize">{service.status.replace('_', ' ')}</span>
+              </div>
+            </button>
+          ))}
+          {!loading && (summary?.recent_orders?.length ?? 0) === 0 && (
+            <p className="text-gray-500">No orders yet.</p>
+          )}
+        </div>
       </div>
 
     </div>

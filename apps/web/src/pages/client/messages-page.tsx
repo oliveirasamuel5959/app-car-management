@@ -73,6 +73,7 @@ export default function MessagesPage() {
 
   const statusLabel: Record<string, { label: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error' }> = {
     pending: { label: 'Pendente', color: 'warning' },
+    confirmed: { label: 'Confirmado', color: 'primary' },
     in_progress: { label: 'Em Andamento', color: 'primary' },
     completed: { label: 'Concluído', color: 'success' },
     cancelled: { label: 'Cancelado', color: 'error' },
@@ -95,7 +96,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <Box className="p-6 max-w-2xl mx-auto">
+    <Box className="w-full p-6">
       <Typography variant="h5" fontWeight={600} className="mb-6">
         Mensagens
       </Typography>

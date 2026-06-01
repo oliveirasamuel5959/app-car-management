@@ -39,18 +39,16 @@ interface ClientSummary {
 
 const statusLabelMap: Record<string, string> = {
   pending: 'Pendente',
-  approved: 'Aprovado',
+  confirmed: 'Confirmado',
   in_progress: 'Em progresso',
-  waiting_parts: 'Aguardando peças',
   completed: 'Concluído',
   cancelled: 'Cancelado',
 };
 
 const statusColorMap: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
   pending: 'warning',
-  approved: 'info',
+  confirmed: 'info',
   in_progress: 'info',
-  waiting_parts: 'default',
   completed: 'success',
   cancelled: 'error',
 };

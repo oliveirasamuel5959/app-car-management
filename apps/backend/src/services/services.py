@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from src.repositories.services import (
@@ -9,16 +10,33 @@ from src.repositories.services import (
     repo_get_services_by_vehicle_id,
     repo_get_services_by_workshop_client_id,
     repo_get_all_services,
+    repo_get_service_for_workshop_user,
     repo_update_service_by_current_workshop,
+    repo_update_service,
     repo_delete_service,
 )
 from src.repositories.workshop_client import repo_get_workshop_client_by_id
 from src.repositories.vehicle import repo_get_vehicle_by_id, repo_get_vehicles_by_user_id, check_duplicate_plate
 from src.repositories.workshop import repo_get_workshop_for_user
 from src.models.workshop import Workshop
-from src.schemas.services import ServiceCreate
+from src.schemas.services import ServiceActionUpdate, ServiceCreate, ServiceSummaryRead
 from src.models.services import Service
 from src.services.notifications import NotificationService
+
+
+SERVICE_STATUS_PENDING = "pending"
+SERVICE_STATUS_CONFIRMED = "confirmed"
+SERVICE_STATUS_IN_PROGRESS = "in_progress"
+SERVICE_STATUS_COMPLETED = "completed"
+SERVICE_STATUS_CANCELLED = "cancelled"
+
+VALID_SERVICE_STATUSES = {
+    SERVICE_STATUS_PENDING,
+    SERVICE_STATUS_CONFIRMED,
+    SERVICE_STATUS_IN_PROGRESS,
+    SERVICE_STATUS_COMPLETED,
+    SERVICE_STATUS_CANCELLED,
+}
 
 
 class ServiceService:
@@ -53,25 +71,211 @@ class ServiceService:
                 raise ValueError(f"Vehicle with ID {service_in.vehicle_id} not found")
 
         # Validate status
-        valid_statuses = ["pending", "approved", "in_progress", "waiting_parts", "completed", "cancelled"]
-        if service_in.status not in valid_statuses:
-            raise ValueError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+        if service_in.status not in VALID_SERVICE_STATUSES:
+            raise ValueError(f"Invalid status. Must be one of: {', '.join(sorted(VALID_SERVICE_STATUSES))}")
 
         # Validate progress_percentage
         if not (0 <= service_in.progress_percentage <= 100):
             raise ValueError("Progress percentage must be between 0 and 100")
 
         # Build service data with workshop_id
-        service_data = service_in.dict()
+        service_data = service_in.model_dump()
         service_data["workshop_id"] = workshop.id
+        service_data["status"] = SERVICE_STATUS_PENDING
+        service_data["progress_percentage"] = 0
 
         # Derive vehicle_id from workshop client's plate
         if service_in.workshop_client_id and not service_in.vehicle_id:
             vehicle = check_duplicate_plate(self.db, tenant_id, client.vehicle_plate)
             if vehicle:
                 service_data["vehicle_id"] = vehicle.id
-        
-        return repo_create_service(self.db, tenant_id=tenant_id, service_data=service_data)
+
+        created_service = repo_create_service(self.db, tenant_id=tenant_id, service_data=service_data)
+        self._notify_status_change(created_service, "created", tenant_id)
+        return created_service
+
+    def _get_client_owned_service(self, service_id: int, user_id: int, user_email: str | None = None) -> Optional[Service]:
+        return repo_get_service_by_user_id(self.db, service_id, user_id, None, user_email=user_email)
+
+    def _build_summary(self, services: List[Service]) -> ServiceSummaryRead:
+        ordered_services = sorted(
+            services,
+            key=lambda service: service.checkin_date or datetime.min,
+            reverse=True,
+        )
+        return ServiceSummaryRead(
+            total_orders=len(services),
+            active_orders=sum(service.status in {SERVICE_STATUS_PENDING, SERVICE_STATUS_CONFIRMED, SERVICE_STATUS_IN_PROGRESS} for service in services),
+            pending_orders=sum(service.status == SERVICE_STATUS_PENDING for service in services),
+            confirmed_orders=sum(service.status == SERVICE_STATUS_CONFIRMED for service in services),
+            in_progress_orders=sum(service.status == SERVICE_STATUS_IN_PROGRESS for service in services),
+            completed_orders=sum(service.status == SERVICE_STATUS_COMPLETED for service in services),
+            cancelled_orders=sum(service.status == SERVICE_STATUS_CANCELLED for service in services),
+            recent_orders=[
+                {
+                    "id": service.id,
+                    "name": service.name,
+                    "status": service.status,
+                    "checkin_date": service.checkin_date,
+                    "estimated_finish_date": service.estimated_finish_date,
+                    "workshop_id": service.workshop_id,
+                    "estimated_cost": service.estimated_cost,
+                    "progress_percentage": service.progress_percentage,
+                }
+                for service in ordered_services[:5]
+            ],
+        )
+
+    def get_client_summary(self, user_id: int, user_email: str | None = None) -> ServiceSummaryRead:
+        services = repo_get_services_by_user_id(self.db, user_id, None, user_email=user_email)
+        return self._build_summary(services)
+
+    def get_service_order_for_workshop(self, service_id: int, user_id: int, tenant_id) -> Optional[Service]:
+        return repo_get_service_for_workshop_user(self.db, tenant_id, user_id, service_id)
+
+    def get_service_order_for_client(self, service_id: int, user_id: int, user_email: str | None = None) -> Optional[Service]:
+        return self._get_client_owned_service(service_id, user_id, user_email=user_email)
+
+    def _validate_transition(self, current_status: str, next_status: str, actor_role: str):
+        allowed_transitions = {
+            SERVICE_STATUS_PENDING: {
+                SERVICE_STATUS_CONFIRMED: {"CLIENT"},
+                SERVICE_STATUS_CANCELLED: {"CLIENT", "WORKSHOP"},
+            },
+            SERVICE_STATUS_CONFIRMED: {
+                SERVICE_STATUS_IN_PROGRESS: {"WORKSHOP"},
+                SERVICE_STATUS_CANCELLED: {"WORKSHOP"},
+            },
+            SERVICE_STATUS_IN_PROGRESS: {
+                SERVICE_STATUS_COMPLETED: {"WORKSHOP"},
+                SERVICE_STATUS_CANCELLED: {"WORKSHOP"},
+            },
+            SERVICE_STATUS_COMPLETED: {},
+            SERVICE_STATUS_CANCELLED: {},
+        }
+
+        if next_status not in VALID_SERVICE_STATUSES:
+            raise ValueError(f"Invalid status. Must be one of: {', '.join(sorted(VALID_SERVICE_STATUSES))}")
+
+        valid_targets = allowed_transitions.get(current_status, {})
+        allowed_roles = valid_targets.get(next_status)
+        if not allowed_roles or actor_role not in allowed_roles:
+            raise ValueError(f"Cannot transition service order from {current_status} to {next_status} as {actor_role}")
+
+    def _recipient_user_ids(self, service: Service, tenant_id) -> set[int]:
+        recipient_ids: set[int] = set()
+        if service.workshop and service.workshop.user_id:
+            recipient_ids.add(service.workshop.user_id)
+
+        if service.workshop_client_id:
+            workshop_client = repo_get_workshop_client_by_id(self.db, service.workshop_client_id, tenant_id)
+            if workshop_client and workshop_client.user_id:
+                recipient_ids.add(workshop_client.user_id)
+
+        if service.vehicle_id:
+            vehicle = repo_get_vehicle_by_id(self.db, service.vehicle_id, tenant_id)
+            if vehicle and vehicle.user_id:
+                recipient_ids.add(vehicle.user_id)
+
+        return recipient_ids
+
+    def _notify_status_change(self, service: Service, old_status: str, tenant_id):
+        if old_status == service.status:
+            return
+
+        notification_service = NotificationService(self.db)
+        for recipient_id in self._recipient_user_ids(service, tenant_id):
+            notification_service.create_status_change_notification(
+                tenant_id=tenant_id,
+                user_id=recipient_id,
+                service_name=service.name,
+                old_status=old_status,
+                new_status=service.status,
+                service_id=service.id,
+            )
+
+    def transition_service_order_for_workshop(
+        self,
+        *,
+        service_id: int,
+        user_id: int,
+        tenant_id,
+        next_status: str,
+        update: ServiceActionUpdate | None = None,
+    ) -> Optional[Service]:
+        service = repo_get_service_for_workshop_user(self.db, tenant_id, user_id, service_id)
+        if not service:
+            return None
+
+        self._validate_transition(service.status, next_status, "WORKSHOP")
+        update_data = update.model_dump(exclude_unset=True) if update else {}
+        update_data["status"] = next_status
+
+        if next_status == SERVICE_STATUS_IN_PROGRESS and "progress_percentage" not in update_data:
+            update_data["progress_percentage"] = max(service.progress_percentage, 25)
+        if next_status == SERVICE_STATUS_COMPLETED:
+            update_data["progress_percentage"] = 100
+            update_data["finished_at"] = datetime.now(UTC).replace(tzinfo=None)
+            if "final_cost" not in update_data and service.estimated_cost is not None:
+                update_data["final_cost"] = service.estimated_cost
+        if next_status == SERVICE_STATUS_CANCELLED:
+            update_data["progress_percentage"] = min(service.progress_percentage, 100)
+
+        old_status = service.status
+        updated_service = repo_update_service(self.db, service, update_data)
+        self._notify_status_change(updated_service, old_status, tenant_id)
+        return updated_service
+
+    def accept_service_order_for_client(
+        self,
+        *,
+        service_id: int,
+        user_id: int,
+        user_email: str | None = None,
+    ) -> Optional[Service]:
+        service = self._get_client_owned_service(service_id, user_id, user_email=user_email)
+        if not service:
+            return None
+
+        self._validate_transition(service.status, SERVICE_STATUS_CONFIRMED, "CLIENT")
+        old_status = service.status
+        updated_service = repo_update_service(
+            self.db,
+            service,
+            {
+                "status": SERVICE_STATUS_CONFIRMED,
+                "progress_percentage": max(service.progress_percentage, 10),
+            },
+        )
+        self._notify_status_change(updated_service, old_status, updated_service.tenant_id)
+        return updated_service
+
+    def cancel_service_order_for_actor(
+        self,
+        *,
+        service_id: int,
+        actor_role: str,
+        user_id: int,
+        tenant_id=None,
+        user_email: str | None = None,
+        update: ServiceActionUpdate | None = None,
+    ) -> Optional[Service]:
+        if actor_role == "WORKSHOP":
+            service = repo_get_service_for_workshop_user(self.db, tenant_id, user_id, service_id)
+        else:
+            service = self._get_client_owned_service(service_id, user_id, user_email=user_email)
+
+        if not service:
+            return None
+
+        self._validate_transition(service.status, SERVICE_STATUS_CANCELLED, actor_role)
+        update_data = update.model_dump(exclude_unset=True) if update else {}
+        update_data["status"] = SERVICE_STATUS_CANCELLED
+
+        old_status = service.status
+        updated_service = repo_update_service(self.db, service, update_data)
+        self._notify_status_change(updated_service, old_status, updated_service.tenant_id)
+        return updated_service
 
     def get_service_by_id(self, service_id: int, tenant_id) -> Optional[Service]:
         """Get a service by ID."""
@@ -115,10 +319,8 @@ class ServiceService:
             return None
 
         # Validate status if provided
-        if "status" in service_data:
-            valid_statuses = ["pending", "approved", "in_progress", "waiting_parts", "completed", "cancelled"]
-            if service_data["status"] not in valid_statuses:
-                raise ValueError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+        if "status" in service_data and service_data["status"] not in VALID_SERVICE_STATUSES:
+            raise ValueError(f"Invalid status. Must be one of: {', '.join(sorted(VALID_SERVICE_STATUSES))}")
 
         # Validate progress_percentage if provided
         if "progress_percentage" in service_data:
@@ -135,41 +337,7 @@ class ServiceService:
         if updated_service and "status" in update_dict and update_dict["status"] != current_service.status:
             print(f"[DEBUG] Status changed from {current_service.status} to {update_dict['status']}")
             try:
-                notification_service = NotificationService(self.db)
-
-                # Notify the workshop client user if they have a user account
-                if updated_service.workshop_client_id:
-                    print(f"[DEBUG] Service has workshop_client_id: {updated_service.workshop_client_id}")
-                    workshop_client = repo_get_workshop_client_by_id(self.db, updated_service.workshop_client_id, tenant_id)
-                    if workshop_client and workshop_client.user_id:
-                        print(f"[DEBUG] Creating notification for workshop client user {workshop_client.user_id}")
-                        notification_service.create_status_change_notification(
-                            tenant_id=tenant_id,
-                            user_id=workshop_client.user_id,
-                            service_name=updated_service.name,
-                            old_status=current_service.status,
-                            new_status=update_dict["status"],
-                            service_id=service_id,
-                        )
-                    else:
-                        print(f"[DEBUG] Workshop client not found or has no user_id")
-
-                # Notify the vehicle owner if they have a user account
-                if updated_service.vehicle_id:
-                    print(f"[DEBUG] Service has vehicle_id: {updated_service.vehicle_id}")
-                    vehicle = repo_get_vehicle_by_id(self.db, updated_service.vehicle_id, tenant_id)
-                    if vehicle and vehicle.user_id:
-                        print(f"[DEBUG] Creating notification for vehicle owner user {vehicle.user_id}")
-                        notification_service.create_status_change_notification(
-                            tenant_id=tenant_id,
-                            user_id=vehicle.user_id,
-                            service_name=updated_service.name,
-                            old_status=current_service.status,
-                            new_status=update_dict["status"],
-                            service_id=service_id,
-                        )
-                    else:
-                        print(f"[DEBUG] Vehicle not found or has no user_id")
+                self._notify_status_change(updated_service, current_service.status, tenant_id)
             except Exception as e:
                 print(f"[ERROR] Error creating notification: {e}")
                 import traceback

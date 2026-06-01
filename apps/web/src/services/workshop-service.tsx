@@ -1,6 +1,15 @@
 import { api } from './api';
 
 export const workshopService = {
+  getCurrentWorkshop: async () => {
+    try {
+      const response = await api.get('/workshops/me');
+      return response;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch current workshop');
+    }
+  },
+
   /**
    * Fetch workshops near the given latitude/longitude coordinates.
    * The backend is expected to support query params `lat` & `lng`.

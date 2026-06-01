@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import {
-  Container,
   Box,
   Typography,
   Card,
@@ -16,8 +15,14 @@ import {
   TableRow,
   Paper,
 } from '@mui/material';
-import { useAuth } from '../../context/auth-context';
 import { serviceService } from '../../services/service-service';
+import { workshopService } from '../../services/workshop-service';
+
+interface WorkshopProfile {
+  id: number;
+  name: string;
+  description?: string | null;
+}
 
 interface ServiceItem {
   id: number;
@@ -66,10 +71,10 @@ function StatCard({ title, value, loading }: { title: string; value: number; loa
 }
 
 export default function WorkshopDashboardPage() {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [services, setServices] = useState<ServiceItem[]>([]);
+  const [workshop, setWorkshop] = useState<WorkshopProfile | null>(null);
   const [totalOrders, setTotalOrders] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
   const [recentActivities, setRecentActivities] = useState<ServiceItem[]>([]);
@@ -80,7 +85,12 @@ export default function WorkshopDashboardPage() {
         setLoading(true);
         setError(null);
 
-        const servicesData = await serviceService.getServices();
+        const [servicesData, workshopData] = await Promise.all([
+          serviceService.getServices(),
+          workshopService.getCurrentWorkshop(),
+        ]);
+
+        setWorkshop(workshopData);
 
         if (servicesData && Array.isArray(servicesData)) {
           const allServices = servicesData as ServiceItem[];
@@ -116,11 +126,16 @@ export default function WorkshopDashboardPage() {
   }, []);
 
   return (
-    <Container maxWidth="lg">
+    <Box sx={{ width: '100%' }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
-          {user?.name || 'Oficina'}
+          {workshop?.name || 'Oficina'}
         </Typography>
+        {workshop?.description && (
+          <Typography variant="body2" color="text.secondary">
+            {workshop.description}
+          </Typography>
+        )}
       </Box>
 
       {error && (
@@ -186,6 +201,8 @@ export default function WorkshopDashboardPage() {
                             backgroundColor:
                               activity.status === 'pending'
                                 ? theme.palette.mode === 'dark' ? '#3d3d3d' : '#ffeaa7'
+                                : activity.status === 'confirmed'
+                                  ? theme.palette.mode === 'dark' ? '#2f314d' : '#dbeafe'
                                 : activity.status === 'in_progress'
                                   ? theme.palette.mode === 'dark' ? '#2c3e50' : '#a8dadc'
                                   : activity.status === 'completed'
@@ -194,6 +211,8 @@ export default function WorkshopDashboardPage() {
                             color:
                               activity.status === 'pending'
                                 ? theme.palette.mode === 'dark' ? '#ffd700' : '#856404'
+                                : activity.status === 'confirmed'
+                                  ? theme.palette.mode === 'dark' ? '#93c5fd' : '#1d4ed8'
                                 : activity.status === 'in_progress'
                                   ? theme.palette.mode === 'dark' ? '#5dade2' : '#084298'
                                   : activity.status === 'completed'
@@ -203,6 +222,8 @@ export default function WorkshopDashboardPage() {
                         >
                           {activity.status === 'pending'
                             ? 'Pendente'
+                            : activity.status === 'confirmed'
+                              ? 'Confirmado'
                             : activity.status === 'in_progress'
                               ? 'Em Progresso'
                               : activity.status === 'completed'
@@ -219,6 +240,6 @@ export default function WorkshopDashboardPage() {
           )}
         </CardContent>
       </Card>
-    </Container>
+    </Box>
   );
 }

@@ -6,6 +6,7 @@ from src.repositories.workshop import (
     repo_create_workshop,
     repo_get_workshop_by_id,
     repo_get_workshop_by_id_for_client,
+    repo_get_workshop_for_user,
     repo_get_workshop_all_clients,
     repo_get_workshops_nearby,
 )
@@ -20,6 +21,12 @@ class WorkshopService:
     def create_workshop(self, workshop_in: WorkshopCreate, user_id: int, tenant_id) -> Workshop:
         # additional business rules could be added here
         return repo_create_workshop(self.db, tenant_id=tenant_id, user_id=user_id, workshop_data=workshop_in.dict())
+
+    def get_current_workshop(self, user_id: int, tenant_id) -> Workshop:
+        workshop = repo_get_workshop_for_user(self.db, user_id, tenant_id)
+        if not workshop:
+            raise ValueError("Workshop profile not found")
+        return workshop
 
     def get_workshop_by_id(self, workshop_id: int, tenant_id) -> Workshop:
         workshop = repo_get_workshop_by_id(self.db, workshop_id, tenant_id)

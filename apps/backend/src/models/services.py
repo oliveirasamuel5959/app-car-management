@@ -41,9 +41,8 @@ class Service(Base):
     status: Mapped[str] = mapped_column(String(30), default="pending")
     """
     pending
-    approved
+    confirmed
     in_progress
-    waiting_parts
     completed
     cancelled
     """

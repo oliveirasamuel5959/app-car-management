@@ -101,6 +101,27 @@ def repo_get_all_services(db: Session, tenant_id: UUID | str) -> List[Service]:
     """Get all services."""
     return db.query(Service).filter(Service.tenant_id == tenant_id).all()
 
+
+def repo_get_service_for_workshop_user(
+    db: Session,
+    tenant_id: UUID | str,
+    user_id: int,
+    service_id: int,
+) -> Optional[Service]:
+    workshop = repo_get_workshop_for_user(db, user_id, tenant_id)
+    if not workshop:
+        return None
+
+    return (
+        db.query(Service)
+        .filter(
+            Service.id == service_id,
+            Service.tenant_id == tenant_id,
+            Service.workshop_id == workshop.id,
+        )
+        .first()
+    )
+
 def repo_update_service_by_current_workshop(
     db: Session,
     tenant_id: UUID | str,
@@ -142,6 +163,15 @@ def repo_update_service_by_current_workshop(
     db.commit()
     db.refresh(service)
 
+    return service
+
+
+def repo_update_service(db: Session, service: Service, update_data: dict) -> Service:
+    for field, value in update_data.items():
+        setattr(service, field, value)
+
+    db.commit()
+    db.refresh(service)
     return service
 
 

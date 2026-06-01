@@ -46,7 +46,7 @@ export default function WorkshopMessagesPage() {
   }
 
   return (
-    <Box className="p-6 max-w-2xl mx-auto">
+    <Box className="w-full p-6">
       <Typography variant="h5" fontWeight={600} className="mb-6">
         Mensagens
       </Typography>

@@ -2,14 +2,19 @@
 
 Last Updated: 2026-06-01
 Branch: feature/2026-06-01-service-order-lifecycle
+Status: Implemented
 
 Phase Context: The next active roadmap phase is Phase 2, Service Order Lifecycle. This plan follows the product direction in `specs/MISSION.md`, the existing implementation roadmap in `specs/ROADMAP.md`, and the current backend/frontend stack documented in `specs/TECH-STACK.md`.
 
 Implementation Note: The backend already exposes a `/service-orders` router, but some service-order behavior still leaks through `services` schemas and service modules. This phase should complete the lifecycle on the existing route surface and remove naming drift where it affects the public contract.
 
+Implementation Result: The phase was implemented against the existing `services` model/table and normalized around the `/service-orders` API contract. No schema migration was required for the delivered branch scope.
+
 ## Task Groups
 
 ### 1. Canonical Workflow and Contract Alignment
+Status: Complete
+
 1. Confirm the lifecycle vocabulary used across backend and frontend: `PENDING`, `CONFIRMED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`.
 2. Normalize the public API contract around the existing `/service-orders` resource and remove branch-scope use of inconsistent route names such as `create-services-orders` where they still appear in adapters or pages.
 3. Lock the role workflow for this phase:
@@ -19,7 +24,13 @@ Implementation Note: The backend already exposes a `/service-orders` router, but
    - `PAID` is explicitly out of scope for this phase and deferred to Phase 6.
 4. Define the transition matrix and shared status labels used by API schemas, frontend badges, filters, and dashboard summary cards.
 
+Delivered:
+- Backend and frontend now use `pending`, `confirmed`, `in_progress`, `completed`, and `cancelled` consistently.
+- Frontend adapters and active pages use `/service-orders` instead of the legacy create-order route naming.
+
 ### 2. Backend Domain and Persistence
+Status: Complete for branch scope
+
 1. Audit the current service-order implementation surface in the backend route, schema, service, model, and repository layers.
 2. Update the data model and schemas to support the finalized lifecycle fields required for this phase:
    - status
@@ -29,7 +40,14 @@ Implementation Note: The backend already exposes a `/service-orders` router, but
 3. Add or update the Alembic migration needed for any new columns, enum constraints, or indexes introduced by the lifecycle changes.
 4. Keep tenant isolation intact on all service-order reads and writes.
 
+Delivered:
+- `ServiceActionUpdate`, `ServiceSummaryItem`, and `ServiceSummaryRead` were added to the schema layer.
+- The service layer now enforces the lifecycle transition matrix and role-specific actions without adding a migration.
+- Repository support was extended for workshop-owned service-order lookups and direct updates.
+
 ### 3. Backend Authorization and Lifecycle Endpoints
+Status: Complete
+
 1. Finalize the canonical endpoint set under `/service-orders`:
    - `POST /service-orders`
    - `GET /service-orders`
@@ -45,7 +63,13 @@ Implementation Note: The backend already exposes a `/service-orders` router, but
 3. Return stable request and response payloads so the frontend does not need route-specific reshaping logic.
 4. Preserve existing auth and tenant context rules from Phase 1.
 
+Delivered:
+- `POST /service-orders`, `GET /service-orders`, `GET /service-orders/{id}`, `GET /service-orders/summary`, `PATCH /service-orders/{id}/accept`, `PATCH /service-orders/{id}/start`, `PATCH /service-orders/{id}/complete`, and `PATCH /service-orders/{id}/cancel` are implemented.
+- CORS support was updated to allow `PATCH` preflight for lifecycle endpoints.
+
 ### 4. Notifications and Dashboard Summary
+Status: Complete for persisted notifications and summary delivery
+
 1. Trigger a persisted notification on each meaningful status transition.
 2. Reuse the existing notification model and delivery surface where possible instead of creating a parallel notification path.
 3. Add a client-facing service-order summary for the dashboard with, at minimum:
@@ -54,7 +78,15 @@ Implementation Note: The backend already exposes a `/service-orders` router, but
    - a recent orders slice for quick navigation
 4. Expose the summary through a backend response shape that can be consumed without frontend-only aggregation hacks.
 
+Delivered:
+- Persisted notifications are now created for both workshop and client recipients on order creation and on lifecycle status changes.
+- Notification routes were corrected to resolve at `/notifications`, `/notifications/unread-count`, and related update endpoints.
+- The client dashboard now consumes `/service-orders/summary`.
+- The frontend notification bell now fetches live data on open and reacts to auth state changes.
+
 ### 5. Frontend Service-Order Experience
+Status: Complete for branch scope
+
 1. Update the frontend service adapters to consume the normalized `/service-orders` contract.
 2. Reuse and extend existing workshop and client pages before introducing new pages.
 3. Implement or repair the workshop flow for creating a service order.
@@ -62,10 +94,23 @@ Implementation Note: The backend already exposes a `/service-orders` router, but
 5. Add consistent status badges, empty states, loading states, and mutation feedback across list and detail views.
 6. Update the client dashboard to surface the current user's service-order summary.
 
+Delivered:
+- Workshop pages now create orders and execute start, complete, and cancel transitions against the canonical lifecycle routes.
+- Client pages now accept and cancel pending orders and render the normalized status set.
+- Workshop dashboard identity was corrected to use the tenant workshop profile through `/workshops/me`.
+- Workshop dashboard, client/workshop messages, and client car page were widened to use the full app content width.
+
 ### 6. Testing, Type Safety, and Merge Preparation
+Status: Automated checks complete; manual QA deferred
+
 1. Add backend tests for valid transitions, invalid transitions, role restrictions, and tenant isolation.
 2. Add frontend type-safety coverage and any targeted component or integration tests already supported by the repo.
 3. Run the backend test slice for service-order behavior.
 4. Run frontend typechecking via `npm.cmd run check` in `apps/web`.
 5. Perform manual verification of the workshop create flow, client accept flow, workshop progress flow, and client dashboard summary.
 6. Document any remaining follow-up work that belongs to later phases, especially payment coupling and review gating.
+
+Delivered:
+- Focused backend lifecycle coverage was added in `apps/backend/tests/test_service_order_lifecycle.py`.
+- Frontend typechecking passes for the updated branch.
+- Manual QA is intentionally deferred for the later validation round requested by the user.

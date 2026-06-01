@@ -2,6 +2,7 @@
 
 Last Updated: 2026-06-01
 Branch: feature/2026-06-01-service-order-lifecycle
+Status: Automated validation passed on 2026-06-01
 
 Purpose: Define the evidence required to confirm the service-order lifecycle implementation is correct, tenant-safe, and ready to merge.
 
@@ -54,10 +55,24 @@ The backend test slice for this phase should cover at least:
 Recommended command from `apps/backend`:
 
 ```bash
-poetry run pytest -q
+poetry run pytest tests/test_service_order_lifecycle.py -q
 ```
 
 If the test suite is too broad during active development, the PR should still include a focused service-order test slice that exercises the cases above.
+
+Recorded result on 2026-06-01:
+
+```text
+5 passed in focused lifecycle coverage
+```
+
+Validated behaviors in the focused test slice:
+
+- service-order creation notifies both workshop and client users
+- client acceptance creates persisted notifications for both actors
+- invalid workshop transitions are rejected
+- client cancellation of a confirmed order is rejected
+- client summary counts reflect the current lifecycle state
 
 ### 2.2 Migration Verification
 
@@ -75,6 +90,10 @@ Expected result:
 - downgrade succeeds
 - re-upgrade succeeds
 
+Recorded result for this branch scope:
+
+- No schema migration was required for the delivered lifecycle implementation.
+
 ## 3. Frontend Validation
 
 ### 3.1 Type Safety
@@ -90,6 +109,12 @@ Expected result:
 - no TypeScript errors in the updated service-order flows
 - dashboard summary integration typechecks cleanly
 
+Recorded result on 2026-06-01:
+
+```text
+TypeScript check passed in apps/web
+```
+
 ### 3.2 UI Behavior Checks
 
 Manual verification should confirm:
@@ -101,6 +126,11 @@ Manual verification should confirm:
 - client dashboard summary updates after mutations or refresh
 - error states are shown when a disallowed action is attempted
 
+Current status:
+
+- Manual UI validation is intentionally deferred to the next validation round.
+- The branch is being committed and pushed based on passing executable checks only.
+
 ## 4. Merge Gate
 
 The branch is merge-ready only if all of the following are true:
@@ -111,6 +141,13 @@ The branch is merge-ready only if all of the following are true:
 - frontend typecheck passes
 - manual flow verification is completed for workshop create, client accept, workshop progress, and dashboard summary
 - no tenant-isolation regression is introduced
+
+Current gate status on 2026-06-01:
+
+- Backend lifecycle slice: passed
+- Frontend typecheck: passed
+- Manual flow verification: pending follow-up validation round
+- Tenant-isolation regression: no automated regression found in the focused lifecycle slice
 
 ## 5. Non-Goals for Validation
 

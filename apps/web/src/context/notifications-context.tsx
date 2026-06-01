@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
+import { useAuth } from './auth-context';
 
 interface Notification {
   id: number;
@@ -26,27 +27,35 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, token } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
+    if (!isAuthenticated || !token) {
+      setNotifications([]);
+      setUnreadCount(0);
+      setError(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       const response = await api.get('/notifications');
-      setNotifications(response.data);
+      setNotifications(Array.isArray(response) ? response : []);
 
       // Get unread count
       const unreadResponse = await api.get('/notifications/unread-count');
-      setUnreadCount(unreadResponse.data.unread_count);
+      setUnreadCount(Number(unreadResponse?.unread_count ?? 0));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch notifications');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, token]);
 
   const markAsRead = useCallback(async (notificationId: number) => {
     try {

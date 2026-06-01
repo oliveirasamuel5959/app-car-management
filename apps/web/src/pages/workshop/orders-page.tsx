@@ -23,7 +23,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
   Grid,
 } from '@mui/material';
 
@@ -54,8 +53,10 @@ function getStatusColor(status: string) {
       return 'info';
     case 'pending':
       return 'warning';
-    case 'approved':
+    case 'confirmed':
       return 'primary';
+    case 'cancelled':
+      return 'error';
     default:
       return 'default';
   }
@@ -68,7 +69,6 @@ export default function WorkshopOrdersPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [editStatus, setEditStatus] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [updating, setUpdating] = useState(false);
 
@@ -96,7 +96,6 @@ export default function WorkshopOrdersPage() {
 
   const handleViewOrder = (service: Service) => {
     setSelectedService(service);
-    setEditStatus(service.status);
     setEditNotes(service.workshop_notes || '');
     setOpenDialog(true);
   };
@@ -104,34 +103,26 @@ export default function WorkshopOrdersPage() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedService(null);
-    setEditStatus('');
   };
 
-  const handleUpdateStatus = async () => {
+  const refreshSelectedService = (updatedService: Service) => {
+    setServices((prev) => prev.map((service) => (service.id === updatedService.id ? updatedService : service)));
+    setSelectedService(updatedService);
+  };
+
+  const handleUpdateStatus = async (action: 'start' | 'complete' | 'cancel') => {
     if (!selectedService) return;
 
     try {
       setUpdating(true);
+      const payload = { workshop_notes: editNotes };
+      const updatedService = action === 'start'
+        ? await serviceService.startServiceOrder(selectedService.id, payload)
+        : action === 'complete'
+          ? await serviceService.completeServiceOrder(selectedService.id, payload)
+          : await serviceService.cancelServiceOrder(selectedService.id, payload);
 
-      await serviceService.updateService(selectedService.id, {
-        status: editStatus,
-        workshop_notes: editNotes,
-      });
-
-      // Update local state
-      setServices((prev) =>
-        prev.map((service) =>
-          service.id === selectedService.id
-            ? {
-              ...service,
-              status: editStatus,
-              workshop_notes: editNotes,
-            }
-            : service
-        )
-      );
-
-      handleCloseDialog();
+      refreshSelectedService(updatedService);
     } catch (err: any) {
       console.error('Error updating service:', err);
     } finally {
@@ -271,22 +262,11 @@ export default function WorkshopOrdersPage() {
                 </Typography>
               </Grid>
 
-              {/* Editable Status */}
               <Grid item xs={12}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Status"
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                >
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="in_progress">In Progress</MenuItem>
-                  <MenuItem value="waiting_parts">Waiting Parts</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                  <MenuItem value="cancelled">Cancelled</MenuItem>
-                </TextField>
+                <Typography variant="subtitle2" color="textSecondary">
+                  Status
+                </Typography>
+                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status) as any} size="small" />
               </Grid>
 
               {/* Editable Workshop Notes */}
@@ -320,12 +300,28 @@ export default function WorkshopOrdersPage() {
           </Button>
 
           <Button
-            onClick={handleUpdateStatus}
-            variant="contained"
-            disabled={updating}
+            onClick={handleCloseDialog}
           >
-            {updating ? 'Updating...' : 'Update'}
+            Close
           </Button>
+
+          {selectedService?.status === 'confirmed' && (
+            <Button onClick={() => handleUpdateStatus('start')} variant="contained" disabled={updating}>
+              {updating ? 'Updating...' : 'Start Work'}
+            </Button>
+          )}
+
+          {selectedService?.status === 'in_progress' && (
+            <Button onClick={() => handleUpdateStatus('complete')} variant="contained" disabled={updating}>
+              {updating ? 'Updating...' : 'Complete'}
+            </Button>
+          )}
+
+          {selectedService && ['pending', 'confirmed', 'in_progress'].includes(selectedService.status) && (
+            <Button onClick={() => handleUpdateStatus('cancel')} color="error" variant="outlined" disabled={updating}>
+              {updating ? 'Updating...' : 'Cancel Order'}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Container>
