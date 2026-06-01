@@ -10,7 +10,7 @@ Protects a route by requiring a valid JWT token.
 **Usage:**
 ```python
 from fastapi import APIRouter, Request
-from app.src.core.middleware import auth_middleware
+from src.core.middleware import auth_middleware
 
 router = APIRouter()
 
@@ -46,7 +46,7 @@ Restricts route access to specific user roles.
 **Usage:**
 ```python
 from fastapi import APIRouter, Request
-from app.src.core.middleware import auth_middleware, role_protected
+from src.core.middleware import auth_middleware, role_protected
 
 router = APIRouter()
 
@@ -82,7 +82,7 @@ Verifies the authenticated user owns the requested resource.
 **Usage:**
 ```python
 from fastapi import APIRouter, Request
-from app.src.core.middleware import auth_middleware, owner_protected
+from src.core.middleware import auth_middleware, owner_protected
 
 router = APIRouter()
 
@@ -119,9 +119,9 @@ def update_vehicle(vehicle_id: int, request: Request):
 ```python
 from fastapi import APIRouter, Request, HTTPException, status
 from sqlalchemy.orm import Session
-from app.src.core.middleware import auth_middleware
-from app.src.db.database import get_session
-from app.src.schemas.vehicle import VehicleCreate
+from src.core.middleware import auth_middleware
+from src.db.database import get_session
+from src.schemas.vehicle import VehicleCreate
 
 router = APIRouter()
 
@@ -209,7 +209,7 @@ def route(request: Request):
 
 ### Using Dependencies (Depends)
 ```python
-from app.src.api.routes.auth import get_current_user
+from src.api.routes.auth import get_current_user
 
 @router.get("/protected")
 def route(current_user: dict = Depends(get_current_user)):
@@ -327,7 +327,7 @@ If you're currently using `Depends(get_current_user)`, you can switch to decorat
 
 **Before:**
 ```python
-from app.src.api.routes.auth import get_current_user
+from src.api.routes.auth import get_current_user
 
 @router.get("/vehicles")
 def get_vehicles(current_user: dict = Depends(get_current_user)):
@@ -337,7 +337,7 @@ def get_vehicles(current_user: dict = Depends(get_current_user)):
 
 **After:**
 ```python
-from app.src.core.middleware import auth_middleware
+from src.core.middleware import auth_middleware
 
 @router.get("/vehicles")
 @auth_middleware

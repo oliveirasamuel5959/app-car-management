@@ -19,7 +19,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const services = await serviceService.getServices();
+        const services = await serviceService.getMyServices();
 
         if (Array.isArray(services) && services.length > 0) {
           // Prefer in_progress service

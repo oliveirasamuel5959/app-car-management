@@ -1,5 +1,13 @@
 # 📋 Phase 1.1 Requirements: Multi-Tenancy Database Foundation
 
+Last Updated: 2026-06-01
+
+Implementation Note: The current codebase models service orders through the `services` table/module. Phase 1.1 is implemented against that existing surface.
+
+Branch Update: The current feature branch extends the phase with frontend signup support for workshop tenants. The web client now collects workshop profile information, resolves workshop coordinates from address lookup, and creates the workshop record after successful user registration.
+
+Branch Update: The current feature branch also restores client-facing service visibility and client/workshop messaging across tenant boundaries when the relationship is grounded by a real workshop service order.
+
 **Phase:** Phase 1.1 (Database Schema & Foundation)  
 **Timeline:** Flexible (as-needed)  
 **Approach:** Aggressive refactor (breaking changes acceptable)  
@@ -22,6 +30,10 @@
 - Add unique constraints: `(tenant_id, email)` on User and Workshop tables
 - Update JWT token generation to include tenant_id claim
 - Create `TenantContext` object for request-level tenant tracking
+- Add frontend workshop signup flow that creates a tenant-owned workshop profile after registration
+- Replace manual workshop coordinate entry with address lookup that resolves `latitude` and `longitude`
+- Preserve client visibility into workshop-created service orders even when the workshop belongs to a different tenant
+- Preserve client/workshop message discovery and transport for cross-tenant workshop relationships
 
 **Data Integrity Guarantees:**
 - All queries must explicitly filter by tenant_id
@@ -34,6 +46,8 @@
 - Integration tests for migration up/down
 - Test data seeding with multiple tenants
 - No cross-tenant data leakage possible
+- Frontend typecheck coverage for the workshop signup flow
+- Manual signup validation for workshop registration and address selection
 
 ### Out of Scope ❌
 
@@ -46,7 +60,7 @@
 **Deferred to Phase 1.3:**
 - Service layer refactoring (comes after repos are updated)
 - Route handler updates
-- Frontend path-based routing enforcement
+- Frontend path-based routing enforcement beyond signup onboarding
 
 **Not Included:**
 - Payment processing (Phase 2)
@@ -184,6 +198,71 @@ op.create_unique_constraint(
 
 ---
 
+### Decision 7: Workshop Signup Creates the Workshop Profile Immediately
+**Decision:** When a user registers with role `WORKSHOP`, the frontend performs a chained flow: `/auth/register` first, then `/workshops/` using the returned authenticated context.
+
+**Rationale:**
+- ✅ Keeps workshop creation aligned with the authenticated tenant context created during registration
+- ✅ Ensures the `workshops` table is populated during onboarding rather than deferred to a later settings flow
+- ✅ Avoids exposing workshop creation on an unauthenticated public endpoint
+- ✅ Keeps tenant slug/name creation centered in backend registration while workshop profile details remain frontend-driven
+
+**Implementation:**
+```text
+1. POST /auth/register
+2. Save access_token from response
+3. POST /workshops/ with workshop name, email, description, latitude, longitude
+4. Clear temporary auth state and redirect to login
+```
+
+---
+
+### Decision 8: Address Lookup Replaces Manual Coordinate Entry
+**Decision:** Workshop signup collects an address query, presents lookup results, and persists coordinates from the selected result instead of requiring the user to type latitude/longitude manually.
+
+**Rationale:**
+- ✅ Reduces signup friction for workshop owners
+- ✅ Produces more consistent coordinates for nearby-workshop queries
+- ✅ Preserves backend workshop schema without adding a separate geocoding service inside the API
+
+**Implementation Surface:**
+- `apps/web/src/components/auth/signup-form.tsx`
+- `apps/web/src/services/api.tsx` via `api.location.searchAddress()`
+- Current lookup provider: OpenStreetMap Nominatim search API
+
+---
+
+### Decision 9: Client Access Can Cross Workshop Tenants When Backed by a Real Service Relationship
+**Decision:** Although workshop staff remain tenant-scoped, client-facing service and workshop lookups may cross tenant boundaries when the client is actually linked to the workshop through a vehicle, a `workshop_client.user_id`, or a `workshop_client.email` match.
+
+**Rationale:**
+- ✅ Matches the business rule that clients can interact with multiple workshops
+- ✅ Prevents tenant isolation from hiding legitimate workshop-created service orders from the client dashboard and client services pages
+- ✅ Supports incremental migration of older workshop-client rows that may still be email-linked instead of fully user-linked
+
+**Implementation Surface:**
+- `apps/backend/src/repositories/services.py`
+- `apps/backend/src/api/routes/services.py`
+- `apps/backend/src/repositories/workshop.py`
+- `apps/backend/src/api/routes/workshops.py`
+
+---
+
+### Decision 10: Cross-Tenant Client/Workshop Messages Use a Shared Conversation Tenant
+**Decision:** Client/workshop messages are still stored with `tenant_id`, but the backend resolves a shared tenant context from existing messages or a shared service relationship rather than assuming both users live in the same tenant.
+
+**Rationale:**
+- ✅ Restores messaging after tenant isolation for the valid client/workshop cross-tenant case
+- ✅ Keeps persisted message rows tenant-owned instead of dropping `tenant_id` entirely
+- ✅ Avoids creating unauthorised conversations where no real workshop/service relationship exists
+
+**Implementation Surface:**
+- `apps/backend/src/services/messages.py`
+- `apps/backend/src/api/routes/messages.py`
+- `apps/backend/src/services/workshop_client.py`
+
+---
+
 ## 3. Context & Business Rules
 
 ### Multi-Tenancy Model (from MISSION.md)
@@ -245,6 +324,26 @@ Vehicles table:
 → Repository.get(vehicle_id=1, tenant_id=UUID-A) → Returns Honda (same tenant)
 ```
 
+**Current Branch Signup Flow:**
+```
+Workshop user selects Account type = WORKSHOP
+→ Signup form reveals workshop profile section
+→ User clicks "Add workshop info"
+→ User searches and selects a workshop address
+→ Frontend submits /auth/register with tenant_name = workshop name
+→ Frontend submits /workshops/ with description + coordinates from address lookup
+→ Workshop owner is redirected to login after successful onboarding
+```
+
+**Current Branch Client/Workshop Interaction Flow:**
+```
+Workshop creates a service order in the workshop tenant
+→ Service may be linked by vehicle_id, workshop_client.user_id, or workshop_client.email
+→ Client can see the service in /services/my even when the workshop belongs to another tenant
+→ Client can resolve the workshop in /client/messages through the shared service relationship
+→ Client and workshop can exchange messages persisted under the resolved shared conversation tenant
+```
+
 ---
 
 ## 4. Dependencies & Assumptions
@@ -286,6 +385,10 @@ Quick checklist:
 - ✅ JWT tokens include `tenant_id` claim
 - ✅ Composite indexes created for query performance
 - ✅ Unit tests pass (repository isolation tests)
+- ✅ Workshop signup flow creates the corresponding workshop record for `WORKSHOP` accounts
+- ✅ Workshop location is resolved from address lookup instead of manual coordinates
+- ✅ Client-facing service visibility survives cross-tenant workshop ownership when backed by a real service relationship
+- ✅ Client/workshop messages survive tenant isolation through shared conversation tenant resolution
 - ✅ Code reviewed and approved
 
 ---
