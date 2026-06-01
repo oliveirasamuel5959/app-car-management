@@ -1,7 +1,7 @@
 # 🗺 Implementation Roadmap
 
 **Current Status:** Pre-Alpha (Phase 1 Complete)  
-**Target:** MVP Ready in ~6-8 weeks  
+**Target:** MVP Ready in ~8 weeks  
 **Scale:** Hundreds of tenants with tenant-scoped isolation
 
 ---
@@ -209,86 +209,15 @@
 - ✅ `poetry run alembic downgrade -1` and `poetry run alembic upgrade head` succeeded on 2026-06-01
 - ✅ `npm.cmd run check` succeeded for the frontend branch changes on 2026-06-01
 
-**Phase Outcome:** Phase 1 implementation is complete; the next active roadmap phase is Phase 2 (Payment Processing).
+**Phase Outcome:** Phase 1 implementation is complete; the next active roadmap phase is Phase 2 (Service Order Lifecycle).
 
 ---
 
-### Phase 2: Payment Processing (Weeks 1.5-2.5)
-
-**Objective:** Integrate Stripe split payment API for marketplace commission model.
-
-#### 2.1 Stripe Account Setup
-- Create Stripe marketplace account
-- Configure split payment rules (10% platform fee)
-- Test in Stripe sandbox environment
-
-**Deliverables:**
-- Stripe API keys in .env
-- Stripe connected account IDs for test workshops
-
-#### 2.2 Payment Schema & Model
-- Create Payment model:
-  - id (UUID)
-  - service_order_id (FK)
-  - amount_cents
-  - platform_fee_cents (10%)
-  - workshop_amount_cents (90%)
-  - status (pending, completed, failed, refunded)
-  - stripe_payment_intent_id
-  - created_at, updated_at
-- Create PaymentSchema for API responses
-
-**Deliverables:**
-- Payment model in SQLAlchemy
-- Payment schema in Pydantic
-- Database migration
-
-#### 2.3 Payment API Endpoints
-- `POST /payments/create-payment-intent` — Create Stripe payment intent
-  - Input: service_order_id, amount
-  - Output: client_secret (for frontend)
-  - Deduct platform fee automatically
-  
-- `POST /payments/confirm-payment` — Confirm payment after client pays
-  - Input: payment_intent_id, service_order_id
-  - Verify payment with Stripe
-  - Trigger split payment to workshop
-  - Update service order status to CONFIRMED
-
-- `GET /payments/{service_order_id}` — Get payment status
-
-**Deliverables:**
-- Payment routes with Stripe integration
-- PaymentService with Stripe API calls
-- PaymentRepository for data persistence
-- Error handling for payment failures
-
-#### 2.4 Frontend Payment Integration
-- Create PaymentModal component
-- Integrate Stripe.js library
-- Add "Pay Now" button to service order detail page
-- Handle payment success/failure UI states
-
-**Deliverables:**
-- PaymentModal component
-- payment-service.tsx for API calls
-- Stripe library integration
-- Payment status display on order page
-
-**Tests:**
-- ✅ Payment intent created in Stripe sandbox
-- ✅ Platform fee calculated correctly (10%)
-- ✅ Split payment routed to workshop account
-- ✅ Payment status persisted in database
-- ✅ Frontend captures payment confirmation
-
----
-
-### Phase 3: Service Order Lifecycle (Weeks 2.5-3.5)
+### Phase 2: Service Order Lifecycle (Weeks 1.5-3)
 
 **Objective:** Complete service order workflow with status transitions.
 
-#### 3.1 Service Order Model & Status Enum
+#### 2.1 Service Order Model & Status Enum
 - Update ServiceOrder model with lifecycle states:
   - PENDING (client created, awaiting workshop response)
   - CONFIRMED (workshop accepted)
@@ -303,7 +232,7 @@
 - Status transition validation
 - Database migration
 
-#### 3.2 Service Order API Endpoints
+#### 2.2 Service Order API Endpoints
 - `POST /service-orders/create` — Client creates service request
   - Input: workshop_id, vehicle_id, description, preferred_date
   - Output: service_order with PENDING status
@@ -318,7 +247,7 @@
   - Triggers payment flow
   
 - `PUT /service-orders/{id}/pay` — Client confirms payment
-  - Via Stripe payment intent (Phase 2)
+  - Via Stripe payment intent (Phase 6)
   
 - `PUT /service-orders/{id}/cancel` — Either party cancels
 - `GET /service-orders/my-orders` — List all orders for current user (client or workshop)
@@ -329,7 +258,7 @@
 - API routes with proper authorization
 - Real-time notification on status change (via WebSocket)
 
-#### 3.3 Service Order UI
+#### 2.3 Service Order UI
 - **Client View:**
   - Create new service order form
   - My Service Orders list with status badges
@@ -358,11 +287,11 @@
 
 ---
 
-### Phase 4: Reviews & Ratings (Weeks 3.5-4)
+### Phase 3: Reviews & Ratings (Weeks 3-3.5)
 
 **Objective:** Enable client feedback on completed service orders.
 
-#### 4.1 Review Model & Schema
+#### 3.1 Review Model & Schema
 - Create Review model:
   - id (UUID)
   - service_order_id (FK, unique)
@@ -380,7 +309,7 @@
 - ReviewSchema in Pydantic
 - Database migration with constraints
 
-#### 4.2 Review API Endpoints
+#### 3.2 Review API Endpoints
 - `POST /reviews/create` — Client creates review (only after PAID)
   - Input: service_order_id, rating, comment
   - Auto-update workshop.rating_avg
@@ -396,7 +325,7 @@
 - Review routes with proper authorization
 - Cascade delete review if service order deleted
 
-#### 4.3 Review UI
+#### 3.3 Review UI
 - ReviewForm component (star picker, comment field)
 - ReviewCard component (display review with rating)
 - Reviews list on workshop detail page
@@ -417,11 +346,11 @@
 
 ---
 
-### Phase 5: Search & Filtering (Weeks 4-4.5)
+### Phase 4: Search & Filtering (Weeks 3.5-4.5)
 
 **Objective:** Enable clients to discover workshops by services, rating, location.
 
-#### 5.1 Search API Endpoint
+#### 4.1 Search API Endpoint
 - `GET /workshops/search?lat={lat}&lng={lng}&radius=10&services={id,id}&min_rating=4` — Search workshops
   - Input: latitude, longitude, radius (km), service IDs, min rating
   - Output: paginated list of workshops with distance, services, rating
@@ -433,7 +362,7 @@
 - Distance calculation (Haversine formula in Python)
 - Pagination support
 
-#### 5.2 Frontend Search
+#### 4.2 Frontend Search
 - SearchWorkshopsPage improvements:
   - Add filter sidebar (services, min_rating)
   - Map view with workshop pins (optional for MVP)
@@ -455,11 +384,11 @@
 
 ---
 
-### Phase 6: WebSocket Real-Time (Weeks 4.5-5)
+### Phase 5: WebSocket Real-Time (Weeks 4.5-5)
 
 **Objective:** Enable real-time notifications and live chat updates.
 
-#### 6.1 WebSocket Connection Manager
+#### 5.1 WebSocket Connection Manager
 - Extend WebSocketManager (already exists) to:
   - Track connections by tenant_id + user_id
   - Ensure messages only broadcast within tenant
@@ -471,7 +400,7 @@
 - Tenant-scoped connection tracking
 - Graceful disconnection handling
 
-#### 6.2 Real-Time Notifications
+#### 5.2 Real-Time Notifications
 - `WebSocket /messages/ws?tenant={slug}` — Connect to real-time channel
   - Events:
     - `message_new` — New chat message
@@ -485,7 +414,7 @@
 - Broadcast logic for notifications
 - Frontend WebSocket connection + event handlers
 
-#### 6.3 Frontend Real-Time
+#### 5.3 Frontend Real-Time
 - Connect to WebSocket on app load (after auth)
 - Update UI in real-time:
   - New messages appear instantly
@@ -508,7 +437,78 @@
 
 ---
 
-### Phase 7: Testing & Polish (Weeks 5-5.5)
+### Phase 6: Payment Processing (Weeks 5-5.5)
+
+**Objective:** Integrate Stripe split payment API only after the core marketplace workflow is operational end to end.
+
+#### 6.1 Stripe Account Setup
+- Create Stripe marketplace account
+- Configure split payment rules (10% platform fee)
+- Test in Stripe sandbox environment
+
+**Deliverables:**
+- Stripe API keys in .env
+- Stripe connected account IDs for test workshops
+
+#### 6.2 Payment Schema & Model
+- Create Payment model:
+  - id (UUID)
+  - service_order_id (FK)
+  - amount_cents
+  - platform_fee_cents (10%)
+  - workshop_amount_cents (90%)
+  - status (pending, completed, failed, refunded)
+  - stripe_payment_intent_id
+  - created_at, updated_at
+- Create PaymentSchema for API responses
+
+**Deliverables:**
+- Payment model in SQLAlchemy
+- Payment schema in Pydantic
+- Database migration
+
+#### 6.3 Payment API Endpoints
+- `POST /payments/create-payment-intent` — Create Stripe payment intent
+  - Input: service_order_id, amount
+  - Output: client_secret (for frontend)
+  - Deduct platform fee automatically
+  
+- `POST /payments/confirm-payment` — Confirm payment after client pays
+  - Input: payment_intent_id, service_order_id
+  - Verify payment with Stripe
+  - Trigger split payment to workshop
+  - Update service order status to CONFIRMED
+
+- `GET /payments/{service_order_id}` — Get payment status
+
+**Deliverables:**
+- Payment routes with Stripe integration
+- PaymentService with Stripe API calls
+- PaymentRepository for data persistence
+- Error handling for payment failures
+
+#### 6.4 Frontend Payment Integration
+- Create PaymentModal component
+- Integrate Stripe.js library
+- Add "Pay Now" button to service order detail page
+- Handle payment success/failure UI states
+
+**Deliverables:**
+- PaymentModal component
+- payment-service.tsx for API calls
+- Stripe library integration
+- Payment status display on order page
+
+**Tests:**
+- ✅ Payment intent created in Stripe sandbox
+- ✅ Platform fee calculated correctly (10%)
+- ✅ Split payment routed to workshop account
+- ✅ Payment status persisted in database
+- ✅ Frontend captures payment confirmation
+
+---
+
+### Phase 7: Testing & Polish (Weeks 5.5-6.5)
 
 **Objective:** Add test coverage and fix bugs found in integration testing.
 
@@ -549,7 +549,7 @@
 
 ---
 
-### Phase 8: Deployment & Documentation (Weeks 5.5-6)
+### Phase 8: Deployment & Documentation (Weeks 6.5-8)
 
 **Objective:** Prepare for production deployment and document the system.
 
@@ -687,16 +687,15 @@
 | Week | Phase | Key Deliverables | Status |
 |------|-------|-----------------|--------|
 | 1 | 1 | Tenant context, multi-tenancy schema | 🚧 |
-| 1.5 | 2 | Stripe integration, payment model | 🚧 |
-| 2 | 2 | Payment endpoints, frontend integration | 🚧 |
-| 2.5 | 3 | Service order lifecycle complete | 🚧 |
-| 3 | 4 | Reviews & ratings | 🚧 |
-| 3.5 | 4 | Review UI | 🚧 |
-| 4 | 5 | Search with filtering | 🚧 |
-| 4.5 | 6 | WebSocket real-time | 🚧 |
-| 5 | 7 | Test suite complete | 🚧 |
-| 5.5 | 8 | Deployment & documentation | 🚧 |
-| **6** | **MVP Ready** | **All systems tested in staging** | 🎯 |
+| 1.5 | 2 | Service order model and workflow foundation | 🚧 |
+| 2.5 | 2 | Service order lifecycle complete | 🚧 |
+| 3 | 3 | Reviews & ratings | 🚧 |
+| 3.5 | 4 | Search and filtering | 🚧 |
+| 4.5 | 5 | WebSocket real-time | 🚧 |
+| 5.5 | 6 | Stripe integration and payment flow | 🚧 |
+| 6.5 | 7 | Test suite complete and polish pass | 🚧 |
+| 7.5 | 8 | Deployment and documentation | 🚧 |
+| **8** | **MVP Ready** | **All systems tested in staging** | 🎯 |
 
 ---
 
@@ -749,7 +748,7 @@
 ## 10. Document Status
 
 **Status:** Active  
-**Scope:** MVP Implementation (Weeks 1-6)  
+**Scope:** MVP Implementation (Weeks 1-8)  
 **Ownership:** Engineering Team  
-**Last Updated:** 2026-05-30  
+**Last Updated:** 2026-06-01  
 **Next Review:** Weekly on Friday standup
