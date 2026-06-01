@@ -17,9 +17,10 @@ from src.repositories.services import (
 )
 from src.repositories.workshop_client import repo_get_workshop_client_by_id
 from src.repositories.vehicle import repo_get_vehicle_by_id, repo_get_vehicles_by_user_id, check_duplicate_plate
-from src.repositories.workshop import repo_get_workshop_for_user
+from src.repositories.workshop import repo_get_workshop_by_id, repo_get_workshop_for_user
 from src.models.workshop import Workshop
 from src.schemas.services import ServiceActionUpdate, ServiceCreate, ServiceSummaryRead
+from src.models.user import User
 from src.models.services import Service
 from src.services.notifications import NotificationService
 
@@ -91,7 +92,13 @@ class ServiceService:
                 service_data["vehicle_id"] = vehicle.id
 
         created_service = repo_create_service(self.db, tenant_id=tenant_id, service_data=service_data)
-        self._notify_status_change(created_service, "created", tenant_id)
+        self._notify_status_change(
+            created_service,
+            "created",
+            tenant_id,
+            actor_role="WORKSHOP",
+            actor_user_id=user_id,
+        )
         return created_service
 
     def _get_client_owned_service(self, service_id: int, user_id: int, user_email: str | None = None) -> Optional[Service]:
@@ -162,11 +169,8 @@ class ServiceService:
         if not allowed_roles or actor_role not in allowed_roles:
             raise ValueError(f"Cannot transition service order from {current_status} to {next_status} as {actor_role}")
 
-    def _recipient_user_ids(self, service: Service, tenant_id) -> set[int]:
+    def _client_recipient_user_ids(self, service: Service, tenant_id) -> set[int]:
         recipient_ids: set[int] = set()
-        if service.workshop and service.workshop.user_id:
-            recipient_ids.add(service.workshop.user_id)
-
         if service.workshop_client_id:
             workshop_client = repo_get_workshop_client_by_id(self.db, service.workshop_client_id, tenant_id)
             if workshop_client and workshop_client.user_id:
@@ -179,14 +183,37 @@ class ServiceService:
 
         return recipient_ids
 
-    def _notify_status_change(self, service: Service, old_status: str, tenant_id):
+    def _workshop_recipient_user_ids(self, service: Service, tenant_id) -> set[int]:
+        recipient_ids: set[int] = set()
+        if service.workshop and service.workshop.user_id:
+            recipient_ids.add(service.workshop.user_id)
+            return recipient_ids
+
+        workshop = repo_get_workshop_by_id(self.db, service.workshop_id, tenant_id)
+        if workshop and workshop.user_id:
+            recipient_ids.add(workshop.user_id)
+
+        return recipient_ids
+
+    def _notify_status_change(self, service: Service, old_status: str, tenant_id, actor_role: str, actor_user_id: int):
         if old_status == service.status:
             return
 
+        if actor_role == "WORKSHOP":
+            recipient_ids = self._client_recipient_user_ids(service, tenant_id)
+        elif actor_role == "CLIENT":
+            recipient_ids = self._workshop_recipient_user_ids(service, tenant_id)
+        else:
+            recipient_ids = self._workshop_recipient_user_ids(service, tenant_id) | self._client_recipient_user_ids(service, tenant_id)
+
+        recipient_ids.discard(actor_user_id)
+
         notification_service = NotificationService(self.db)
-        for recipient_id in self._recipient_user_ids(service, tenant_id):
+        for recipient_id in recipient_ids:
+            recipient = self.db.query(User).filter(User.id == recipient_id).first()
+            recipient_tenant_id = recipient.tenant_id if recipient else tenant_id
             notification_service.create_status_change_notification(
-                tenant_id=tenant_id,
+                tenant_id=recipient_tenant_id,
                 user_id=recipient_id,
                 service_name=service.name,
                 old_status=old_status,
@@ -223,7 +250,13 @@ class ServiceService:
 
         old_status = service.status
         updated_service = repo_update_service(self.db, service, update_data)
-        self._notify_status_change(updated_service, old_status, tenant_id)
+        self._notify_status_change(
+            updated_service,
+            old_status,
+            tenant_id,
+            actor_role="WORKSHOP",
+            actor_user_id=user_id,
+        )
         return updated_service
 
     def accept_service_order_for_client(
@@ -247,7 +280,13 @@ class ServiceService:
                 "progress_percentage": max(service.progress_percentage, 10),
             },
         )
-        self._notify_status_change(updated_service, old_status, updated_service.tenant_id)
+        self._notify_status_change(
+            updated_service,
+            old_status,
+            updated_service.tenant_id,
+            actor_role="CLIENT",
+            actor_user_id=user_id,
+        )
         return updated_service
 
     def cancel_service_order_for_actor(
@@ -274,7 +313,13 @@ class ServiceService:
 
         old_status = service.status
         updated_service = repo_update_service(self.db, service, update_data)
-        self._notify_status_change(updated_service, old_status, updated_service.tenant_id)
+        self._notify_status_change(
+            updated_service,
+            old_status,
+            updated_service.tenant_id,
+            actor_role=actor_role,
+            actor_user_id=user_id,
+        )
         return updated_service
 
     def get_service_by_id(self, service_id: int, tenant_id) -> Optional[Service]:
@@ -337,7 +382,13 @@ class ServiceService:
         if updated_service and "status" in update_dict and update_dict["status"] != current_service.status:
             print(f"[DEBUG] Status changed from {current_service.status} to {update_dict['status']}")
             try:
-                self._notify_status_change(updated_service, current_service.status, tenant_id)
+                self._notify_status_change(
+                    updated_service,
+                    current_service.status,
+                    tenant_id,
+                    actor_role="WORKSHOP",
+                    actor_user_id=user_id,
+                )
             except Exception as e:
                 print(f"[ERROR] Error creating notification: {e}")
                 import traceback
