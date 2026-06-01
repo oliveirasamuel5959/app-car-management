@@ -77,11 +77,14 @@
 - ✅ Users Management Page (workshop)
 - ✅ Responsive Navbar, Sidebar, Footer components
 - ✅ Theme toggle, notification bell, dropdowns
+- ✅ Protected client/workshop route map already registered in `apps/web/src/routes/routes.tsx`
 
 **API Integration:**
 - ✅ API service layer for HTTP requests
 - ✅ Car service, workshop service, message service, workshop-client service, service service
 - ✅ Error handling in API calls
+- ✅ Existing frontend-to-backend integration surface already includes auth, vehicles, workshops, services, workshop-clients, and messages
+- ⚠️ Some frontend service adapters still need contract cleanup where endpoint paths or response handling diverge from the current backend API
 
 ### ⚠️ Partial / In-Progress
 
@@ -89,6 +92,7 @@
 - ⚠️ **Reviews & ratings** (model exists, UI not complete)
 - ⚠️ **Real-time notifications** (model/endpoints exist, WebSocket integration incomplete)
 - ⚠️ **Database migrations** (core tenant foundation migrations implemented; future feature migrations still pending)
+- ⚠️ **Backend/frontend contract consistency** (many pages and routes already exist, but some service modules still need response/path normalization)
 
 ### ❌ Not Yet Implemented
 
@@ -125,6 +129,10 @@
 ---
 
 ## 3. Implementation Phases (Detailed)
+
+**Cross-Phase Delivery Rule:** Every feature phase must ship backend and frontend changes together. That includes API routes, request/response schemas, frontend service adapters, pages, cards, forms, route registration, loading/error states, and any contract updates required for the UI to consume the new backend behavior.
+
+**Existing Frontend Baseline:** The application already has a non-trivial frontend surface connected to the backend, including route registration for client/workshop areas and existing pages for dashboard, vehicles, workshop search, workshop detail, services, orders, clients, users, and messaging. Future phases should default to extending and synchronizing these surfaces before creating net-new pages.
 
 ### Phase 1: Multi-Tenancy Foundation (Weeks 1-1.5)
 
@@ -199,6 +207,7 @@
 **Completed:**
 - Route/service propagation updated for `/services`, `/create-services-orders`, `/workshops`, `/messages`, and auth-backed paths
 - Client dashboard, service visibility, workshop lookup, and messaging were repaired after tenant scoping changes
+- Frontend auth, signup, dashboard, messaging, and workshop-client flows were synchronized with the tenant-aware backend contracts
 
 **Tests:**
 - ✅ User cannot access other tenant's vehicles
@@ -244,10 +253,7 @@
 - `PUT /service-orders/{id}/start-work` — Workshop marks work in progress
   
 - `PUT /service-orders/{id}/complete` — Workshop marks work complete
-  - Triggers payment flow
-  
-- `PUT /service-orders/{id}/pay` — Client confirms payment
-  - Via Stripe payment intent (Phase 6)
+  - Marks the order ready for the later payment phase
   
 - `PUT /service-orders/{id}/cancel` — Either party cancels
 - `GET /service-orders/my-orders` — List all orders for current user (client or workshop)
@@ -257,12 +263,14 @@
 - Updated ServiceOrderRepository
 - API routes with proper authorization
 - Real-time notification on status change (via WebSocket)
+- Frontend service adapters updated for the new lifecycle endpoints and response payloads
+- Existing workshop/client service and order pages extended to consume the lifecycle endpoints instead of introducing duplicate flows
 
 #### 2.3 Service Order UI
 - **Client View:**
   - Create new service order form
   - My Service Orders list with status badges
-  - Order detail page with payment button (after COMPLETED)
+  - Order detail page with lifecycle status and completion summary
   - Cancel order option
   
 - **Workshop View:**
@@ -276,12 +284,26 @@
 - ServiceOrdersList component
 - ServiceOrderDetail page
 - Status badge component with color coding
+- Frontend route registration for the new service-order pages in both client and workshop areas
+- Card/list/table updates so lifecycle fields from the backend are rendered consistently
+- Reuse and evolve the existing workshop orders, create-orders, client-orders, and client services pages where possible
+
+#### 2.4 Backend/Frontend Synchronization
+- Keep service-order response schemas stable across backend and frontend
+- Update frontend API clients when route names, request payloads, or response bodies change
+- Align status enums, labels, and badge colors with backend status values
+- Ensure workshop and client dashboards reflect the same lifecycle state model returned by the API
+
+**Deliverables:**
+- Updated frontend service-order service layer
+- Synced backend schemas and frontend types/interfaces
+- End-to-end navigation flow from list page to detail page to lifecycle action
+- Audit of existing `service-service.tsx` consumers against the final backend route/response contract
 
 **Tests:**
 - ✅ Valid status transitions allowed
 - ✅ Invalid transitions rejected
 - ✅ Only workshop can confirm order
-- ✅ Only client can pay
 - ✅ Notifications sent on status change
 - ✅ Cross-tenant orders cannot be accessed
 
@@ -324,6 +346,7 @@
 - ReviewRepository
 - Review routes with proper authorization
 - Cascade delete review if service order deleted
+- Frontend review data contracts aligned with backend review and workshop rating responses
 
 #### 3.3 Review UI
 - ReviewForm component (star picker, comment field)
@@ -336,6 +359,18 @@
 - ReviewsList component
 - Rating display updates on workshop cards
 - Review creation form on service order completion
+- Workshop detail and search cards updated to consume the new rating fields returned by the backend
+- Extend the existing workshop detail/search pages rather than introducing parallel review pages
+
+#### 3.4 Backend/Frontend Synchronization
+- Sync review payloads, rating aggregates, and workshop detail responses across backend and frontend
+- Update cards, detail pages, and post-service flows to display rating changes without manual data reshaping
+- Ensure frontend validation and backend validation use the same review rules
+
+**Deliverables:**
+- Updated frontend review service/types
+- Workshop card/detail contract alignment
+- Review submission and refresh flow verified against backend responses
 
 **Tests:**
 - ✅ Review only creatable after PAID status
@@ -361,6 +396,7 @@
 - Filtering logic for services and rating
 - Distance calculation (Haversine formula in Python)
 - Pagination support
+- Response contract that includes the frontend fields needed for cards, filter chips, and pagination controls
 
 #### 4.2 Frontend Search
 - SearchWorkshopsPage improvements:
@@ -374,6 +410,17 @@
 - FilterPanel component
 - WorkshopCard with all info
 - Pagination component
+- Extend the existing client search and workshop detail pages already registered in the router
+
+#### 4.3 Backend/Frontend Synchronization
+- Keep filter query parameters aligned between the backend search endpoint and frontend URL/query-state handling
+- Ensure workshop search responses include all fields needed by cards, list rows, and optional map pins
+- Update empty, loading, and error states when the backend search contract changes
+
+**Deliverables:**
+- Synced search request parameter handling
+- Updated workshop cards/list rendering for new backend response fields
+- Frontend search service and backend search schema aligned
 
 **Tests:**
 - ✅ Search filters by service type
@@ -427,6 +474,17 @@
 - Event listener setup
 - Real-time message list updates
 - Notification toast system
+- Extend the existing client/workshop messages and chat pages already wired in the frontend router
+
+#### 5.4 Backend/Frontend Synchronization
+- Define shared event payload shapes for messages, notifications, and service-order status changes
+- Keep websocket event names and payload fields synchronized with frontend listeners
+- Ensure pages, chat panels, dashboard cards, and notification UI react to the same backend event contract
+
+**Deliverables:**
+- Documented websocket event contract
+- Updated frontend real-time adapters for backend event payloads
+- UI refresh strategy for cards, lists, and detail pages driven by websocket events
 
 **Tests:**
 - ✅ WebSocket connection scoped to tenant
@@ -486,6 +544,7 @@
 - PaymentService with Stripe API calls
 - PaymentRepository for data persistence
 - Error handling for payment failures
+- Payment response contract aligned with frontend order detail and payment state UI
 
 #### 6.4 Frontend Payment Integration
 - Create PaymentModal component
@@ -498,6 +557,17 @@
 - payment-service.tsx for API calls
 - Stripe library integration
 - Payment status display on order page
+- Payment UI integrated into the existing service-order detail and workshop/client lifecycle pages
+
+#### 6.5 Backend/Frontend Synchronization
+- Keep payment intent, confirmation, and payment-status responses aligned with frontend payment flows
+- Update service-order detail pages and status cards to reflect backend payment states without custom per-page mapping
+- Ensure backend payment failures map to actionable frontend error messages
+
+**Deliverables:**
+- Synced payment API contracts and frontend payment service
+- Updated order detail/status UI for payment states
+- Backend error payloads consumed cleanly by frontend modals and pages
 
 **Tests:**
 - ✅ Payment intent created in Stripe sandbox
@@ -534,6 +604,7 @@
 - Vitest test suite for components
 - Playwright E2E scenarios
 - CI/CD step to run browser tests
+- Contract-focused tests covering backend/frontend response compatibility for the main user journeys
 
 #### 7.3 Bug Fixes & Polish
 - Fix any UI/UX issues found in manual testing
@@ -546,6 +617,19 @@
 - Bug fixes PR
 - Performance audit report
 - Mobile testing checklist passed
+
+#### 7.4 Backend/Frontend Synchronization Audit
+- Review every active frontend page against the backend routes it depends on
+- Verify new routes are registered in frontend navigation and app routing
+- Verify cards, tables, detail views, and forms consume the current backend response shape without ad hoc field patching
+- Fix drift between backend naming and frontend naming before release
+- Normalize existing frontend service modules where they still use stale endpoint shapes or inconsistent response assumptions
+
+**Deliverables:**
+- Backend/frontend route matrix
+- UI contract audit for pages, cards, forms, and tables
+- Release checklist confirming synchronized backend/frontend behavior
+- Cleanup list for existing frontend API adapters that need to be aligned with the backend
 
 ---
 
@@ -597,6 +681,7 @@
 - API documentation complete
 - README.md with setup steps
 - Deployment guide
+- Frontend integration notes documenting how pages, routes, and service adapters map to backend endpoints
 
 ---
 
@@ -613,6 +698,7 @@
 - ✅ Client can pay via Stripe
 - ✅ Client can leave review/rating
 - ✅ Data is completely isolated per tenant
+- ✅ Backend feature changes are reflected in the corresponding frontend pages, routes, cards, and forms
 
 ### Non-Functional
 - ✅ All database queries enforce tenant isolation
@@ -667,12 +753,14 @@
 2. **No multi-tenancy enforcement** — Users can theoretically access all data
 3. **No payment integration** — Cannot charge for service orders
 4. **WebSocket not fully integrated** — Real-time messages not working
+5. **Existing frontend/backend contract drift** — some pages already exist but still assume outdated endpoint paths or response shapes
 
 ### 🟡 Important
 1. **No database migrations written** — Cannot initialize empty database
 2. **No tests** — No confidence in code quality
 3. **Authentication doesn't track tenant** — JWT should include tenant_id
 4. **Search endpoint missing filters** — Can only search by location, not services/rating
+5. **Existing UI surfaces need reuse-first planning** — roadmap work should extend current pages/routes before adding duplicates
 
 ### 🟢 Nice to Have
 1. Analytics dashboard for workshops
@@ -742,6 +830,7 @@
 - No production incidents
 - Documentation up-to-date
 - Daily standup on progress
+- Backend and frontend contracts reviewed together before release
 
 ---
 
