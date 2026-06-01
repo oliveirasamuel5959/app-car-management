@@ -4,7 +4,14 @@ from src.core.security import create_access_token, verify_password
 from src.core.tenant import slugify_tenant_name
 from src.models.user import User
 from src.repositories.tenant import repo_get_or_create_tenant, repo_get_tenant_by_slug
-from src.repositories.user import repo_create_user, repo_email_exists, repo_get_all_users, repo_get_user_by_email, repo_get_user_by_id
+from src.repositories.user import (
+    repo_create_user,
+    repo_email_exists,
+    repo_get_all_users,
+    repo_get_user_by_email,
+    repo_get_user_by_id,
+    repo_get_users_by_email,
+)
 from src.schemas.user import UserCreate
 
 
@@ -83,13 +90,29 @@ class UserService:
             ValueError: If credentials are invalid
         """
         tenant = repo_get_tenant_by_slug(self.db, tenant_slug) if tenant_slug else None
-        user = repo_get_user_by_email(self.db, email, tenant_id=tenant.id if tenant else None)
 
-        if not user:
-            raise ValueError("Invalid email or password")
+        if tenant_slug and not tenant:
+            raise ValueError("Tenant not found")
 
-        if not verify_password(password, user.password_hash):
-            raise ValueError("Invalid email or password")
+        if tenant:
+            user = repo_get_user_by_email(self.db, email, tenant_id=tenant.id)
+            if not user or not verify_password(password, user.password_hash):
+                raise ValueError("Invalid email or password")
+        else:
+            matching_users = [
+                candidate
+                for candidate in repo_get_users_by_email(self.db, email)
+                if verify_password(password, candidate.password_hash)
+            ]
+
+            if not matching_users:
+                raise ValueError("Invalid email or password")
+
+            if len(matching_users) > 1:
+                raise ValueError("Multiple accounts match these credentials. Provide tenant_slug to select the correct tenant.")
+
+            user = matching_users[0]
+            tenant = user.tenant
 
         # Create JWT token
         access_token = create_access_token(

@@ -14,6 +14,7 @@ from src.repositories.services import (
 )
 from src.repositories.workshop_client import repo_get_workshop_client_by_id
 from src.repositories.vehicle import repo_get_vehicle_by_id, repo_get_vehicles_by_user_id, check_duplicate_plate
+from src.repositories.workshop import repo_get_workshop_for_user
 from src.models.workshop import Workshop
 from src.schemas.services import ServiceCreate
 from src.models.services import Service
@@ -27,7 +28,7 @@ class ServiceService:
     def create_service(self, service_in: ServiceCreate, user_id: int, tenant_id) -> Service:
         """Create a new service with validation."""
         # Derive workshop from current user
-        workshop = self.db.query(Workshop).filter(Workshop.user_id == user_id, Workshop.tenant_id == tenant_id).first()
+        workshop = repo_get_workshop_for_user(self.db, user_id, tenant_id)
         client = None
         if service_in.workshop_client_id:
             client = repo_get_workshop_client_by_id(self.db, service_in.workshop_client_id, tenant_id)

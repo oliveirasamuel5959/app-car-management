@@ -33,6 +33,24 @@ def repo_get_workshop_by_id(db: Session, workshop_id: int, tenant_id: UUID | str
     return db.query(Workshop).filter(Workshop.id == workshop_id, Workshop.tenant_id == tenant_id).first()
 
 
+def repo_get_workshop_for_user(db: Session, user_id: int, tenant_id: UUID | str) -> Workshop | None:
+    """Resolve the current tenant's workshop, preferring a direct owner match.
+
+    A tenant currently supports a single workshop row, while multiple workshop-role
+    users may belong to that tenant. Prefer the creator/owner link when present,
+    then fall back to the tenant's single workshop.
+    """
+    workshop = (
+        db.query(Workshop)
+        .filter(Workshop.user_id == user_id, Workshop.tenant_id == tenant_id)
+        .first()
+    )
+    if workshop:
+        return workshop
+
+    return db.query(Workshop).filter(Workshop.tenant_id == tenant_id).first()
+
+
 def repo_get_workshop_by_id_for_client(
     db: Session,
     workshop_id: int,

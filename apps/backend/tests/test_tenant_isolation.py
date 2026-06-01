@@ -8,7 +8,7 @@ from sqlalchemy import event
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import sessionmaker
 
-from src.core.security import create_access_token, verify_token
+from src.core.security import create_access_token, hash_password, verify_token
 from src.core.tenant import TenantContext
 from src.db.base import Base
 from src.models import Message, Notification, Tenant, User, Vehicle, Workshop, WorkshopClient
@@ -16,8 +16,10 @@ from src.models.services import Service
 from src.repositories.services import repo_get_services_by_user_id
 from src.repositories.user import repo_get_user_by_id
 from src.repositories.vehicle import repo_get_vehicles_by_user_id
+from src.repositories.workshop import repo_get_workshop_for_user
 from src.schemas.workshop_client import WorkshopClientCreate
 from src.services.messages import MessageService
+from src.services.user import UserService
 from src.services.workshop_client import WorkshopClientService
 
 
@@ -45,6 +47,24 @@ def create_user(session, *, tenant_id, email, user_id):
         email=email,
         password_hash="hashed",
         role="CLIENT",
+        is_active=True,
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def create_user_with_password(session, *, tenant_id, email, user_id, password, role="CLIENT"):
+    user = User(
+        id=user_id,
+        tenant_id=tenant_id,
+        name="Test User",
+        age=30,
+        sex="M",
+        email=email,
+        password_hash=hash_password(password),
+        role=role,
         is_active=True,
     )
     session.add(user)
@@ -273,6 +293,67 @@ def test_workshop_client_allows_unregistered_email_and_keeps_user_link_optional(
     assert client.tenant_id == tenant.id
 
 
+def test_login_user_selects_matching_password_across_tenants_without_tenant_slug():
+    session = build_session()
+    tenant_a = Tenant(id=uuid.uuid4(), slug="tenant-a", name="Tenant A")
+    tenant_b = Tenant(id=uuid.uuid4(), slug="tenant-b", name="Tenant B")
+    session.add_all([tenant_a, tenant_b])
+    session.commit()
+
+    create_user_with_password(
+        session,
+        tenant_id=tenant_a.id,
+        email="shared@test.dev",
+        user_id=1,
+        password="Password1",
+        role="CLIENT",
+    )
+    workshop_user = create_user_with_password(
+        session,
+        tenant_id=tenant_b.id,
+        email="shared@test.dev",
+        user_id=2,
+        password="Password2",
+        role="WORKSHOP",
+    )
+
+    user, token = UserService(session).login_user("shared@test.dev", "Password2")
+    payload = verify_token(token)
+
+    assert user.id == workshop_user.id
+    assert payload is not None
+    assert payload["tenant_id"] == str(tenant_b.id)
+    assert payload["tenant_slug"] == tenant_b.slug
+
+
+def test_login_user_requires_tenant_slug_when_multiple_accounts_share_credentials():
+    session = build_session()
+    tenant_a = Tenant(id=uuid.uuid4(), slug="tenant-a", name="Tenant A")
+    tenant_b = Tenant(id=uuid.uuid4(), slug="tenant-b", name="Tenant B")
+    session.add_all([tenant_a, tenant_b])
+    session.commit()
+
+    create_user_with_password(
+        session,
+        tenant_id=tenant_a.id,
+        email="shared@test.dev",
+        user_id=1,
+        password="Password1",
+        role="CLIENT",
+    )
+    create_user_with_password(
+        session,
+        tenant_id=tenant_b.id,
+        email="shared@test.dev",
+        user_id=2,
+        password="Password1",
+        role="WORKSHOP",
+    )
+
+    with pytest.raises(ValueError, match="Provide tenant_slug"):
+        UserService(session).login_user("shared@test.dev", "Password1")
+
+
 def test_repo_get_services_by_user_id_includes_services_linked_by_workshop_client():
     session = build_session()
     tenant = Tenant(id=uuid.uuid4(), slug="tenant-a", name="Tenant A")
@@ -442,6 +523,54 @@ def test_workshop_client_service_backfills_registered_client_user_by_cross_tenan
     )
 
     assert client.user_id == client_user.id
+
+
+def test_workshop_resolution_falls_back_to_tenant_workshop_for_secondary_workshop_user():
+    session = build_session()
+    tenant = Tenant(id=uuid.uuid4(), slug="tenant-a", name="Tenant A")
+    session.add(tenant)
+    session.commit()
+
+    workshop_owner = create_user(session, tenant_id=tenant.id, email="owner@test.dev", user_id=1)
+    secondary_workshop_user = create_user(session, tenant_id=tenant.id, email="staff@test.dev", user_id=2)
+    workshop = create_workshop(session, tenant_id=tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+
+    resolved = repo_get_workshop_for_user(session, secondary_workshop_user.id, tenant.id)
+
+    assert resolved is not None
+    assert resolved.id == workshop.id
+
+
+def test_workshop_client_service_uses_tenant_workshop_for_secondary_workshop_user():
+    session = build_session()
+    tenant = Tenant(id=uuid.uuid4(), slug="tenant-a", name="Tenant A")
+    session.add(tenant)
+    session.commit()
+
+    workshop_owner = create_user(session, tenant_id=tenant.id, email="owner@test.dev", user_id=1)
+    secondary_workshop_user = create_user(session, tenant_id=tenant.id, email="staff@test.dev", user_id=2)
+    workshop = create_workshop(session, tenant_id=tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+
+    session.add(
+        WorkshopClient(
+            tenant_id=tenant.id,
+            workshop_id=workshop.id,
+            name="Existing Client",
+            email="client@test.dev",
+            phone="5551999999999",
+            vehicle_brand="Honda",
+            vehicle_model="Civic",
+            vehicle_year=2022,
+            vehicle_plate="CLI-2222",
+            user_id=None,
+        )
+    )
+    session.commit()
+
+    clients = WorkshopClientService(session).get_clients(secondary_workshop_user.id, tenant.id)
+
+    assert len(clients) == 1
+    assert clients[0].workshop_id == workshop.id
 
 
 def test_message_service_allows_cross_tenant_client_workshop_conversation():

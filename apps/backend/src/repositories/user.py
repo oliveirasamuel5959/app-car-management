@@ -34,6 +34,13 @@ def repo_get_user_by_email(db: Session, email: str, tenant_id: UUID | str | None
     return query.first()
 
 
+def repo_get_users_by_email(db: Session, email: str, tenant_id: UUID | str | None = None) -> list[User]:
+    query = db.query(User).filter(User.email == email)
+    if tenant_id is not None:
+        query = query.filter(User.tenant_id == tenant_id)
+    return query.all()
+
+
 def repo_email_exists(db: Session, email: str, tenant_id: UUID | str | None = None) -> bool:
     """Check if email already exists in database."""
     return repo_get_user_by_email(db, email, tenant_id=tenant_id) is not None
