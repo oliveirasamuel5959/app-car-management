@@ -8,10 +8,10 @@ from alembic import context
 from dotenv import load_dotenv
 load_dotenv()
 
-from app.src.db.base import Base
-from app.src.models import User, Vehicle, Workshop, WorkshopClient, Message
-from app.src.models.services import Service
-from app.src.models.notification import Notification
+from src.db.base import Base
+from src.models import Message, Tenant, User, Vehicle, Workshop, WorkshopClient
+from src.models.services import Service
+from src.models.notification import Notification
 
 config = context.config
 

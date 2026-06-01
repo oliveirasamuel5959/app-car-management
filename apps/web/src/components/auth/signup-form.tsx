@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import { api } from '../../services/api';
 
+type AccountRole = 'CLIENT' | 'WORKSHOP';
+type AddressResult = {
+  display_name: string;
+  lat: string;
+  lon: string;
+};
+
 // ── Reusable Input ────────────────────────────────────────────────────────────
 const Input = ({
   label,
@@ -63,13 +70,23 @@ const SignupForm = () => {
     lastName: '',
     firstName: '',
     email: '',
-    role: 'CLIENT' as 'CLIENT' | 'WORKSHOP',
-    countryCode: '+33',
+    role: 'CLIENT' as AccountRole,
+    countryCode: '+55',
     phone: '',
     password: '',
     acceptTerms: false,
     acceptMarketing: false,
+    workshopName: '',
+    workshopEmail: '',
+    workshopDescription: '',
+    workshopLatitude: '',
+    workshopLongitude: '',
   });
+  const [showWorkshopFields, setShowWorkshopFields] = useState(false);
+  const [workshopAddressQuery, setWorkshopAddressQuery] = useState('');
+  const [addressResults, setAddressResults] = useState<AddressResult[]>([]);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState('');
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -83,6 +100,17 @@ const SignupForm = () => {
   }), [form.password]);
 
   const pwValid = Object.values(pwRules).every(Boolean);
+  const isWorkshop = form.role === 'WORKSHOP';
+  const workshopFieldsComplete =
+    form.workshopName.trim() &&
+    form.workshopEmail.trim() &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.workshopEmail) &&
+    form.workshopDescription.trim() &&
+    selectedAddress.trim() &&
+    form.workshopLatitude.trim() &&
+    !Number.isNaN(Number(form.workshopLatitude)) &&
+    form.workshopLongitude.trim() &&
+    !Number.isNaN(Number(form.workshopLongitude));
 
   // ── Validation ──────────────────────────────────────────────────────────────
   const validate = () => {
@@ -94,6 +122,17 @@ const SignupForm = () => {
       e.email = 'Invalid email format';
     if (!pwValid) e.password = 'Password does not meet requirements';
     if (!form.acceptTerms) e.acceptTerms = 'You must accept the Terms';
+    if (isWorkshop) {
+      if (!showWorkshopFields) e.workshopSection = 'Add workshop information to continue';
+      if (!form.workshopName.trim()) e.workshopName = 'Workshop name is required';
+      if (!form.workshopEmail.trim()) e.workshopEmail = 'Workshop email is required';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.workshopEmail)) e.workshopEmail = 'Invalid workshop email format';
+      if (!form.workshopDescription.trim()) e.workshopDescription = 'Workshop description is required';
+      if (!workshopAddressQuery.trim()) e.workshopAddressQuery = 'Workshop address is required';
+      if (!selectedAddress.trim()) e.workshopAddressQuery = 'Select an address from the lookup results';
+      if (!form.workshopLatitude.trim() || Number.isNaN(Number(form.workshopLatitude))) e.workshopLocation = 'Address lookup must provide valid coordinates';
+      if (!form.workshopLongitude.trim() || Number.isNaN(Number(form.workshopLongitude))) e.workshopLocation = 'Address lookup must provide valid coordinates';
+    }
     return e;
   };
 
@@ -103,9 +142,10 @@ const SignupForm = () => {
       form.firstName.trim() &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
       pwValid &&
-      form.acceptTerms
+      form.acceptTerms &&
+      (!isWorkshop || (showWorkshopFields && Boolean(workshopFieldsComplete)))
     );
-  }, [form, pwValid]);
+  }, [form, pwValid, isWorkshop, showWorkshopFields, workshopFieldsComplete]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const set = (field: string, value: string | boolean) =>
@@ -116,11 +156,122 @@ const SignupForm = () => {
     setErrors(validate());
   };
 
+  const handleRoleChange = (value: string) => {
+    const nextRole = value as AccountRole;
+    setForm(prev => ({
+      ...prev,
+      role: nextRole,
+      workshopEmail: nextRole === 'WORKSHOP' && !prev.workshopEmail ? prev.email : prev.workshopEmail,
+    }));
+    if (nextRole !== 'WORKSHOP') {
+      setShowWorkshopFields(false);
+      setErrors(prev => {
+        const nextErrors = { ...prev };
+        delete nextErrors.workshopSection;
+        delete nextErrors.workshopName;
+        delete nextErrors.workshopEmail;
+        delete nextErrors.workshopDescription;
+        delete nextErrors.workshopAddressQuery;
+        delete nextErrors.workshopLocation;
+        return nextErrors;
+      });
+      setWorkshopAddressQuery('');
+      setSelectedAddress('');
+      setAddressResults([]);
+      setForm(prev => ({
+        ...prev,
+        workshopLatitude: '',
+        workshopLongitude: '',
+      }));
+    }
+  };
+
+  const openWorkshopFields = () => {
+    setShowWorkshopFields(true);
+    setForm(prev => ({
+      ...prev,
+      workshopEmail: prev.workshopEmail || prev.email,
+    }));
+    setTouched(prev => ({ ...prev, workshopSection: true }));
+    setErrors(validate());
+  };
+
+  const handleWorkshopAddressChange = (value: string) => {
+    setWorkshopAddressQuery(value);
+    setSelectedAddress('');
+    setAddressResults([]);
+    setForm(prev => ({
+      ...prev,
+      workshopLatitude: '',
+      workshopLongitude: '',
+    }));
+  };
+
+  const searchAddress = async () => {
+    if (!workshopAddressQuery.trim()) {
+      setTouched(prev => ({ ...prev, workshopAddressQuery: true }));
+      setErrors(prev => ({ ...prev, workshopAddressQuery: 'Workshop address is required' }));
+      return;
+    }
+
+    setIsSearchingAddress(true);
+    setServerError('');
+
+    try {
+      const results = await api.location.searchAddress(workshopAddressQuery.trim());
+      setAddressResults(results);
+
+      if (!results.length) {
+        setErrors(prev => ({ ...prev, workshopAddressQuery: 'No address matches found. Try a more specific search.' }));
+      } else {
+        setErrors(prev => {
+          const nextErrors = { ...prev };
+          delete nextErrors.workshopAddressQuery;
+          delete nextErrors.workshopLocation;
+          return nextErrors;
+        });
+      }
+    } catch (err: any) {
+      setAddressResults([]);
+      setServerError(err.message || 'Address lookup failed. Please try again.');
+    } finally {
+      setIsSearchingAddress(false);
+    }
+  };
+
+  const selectAddress = (result: AddressResult) => {
+    setSelectedAddress(result.display_name);
+    setWorkshopAddressQuery(result.display_name);
+    setAddressResults([]);
+    setForm(prev => ({
+      ...prev,
+      workshopLatitude: result.lat,
+      workshopLongitude: result.lon,
+    }));
+    setTouched(prev => ({ ...prev, workshopAddressQuery: true }));
+    setErrors(prev => {
+      const nextErrors = { ...prev };
+      delete nextErrors.workshopAddressQuery;
+      delete nextErrors.workshopLocation;
+      return nextErrors;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     setErrors(errs);
-    setTouched({ lastName: true, firstName: true, email: true, password: true, acceptTerms: true });
+    setTouched({
+      lastName: true,
+      firstName: true,
+      email: true,
+      password: true,
+      acceptTerms: true,
+      workshopName: true,
+      workshopEmail: true,
+      workshopDescription: true,
+      workshopAddressQuery: true,
+    });
     if (Object.keys(errs).length) return;
 
     setIsLoading(true);
@@ -134,10 +285,30 @@ const SignupForm = () => {
         password: form.password,
         password_confirm: form.password,
         role: form.role,
+        tenant_name: isWorkshop ? form.workshopName.trim() : undefined,
       });
+
+      if (isWorkshop) {
+        await api.workshops.create({
+          name: form.workshopName.trim(),
+          email: form.workshopEmail.trim(),
+          description: form.workshopDescription.trim(),
+          latitude: Number(form.workshopLatitude),
+          longitude: Number(form.workshopLongitude),
+          rating_avg: 0,
+        });
+      }
+
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
       navigate('/login', {
         replace: true,
-        state: { message: 'Registration successful! Please log in.', email: form.email },
+        state: {
+          message: isWorkshop
+            ? 'Registration successful. Your workshop profile was created. Please log in.'
+            : 'Registration successful! Please log in.',
+          email: form.email,
+        },
       });
     } catch (err: any) {
       setServerError(err.message || 'Registration failed. Please try again.');
@@ -199,13 +370,136 @@ const SignupForm = () => {
         </label>
         <select
           value={form.role}
-          onChange={e => set('role', e.target.value)}
+          onChange={e => handleRoleChange(e.target.value)}
           className="w-full rounded-lg border border-gray-300 bg-white px-5 py-3.5 text-base text-gray-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="CLIENT">Client</option>
           <option value="WORKSHOP">Workshop</option>
         </select>
       </div>
+
+      {isWorkshop && (
+        <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-base font-medium text-gray-900">Workshop profile</p>
+              <p className="text-sm text-gray-500">Add the workshop details that will be saved in the workshops table.</p>
+            </div>
+            <button
+              type="button"
+              onClick={openWorkshopFields}
+              className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
+            >
+              {showWorkshopFields ? 'Workshop info added' : 'Add workshop info'}
+            </button>
+          </div>
+
+          {(touched.workshopSection || Object.keys(errors).length > 0) && errors.workshopSection && (
+            <p className="text-sm text-red-500">{errors.workshopSection}</p>
+          )}
+
+          {showWorkshopFields && (
+            <>
+              <Input
+                label="Workshop Name"
+                required
+                placeholder="Drive Pluss Garage"
+                value={form.workshopName}
+                onChange={e => set('workshopName', e.target.value)}
+                onBlur={() => blur('workshopName')}
+                error={touched.workshopName ? errors.workshopName : ''}
+              />
+
+              <Input
+                label="Workshop Email"
+                required
+                type="email"
+                placeholder="contact@drivepluss.com"
+                value={form.workshopEmail}
+                onChange={e => set('workshopEmail', e.target.value)}
+                onBlur={() => blur('workshopEmail')}
+                error={touched.workshopEmail ? errors.workshopEmail : ''}
+              />
+
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Workshop Description<span className="text-red-500 ml-0.5">*</span>
+                </label>
+                <textarea
+                  placeholder="Tell customers what your workshop specializes in"
+                  value={form.workshopDescription}
+                  onChange={e => set('workshopDescription', e.target.value)}
+                  onBlur={() => blur('workshopDescription')}
+                  rows={4}
+                  className={`w-full rounded-lg border px-5 py-3.5 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    touched.workshopDescription && errors.workshopDescription ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
+                  }`}
+                />
+                {touched.workshopDescription && errors.workshopDescription && (
+                  <p className="text-sm text-red-500">{errors.workshopDescription}</p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Workshop Address<span className="text-red-500 ml-0.5">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="Search by street, neighborhood, city"
+                    value={workshopAddressQuery}
+                    onChange={e => handleWorkshopAddressChange(e.target.value)}
+                    onBlur={() => blur('workshopAddressQuery')}
+                    className={`flex-1 rounded-lg border px-5 py-3.5 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      touched.workshopAddressQuery && errors.workshopAddressQuery ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={searchAddress}
+                    disabled={isSearchingAddress}
+                    className="rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSearchingAddress ? 'Searching...' : 'Find address'}
+                  </button>
+                </div>
+                {touched.workshopAddressQuery && errors.workshopAddressQuery && (
+                  <p className="text-sm text-red-500">{errors.workshopAddressQuery}</p>
+                )}
+
+                {addressResults.length > 0 && (
+                  <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                    {addressResults.map(result => (
+                      <button
+                        key={`${result.lat}-${result.lon}-${result.display_name}`}
+                        type="button"
+                        onClick={() => selectAddress(result)}
+                        className="block w-full border-b border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition last:border-b-0 hover:bg-slate-50"
+                      >
+                        {result.display_name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {selectedAddress && (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    <p className="font-medium">Selected address</p>
+                    <p className="mt-1">{selectedAddress}</p>
+                    <p className="mt-2 text-emerald-700">
+                      Coordinates: {Number(form.workshopLatitude).toFixed(5)}, {Number(form.workshopLongitude).toFixed(5)}
+                    </p>
+                  </div>
+                )}
+
+                {errors.workshopLocation && (
+                  <p className="text-sm text-red-500">{errors.workshopLocation}</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Phone */}
       <div className="flex flex-col gap-1">
