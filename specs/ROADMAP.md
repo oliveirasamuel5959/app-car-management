@@ -1,8 +1,8 @@
 # 🗺 Implementation Roadmap
 
-**Current Status:** Pre-Alpha (Foundation Built)  
+**Current Status:** Pre-Alpha (Phase 1 Complete)  
 **Target:** MVP Ready in ~6-8 weeks  
-**Scale:** Hundreds of tenants with path-based routing isolation
+**Scale:** Hundreds of tenants with tenant-scoped isolation
 
 ---
 
@@ -88,14 +88,13 @@
 - ⚠️ **Service order lifecycle** (created, not fully implemented)
 - ⚠️ **Reviews & ratings** (model exists, UI not complete)
 - ⚠️ **Real-time notifications** (model/endpoints exist, WebSocket integration incomplete)
-- ⚠️ **Database migrations** (Alembic structure exists, no migrations written)
+- ⚠️ **Database migrations** (core tenant foundation migrations implemented; future feature migrations still pending)
 
 ### ❌ Not Yet Implemented
 
-- ❌ **Multi-tenancy enforcement** (no tenant_id column on models, no path-based routing context)
 - ❌ **Payment processing** (Stripe integration, split payments)
 - ❌ **Search with filters** (service types, rating, availability)
-- ❌ **Unit & integration tests**
+- ❌ **Broader unit & integration coverage beyond tenant foundation**
 - ❌ **Deployment pipeline** (Docker, CI/CD)
 - ❌ **Production database** (using local PostgreSQL)
 - ❌ **Analytics & audit logging**
@@ -105,7 +104,7 @@
 ## 2. MVP Requirements (From Specs)
 
 **Functional:**
-- FR-00: Multi-tenancy & tenant management ❌
+- FR-00: Multi-tenancy & tenant management ✅
 - FR-01: Authentication ✅
 - FR-02: User profiles ✅ (partial)
 - FR-03: Vehicle management ✅
@@ -116,11 +115,11 @@
 - FR-08: Messaging ✅ (WebSocket needs integration)
 
 **Non-Functional:**
-- Security ✅ (partial - multi-tenancy isolation missing)
-- Data isolation ❌ (no tenant_id filtering)
+- Security ✅ (tenant-aware auth and route protection implemented)
+- Data isolation ✅ (tenant_id filtering and FK constraints implemented)
 - Performance ⚠️ (no caching, no indexing strategy)
 - Scalability ⚠️ (no load testing)
-- Testing ❌ (no test suite)
+- Testing ⚠️ (tenant foundation covered; wider suite still incomplete)
 - Observability ⚠️ (logging exists, no centralized monitoring)
 
 ---
@@ -130,6 +129,8 @@
 ### Phase 1: Multi-Tenancy Foundation (Weeks 1-1.5)
 
 **Objective:** Add tenant isolation to all layers without breaking existing code.
+
+**Status:** Complete on 2026-06-01
 
 #### 1.1 Database Schema Update
 - Add `tenant_id` UUID column to all tenant-owned tables:
@@ -150,26 +151,40 @@
 - Updated SQLAlchemy models with tenant_id
 - Test migration locally
 
+**Completed:**
+- `tenants` table plus tenant-owned `tenant_id` foreign keys added to the active backend models
+- Idempotent Alembic revisions created in `apps/backend/migrations/versions/0001_initial_core_schema.py`, `0002_create_tenants_table.py`, and `0003_add_tenant_foundation.py`
+- Composite indexes and uniqueness constraints validated for users, workshops, and services
+
 #### 1.2 Tenant Context Middleware
-- Extract tenant slug from request path: `/oficina-xyz/` → `oficina-xyz`
+- Extract tenant context from authenticated JWT claims
 - Create tenant context object (tenant_id, tenant_slug)
-- Middleware validates tenant_id against user's assigned tenant
-- Attach tenant_id to request scope for access in routes
+- Auth dependencies validate tenant_id against the authenticated user
+- Attach tenant context to route/service access paths
 
 **Deliverables:**
-- `TenantMiddleware` class
+- JWT-backed tenant context helpers
 - Request context helper functions
 - Tests for tenant extraction and validation
 
+**Completed:**
+- `TenantContext` and tenant helper utilities implemented in the backend core layer
+- JWT generation/validation now carries `tenant_id` and `tenant_slug`
+- Websocket and HTTP auth paths validate tenant-aware access
+
 #### 1.3 Repository Layer Update
-- Update BaseRepository to accept and enforce tenant_id
-- Add `@tenant_filtered` decorator for all queries
-- Ensure all `select()` queries include `WHERE tenant_id = $1`
+- Update repository functions to accept and enforce tenant_id
+- Apply tenant-filtered query patterns across repositories
+- Ensure tenant-owned `select()` queries include tenant-aware filters
 - Document tenant filtering pattern for future repositories
 
 **Deliverables:**
 - Updated repository methods with tenant filtering
 - Linting rule to catch queries without tenant filter (pre-commit hook)
+
+**Completed:**
+- User, vehicle, workshop, service, message, and notification repository paths were updated to enforce tenant ownership
+- Client-facing service and messaging flows now use explicit, relationship-backed cross-tenant exceptions where required by the product behavior
 
 #### 1.4 Route Protection
 - Update all route handlers to extract tenant_id from context
@@ -181,11 +196,20 @@
 - Updated route handlers (auth.py, vehicles.py, workshops.py, etc.)
 - Tests for cross-tenant access prevention
 
+**Completed:**
+- Route/service propagation updated for `/services`, `/create-services-orders`, `/workshops`, `/messages`, and auth-backed paths
+- Client dashboard, service visibility, workshop lookup, and messaging were repaired after tenant scoping changes
+
 **Tests:**
 - ✅ User cannot access other tenant's vehicles
-- ✅ Tenant context extracted correctly from path
-- ✅ Middleware validates tenant ownership
+- ✅ Tenant context extracted correctly from JWT/auth context
+- ✅ Auth layer validates tenant ownership
 - ✅ 404 returned for cross-tenant resource access
+- ✅ `poetry run pytest tests/test_tenant_isolation.py -q` passed with 17 tests on 2026-06-01
+- ✅ `poetry run alembic downgrade -1` and `poetry run alembic upgrade head` succeeded on 2026-06-01
+- ✅ `npm.cmd run check` succeeded for the frontend branch changes on 2026-06-01
+
+**Phase Outcome:** Phase 1 implementation is complete; the next active roadmap phase is Phase 2 (Payment Processing).
 
 ---
 

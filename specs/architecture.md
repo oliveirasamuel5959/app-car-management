@@ -16,7 +16,7 @@ The architecture is designed with:
 - Stateless services
 - API-first approach
 - MVP-driven evolution
-- **Tenant isolation via row-level security**
+- **Tenant isolation via tenant-scoped application queries and constraints**
 
 ---
 
@@ -39,25 +39,25 @@ The platform uses a **shared everything** multi-tenant model optimized for MVP a
 
 ### Tenant Identification & Routing
 
-**Path-based tenant routing:**
-- Tenant identified via URL path: `/oficina-xyz/`, `/workshop-abc/`
-- No DNS changes required (vs. subdomain approach)
-- Tenant context extracted from request path and propagated through all layers
-- Works seamlessly with existing infrastructure
+**JWT-backed tenant routing:**
+- Tenant identified primarily from authenticated JWT claims (`tenant_id`, `tenant_slug`)
+- No DNS or path rewriting is required for the current application flow
+- Tenant context is extracted from auth dependencies and propagated through services/repositories
+- Compatible with the current frontend login/signup flow
 
 **Tenant Context Flow:**
-1. Request arrives at `/oficina-xyz/resource`
-2. Router extracts tenant ID: `oficina-xyz`
-3. Middleware validates tenant context and attaches to request
-4. All services query with implicit tenant filter: `WHERE tenant_id = context.tenant_id`
-5. Database enforces isolation at row level
+1. User authenticates and receives JWT claims including `tenant_id`
+2. FastAPI auth dependencies validate the token and expose the tenant context
+3. Services and repositories apply tenant-scoped filters to tenant-owned resources
+4. Database constraints and foreign keys enforce valid tenant ownership
+5. A small set of client-facing flows may resolve a shared tenant context for legitimate cross-tenant workshop relationships
 
 ### Data Isolation Strategy
 
 **Row-level filtering via tenant_id column:**
 - Every business table has `tenant_id` UUID foreign key
 - All queries implicitly filter by current tenant: `WHERE tenant_id = $1`
-- No cross-tenant data queries allowed
+- Cross-tenant access is only allowed for specific client/workshop flows backed by an existing service relationship
 - Repositories enforce tenant isolation in code
 
 **Schema Evolution:**
@@ -71,9 +71,11 @@ The platform uses a **shared everything** multi-tenant model optimized for MVP a
 - Clients
 - Vehicles
 - Service Orders
-- Reviews
-- Payments
 - Messages
+
+**Current branch exception:**
+- Workshop-side management remains tenant-scoped
+- Client-side service visibility, workshop lookup, and messaging may cross tenant boundaries when linked by a real service order or workshop-client relationship
 
 ---
 
@@ -106,15 +108,15 @@ The backend follows a **layered (clean) architecture** with **tenant context pro
 
 ### Responsibilities
 - **Routers**: HTTP layer, request/response validation, authentication, **tenant context extraction**
-- **Services**: Business rules and workflows, **enforce tenant ownership**, validate cross-tenant operations
-- **Repositories**: Database access only, **filter all queries by tenant_id**, reject cross-tenant access
+- **Services**: Business rules and workflows, **enforce tenant ownership**, resolve the limited shared-tenant cases used by client/workshop interactions
+- **Repositories**: Database access only, **filter all queries by tenant_id** unless a service explicitly authorizes the current client/workshop cross-tenant access path
 - **Models**: ORM entities (SQLAlchemy)
 - **Schemas**: API contracts (Pydantic)
 
 **Golden Rule:** 
 - Business logic must never live in routers
 - **All database queries must implicitly filter by current tenant context**
-- Services must never return data from other tenants
+- Services must not return data from other tenants unless the access path is an explicitly modelled client/workshop relationship
 
 ---
 
@@ -129,11 +131,11 @@ The backend follows a **layered (clean) architecture** with **tenant context pro
 
 ### 4.3 Tenant Context & Security
 
-- **Tenant context** extracted from request path (middleware)
+- **Tenant context** extracted from JWT/auth dependencies
 - Propagated through dependency injection or request locals
 - All database queries scoped to `tenant_id` from context
-- **No cross-tenant data access allowed** even for admins
-- Services validate tenant ownership before returning data
+- Cross-tenant access is blocked by default
+- Services validate tenant ownership before returning data and may resolve a shared conversation/service tenant for specific client/workshop flows
 
 **Critical:** Repositories must always filter by tenant context. Queries without tenant filter indicate a bug.
 
