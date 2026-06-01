@@ -23,7 +23,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
   Grid,
 } from '@mui/material';
 
@@ -57,7 +56,7 @@ function getStatusColor(status: string) {
       return 'info';
     case 'pending':
       return 'warning';
-    case 'approved':
+    case 'confirmed':
       return 'primary';
     case 'cancelled':
       return 'error';
@@ -75,7 +74,6 @@ export default function ClientOrdersPage() {
   const [client, setClient] = useState<WorkshopClient | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [editStatus, setEditStatus] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [updating, setUpdating] = useState(false);
 
@@ -109,7 +107,6 @@ export default function ClientOrdersPage() {
 
   const handleViewOrder = (service: Service) => {
     setSelectedService(service);
-    setEditStatus(service.status);
     setEditNotes(service.workshop_notes || '');
     setOpenDialog(true);
   };
@@ -119,24 +116,26 @@ export default function ClientOrdersPage() {
     setSelectedService(null);
   };
 
-  const handleUpdateStatus = async () => {
+  const handleUpdateStatus = async (action: 'start' | 'complete' | 'cancel') => {
     if (!selectedService) return;
 
     try {
       setUpdating(true);
-      await serviceService.updateService(selectedService.id, {
-        status: editStatus,
-        workshop_notes: editNotes,
-      });
+      const payload = { workshop_notes: editNotes };
+      const updatedService = action === 'start'
+        ? await serviceService.startServiceOrder(selectedService.id, payload)
+        : action === 'complete'
+          ? await serviceService.completeServiceOrder(selectedService.id, payload)
+          : await serviceService.cancelServiceOrder(selectedService.id, payload);
 
       setServices((prev) =>
         prev.map((s) =>
           s.id === selectedService.id
-            ? { ...s, status: editStatus, workshop_notes: editNotes }
+            ? updatedService
             : s
         )
       );
-      handleCloseDialog();
+      setSelectedService(updatedService);
     } catch (err) {
       console.error('Error updating service:', err);
     } finally {
@@ -269,20 +268,8 @@ export default function ClientOrdersPage() {
               </Grid>
 
               <Grid item xs={12}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Status"
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                >
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="in_progress">In Progress</MenuItem>
-                  <MenuItem value="waiting_parts">Waiting Parts</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                  <MenuItem value="cancelled">Cancelled</MenuItem>
-                </TextField>
+                <Typography variant="subtitle2" color="textSecondary">Status</Typography>
+                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status) as any} size="small" />
               </Grid>
 
               <Grid item xs={12}>
@@ -305,9 +292,21 @@ export default function ClientOrdersPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleUpdateStatus} variant="contained" disabled={updating}>
-            {updating ? 'Updating...' : 'Update'}
-          </Button>
+          {selectedService?.status === 'confirmed' && (
+            <Button onClick={() => handleUpdateStatus('start')} variant="contained" disabled={updating}>
+              {updating ? 'Updating...' : 'Start Work'}
+            </Button>
+          )}
+          {selectedService?.status === 'in_progress' && (
+            <Button onClick={() => handleUpdateStatus('complete')} variant="contained" disabled={updating}>
+              {updating ? 'Updating...' : 'Complete'}
+            </Button>
+          )}
+          {selectedService && ['pending', 'confirmed', 'in_progress'].includes(selectedService.status) && (
+            <Button onClick={() => handleUpdateStatus('cancel')} color="error" variant="outlined" disabled={updating}>
+              {updating ? 'Updating...' : 'Cancel Order'}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Container>

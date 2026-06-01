@@ -9,7 +9,7 @@ from src.schemas.notifications import NotificationRead, NotificationUpdate
 router = APIRouter()
 
 
-@router.get("/notifications", response_model=List[NotificationRead])
+@router.get("", response_model=List[NotificationRead])
 def get_notifications(
     limit: int = 20,
     current_user: dict = Depends(get_current_user),
@@ -21,7 +21,7 @@ def get_notifications(
     return notifications
 
 
-@router.get("/notifications/unread-count")
+@router.get("/unread-count")
 def get_unread_count(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_session),
@@ -32,7 +32,7 @@ def get_unread_count(
     return {"unread_count": count}
 
 
-@router.put("/notifications/{notification_id}", response_model=NotificationRead)
+@router.put("/{notification_id}", response_model=NotificationRead)
 def mark_notification_as_read(
     notification_id: int,
     current_user: dict = Depends(get_current_user),
@@ -52,7 +52,7 @@ def mark_notification_as_read(
     return updated_notification
 
 
-@router.put("/notifications/mark-all-read")
+@router.put("/mark-all-read")
 def mark_all_as_read(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_session),

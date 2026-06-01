@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { serviceService } from '../../services/service-service';
+import { useParams } from 'react-router-dom';
 
 interface Service {
   id: number;
@@ -7,7 +8,7 @@ interface Service {
   vehicle_id: number;
   name: string;
   description: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
   progress_percentage: number;
   checkin_date: string;
   estimated_finish_date: string;
@@ -20,14 +21,20 @@ interface Service {
 }
 
 export default function ServicesPage() {
+  const { serviceId } = useParams();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+
+  const reloadServices = async () => {
+    const response = await serviceService.getMyServices();
+    setServices(Array.isArray(response) ? response : []);
+  };
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await serviceService.getMyServices();
-        setServices(response);
+        await reloadServices();
       } catch (err) {
         console.error(err);
       } finally {
@@ -50,18 +57,50 @@ export default function ServicesPage() {
     return <div className="p-10 text-gray-500">Nenhum serviço encontrado</div>;
   }
 
-  const statusColor = {
+  const sortedServices = [...services].sort((left, right) => {
+    if (String(left.id) === serviceId) return -1;
+    if (String(right.id) === serviceId) return 1;
+    return new Date(right.checkin_date).getTime() - new Date(left.checkin_date).getTime();
+  });
+
+  const statusColor: Record<Service['status'], string> = {
     pending: 'bg-yellow-100 text-yellow-700',
+    confirmed: 'bg-indigo-100 text-indigo-700',
     in_progress: 'bg-blue-100 text-blue-700',
     completed: 'bg-green-100 text-green-700',
-    approved: 'bg-green-100 text-green-700',
+    cancelled: 'bg-red-100 text-red-700',
   };
 
   const statusLabel: Record<string, string> = {
     pending: 'Pendente',
+    confirmed: 'Confirmado',
     in_progress: 'Em andamento',
     completed: 'Concluído',
-    approved: 'Aprovado',
+    cancelled: 'Cancelado',
+  };
+
+  const handleAccept = async (id: number) => {
+    try {
+      setSubmittingId(id);
+      await serviceService.acceptServiceOrder(id);
+      await reloadServices();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  const handleCancel = async (id: number) => {
+    try {
+      setSubmittingId(id);
+      await serviceService.cancelServiceOrder(id);
+      await reloadServices();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmittingId(null);
+    }
   };
 
   return (
@@ -76,7 +115,7 @@ export default function ServicesPage() {
       </div>
 
       <div className="space-y-8">
-        {services.map((service) => (
+        {sortedServices.map((service) => (
           <div
             key={service.id}
             className="bg-white rounded-2xl shadow-lg p-8"
@@ -98,6 +137,25 @@ export default function ServicesPage() {
                 {statusLabel[service.status]}
               </span>
             </div>
+
+            {service.status === 'pending' && (
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => handleAccept(service.id)}
+                  disabled={submittingId === service.id}
+                  className="px-4 py-2 rounded-xl bg-blue-600 text-white font-medium disabled:opacity-60"
+                >
+                  {submittingId === service.id ? 'Atualizando...' : 'Aceitar orçamento'}
+                </button>
+                <button
+                  onClick={() => handleCancel(service.id)}
+                  disabled={submittingId === service.id}
+                  className="px-4 py-2 rounded-xl bg-red-100 text-red-700 font-medium disabled:opacity-60"
+                >
+                  Cancelar pedido
+                </button>
+              </div>
+            )}
 
             {/* Progress */}
             <div className="mt-8">
@@ -125,15 +183,24 @@ export default function ServicesPage() {
                 </p>
               </div>
 
-              {service.status !== 'pending' && (
+              {service.status !== 'pending' && service.status !== 'cancelled' && (
                 <div className="relative">
                   <div className="absolute -left-10 w-8 h-8 bg-blue-400 rounded-full"></div>
                   <h3 className="font-semibold text-gray-800">
-                    Reparo em Andamento
+                    {service.status === 'confirmed' ? 'Serviço confirmado' : 'Reparo em Andamento'}
                   </h3>
                   <p className="text-gray-500 text-sm">
                     Horas Estimadas: {service.estimated_hours}h
                   </p>
+                </div>
+              )}
+
+              {service.status === 'cancelled' && (
+                <div className="relative">
+                  <div className="absolute -left-10 w-8 h-8 bg-red-500 rounded-full"></div>
+                  <h3 className="font-semibold text-gray-800">
+                    Pedido cancelado
+                  </h3>
                 </div>
               )}
 

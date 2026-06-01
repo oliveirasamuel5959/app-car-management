@@ -66,6 +66,32 @@ def create_workshop(
         )
 
 @router.get(
+    "/me",
+    response_model=WorkshopRead,
+    status_code=status.HTTP_200_OK,
+    summary="Get current workshop profile",
+)
+def get_current_workshop(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_session),
+):
+    if current_user.get("role") != "WORKSHOP":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only workshop users can access this resource",
+        )
+
+    service = WorkshopService(db)
+    try:
+        return service.get_current_workshop(
+            int(current_user.get("user_id")),
+            current_user.get("tenant_id"),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
     "/{workshop_id}",
     response_model=WorkshopRead,
     status_code=status.HTTP_200_OK,

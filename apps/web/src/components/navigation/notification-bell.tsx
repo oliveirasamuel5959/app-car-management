@@ -4,11 +4,20 @@ import { useNotifications } from '../../context/notifications-context';
 import { Button } from '../ui/button';
 
 export const NotificationBell = () => {
-  const { notifications = [], unreadCount = 0, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications = [], unreadCount = 0, loading, error, fetchNotifications, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleMarkAsRead = (notificationId: number) => {
     markAsRead(notificationId);
+  };
+
+  const handleToggle = async () => {
+    const nextOpen = !isOpen;
+    setIsOpen(nextOpen);
+
+    if (nextOpen) {
+      await fetchNotifications();
+    }
   };
 
   return (
@@ -17,7 +26,7 @@ export const NotificationBell = () => {
         variant="ghost"
         size="icon"
         aria-label="Notificações"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className="text-slate-400 hover:text-white relative transition-colors"
       >
         <Bell className="w-5 h-5" aria-hidden="true" />
@@ -41,7 +50,15 @@ export const NotificationBell = () => {
           </div>
 
           <div className="max-h-96 overflow-y-auto">
-            {!notifications || notifications.length === 0 ? (
+            {loading ? (
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                Carregando notificações...
+              </div>
+            ) : error ? (
+              <div className="p-4 text-center text-red-500 dark:text-red-400">
+                {error}
+              </div>
+            ) : !notifications || notifications.length === 0 ? (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                 Nenhuma notificação
               </div>

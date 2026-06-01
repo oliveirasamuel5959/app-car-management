@@ -95,7 +95,7 @@ export function CarPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="w-full px-6 py-10">
 
         {/* Header only appears if user has cars */}
         {!loadingState && !error && carData && carData.length > 0 && (
