@@ -10,8 +10,8 @@ protection dependencies in your FastAPI routes.
 # ============================================================================
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.src.api.routes.auth import get_current_user
-from app.src.db.database import get_session
+from src.api.routes.auth import get_current_user
+from src.db.database import get_session
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ async def protected_route(
 # ============================================================================
 # 2. OPTIONAL AUTHENTICATION (Token not required)
 # ============================================================================
-from app.src.api.routes.auth import get_optional_user
+from src.api.routes.auth import get_optional_user
 from typing import Optional
 
 @router.get("/public-with-auth")
@@ -52,7 +52,7 @@ async def public_with_optional_auth(
 # ============================================================================
 # 3. ROLE-BASED ACCESS CONTROL (Only specific roles)
 # ============================================================================
-from app.src.api.routes.auth import get_user_by_role
+from src.api.routes.auth import get_user_by_role
 from functools import partial
 
 @router.delete("/admin-only")
@@ -83,7 +83,7 @@ async def workshop_operations(
 # ============================================================================
 # 4. USER OWNERSHIP VERIFICATION
 # ============================================================================
-from app.src.api.routes.auth import verify_user_id_ownership
+from src.api.routes.auth import verify_user_id_ownership
 
 @router.put("/users/{user_id}/profile")
 async def update_user_profile(

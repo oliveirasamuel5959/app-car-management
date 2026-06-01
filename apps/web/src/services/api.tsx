@@ -1,5 +1,11 @@
 const BASE_URL = 'http://localhost:5500';
 
+type AddressLookupResult = {
+  display_name: string;
+  lat: string;
+  lon: string;
+};
+
 /**
  * Get authentication headers with Bearer token
  */
@@ -156,6 +162,7 @@ export const api = {
       password: string;
       password_confirm: string;
       role?: 'CLIENT' | 'WORKSHOP';
+      tenant_name?: string;
     }) => {
       const response = await api.post('/auth/register', userData);
       // Save token and user after registration
@@ -188,6 +195,42 @@ export const api = {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    },
+  },
+
+  location: {
+    searchAddress: async (query: string): Promise<AddressLookupResult[]> => {
+      const params = new URLSearchParams({
+        format: 'jsonv2',
+        q: query,
+        limit: '5',
+        addressdetails: '1',
+      });
+
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to look up address');
+      }
+
+      return response.json();
+    },
+  },
+
+  workshops: {
+    create: async (workshopData: {
+      name: string;
+      email?: string | null;
+      description: string;
+      latitude: number;
+      longitude: number;
+      rating_avg?: number;
+    }) => {
+      return api.post('/workshops/', workshopData);
     },
   },
 
