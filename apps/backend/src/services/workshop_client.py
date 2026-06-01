@@ -14,6 +14,7 @@ from src.repositories.workshop_client import (
 )
 
 from src.repositories.user import repo_get_user_by_email
+from src.repositories.workshop import repo_get_workshop_for_user
 from src.schemas.workshop_client import WorkshopClientCreate, WorkshopClientUpdate
 from src.core.logger import get_logger
 
@@ -24,10 +25,10 @@ class WorkshopClientService:
         self.db = db
 
     def _get_workshop_for_user(self, user_id: int, tenant_id) -> Workshop:
-        workshop = self.db.query(Workshop).filter(Workshop.user_id == user_id, Workshop.tenant_id == tenant_id).first()
+        workshop = repo_get_workshop_for_user(self.db, user_id, tenant_id)
         if not workshop:
             logger.error(f"No workshop found for user_id {user_id} and tenant_id {tenant_id}")
-            raise ValueError("No workshop found for the given user and tenant")
+            raise ValueError("No workshop found for the authenticated tenant. Re-authenticate and ensure you are logged into the workshop account for this tenant.")
         return workshop
 
     def _resolve_registered_client_user(self, email: str | None, tenant_id) -> User | None:

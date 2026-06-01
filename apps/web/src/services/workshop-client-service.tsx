@@ -26,7 +26,7 @@ export interface WorkshopClientCreate {
 
 export const workshopClientService = {
   getClients: async (): Promise<WorkshopClient[]> => {
-    const response = await api.get('/workshop-clients');
+    const response = await api.get('/workshop-clients/');
     return response;
   },
 
@@ -36,7 +36,7 @@ export const workshopClientService = {
   },
 
   createClient: async (data: WorkshopClientCreate): Promise<WorkshopClient> => {
-    const response = await api.post('/workshop-clients', data);
+    const response = await api.post('/workshop-clients/', data);
     return response;
   },
 

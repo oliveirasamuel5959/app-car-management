@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  Container,
   Box,
   Typography,
   Table,
@@ -48,10 +47,13 @@ export default function WorkshopClientsPage() {
   const fetchClients = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await workshopClientService.getClients();
       setClients(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error('Failed to fetch clients:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load workshop clients');
+      setClients([]);
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,7 @@ export default function WorkshopClientsPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'vehicle_year') {
-      setFormData((prev) => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
+      setFormData((prev) => ({ ...prev, vehicle_year: value === '' ? new Date().getFullYear() : Number(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -141,6 +143,12 @@ export default function WorkshopClientsPage() {
         </Alert>
       )}
 
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
       <TableContainer component={Paper} sx={{ width: '100%', overflowX: 'auto' }}>
         <Table sx={{ minWidth: 800 }}>
           <TableHead>
@@ -173,7 +181,7 @@ export default function WorkshopClientsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {clients.length === 0 && (
+            {clients.length === 0 && !error && (
               <TableRow>
                 <TableCell colSpan={6} align="center">
                   No clients yet. Click "Add Client" to register your first client.

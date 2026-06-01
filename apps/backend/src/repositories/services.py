@@ -5,6 +5,7 @@ from sqlalchemy import and_, or_
 
 from src.models.vehicle import Vehicle
 from src.models.workshop import Workshop
+from src.repositories.workshop import repo_get_workshop_for_user
 from src.models.workshop_client import WorkshopClient
 from src.models import User
 from src.models.services import Service
@@ -113,7 +114,7 @@ def repo_update_service_by_current_workshop(
     """
 
     # Get the workshop linked to this user
-    workshop = db.query(Workshop).filter(Workshop.user_id == user_id, Workshop.tenant_id == tenant_id).first()
+    workshop = repo_get_workshop_for_user(db, user_id, tenant_id)
     if not workshop:
         print(f"No workshop found for user_id: {user_id}")
         return None
