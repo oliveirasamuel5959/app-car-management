@@ -8,6 +8,7 @@ from src.api.routes.service_orders import router as service_orders
 from src.api.routes.workshop_clients import router as workshop_clients
 from src.api.routes.messages import router as messages
 from src.api.routes.notifications import router as notifications
+from src.api.routes.services_history import router as services_history
 
 api_router = APIRouter()
 
@@ -20,3 +21,4 @@ api_router.include_router(service_orders, prefix="/service-orders", tags=["servi
 api_router.include_router(workshop_clients, prefix="/workshop-clients", tags=["workshop-clients"])
 api_router.include_router(messages, prefix="/messages", tags=["messages"])
 api_router.include_router(notifications, prefix="/notifications", tags=["notifications"])
+api_router.include_router(services_history, prefix="/services-history", tags=["services-history"])
