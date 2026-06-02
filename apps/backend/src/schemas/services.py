@@ -71,7 +71,6 @@ class ServiceSummaryItem(BaseModel):
     class Config:
         from_attributes = True
 
-
 class ServiceSummaryRead(BaseModel):
     total_orders: int = Field(default=0)
     active_orders: int = Field(default=0)
