@@ -12,6 +12,7 @@ from src.db.base import Base
 from src.models import Message, Tenant, User, Vehicle, Workshop, WorkshopClient
 from src.models.services import Service
 from src.models.notification import Notification
+from src.models.services_history import ServiceHistory
 
 config = context.config
 

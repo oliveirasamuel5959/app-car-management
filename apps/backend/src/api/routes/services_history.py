@@ -8,6 +8,10 @@ from src.schemas.services_history import ServiceHistoryCreate, ServiceHistoryRea
 from src.services.services_history import ServiceHistoryService
 from src.core.auth import get_current_user
 
+from src.core.logger import get_logger
+
+logger = get_logger(__name__)
+
 router = APIRouter()
 
 @router.post(
@@ -23,14 +27,15 @@ def create_service_history(
     db: Session = Depends(get_session)
 ):
     """Create a new service history record with validation of workshop and client."""
-    if current_user.get("role") != "WORKSHOP":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only workshops can create service history records")
+    if current_user.get("role") != "CLIENT":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can create service history records")
 
     service = ServiceHistoryService(db)
 
     try:
         user_id = current_user.get("user_id")
         tenant_id = current_user.get("tenant_id")
+        logger.info(f"Creating service history record for user_id={user_id}, tenant_id={tenant_id}")
         return service.create_service_history(history_in, user_id=int(user_id), tenant_id=tenant_id)
     except ValueError as e:
         raise HTTPException(
@@ -40,5 +45,5 @@ def create_service_history(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the service history record"
+            detail=f"An error occurred while creating the service history record: {str(e)}"
         )

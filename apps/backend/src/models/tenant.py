@@ -6,7 +6,6 @@ from sqlalchemy.sql import func
 
 from src.db.base import Base
 
-
 class Tenant(Base):
     __tablename__ = "tenants"
 
@@ -26,3 +25,4 @@ class Tenant(Base):
     workshop_clients = relationship("WorkshopClient", back_populates="tenant")
     messages = relationship("Message", back_populates="tenant")
     notifications = relationship("Notification", back_populates="tenant")
+    services_history = relationship("ServiceHistory", back_populates="tenant")
