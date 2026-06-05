@@ -28,6 +28,17 @@ class ServiceHistoryCreate(BaseModel):
     next_service_mileage: Optional[int] = None
 
 
+class ServiceHistoryUpdate(BaseModel):
+    vehicle_id: Optional[int] = None
+    service_type: Optional[ServiceType] = None
+    description: Optional[str] = None
+    current_mileage: Optional[int] = None
+    cost: Optional[float] = None
+    serviced_at: Optional[datetime] = None
+    next_service_date: Optional[datetime] = None
+    next_service_mileage: Optional[int] = None
+
+
 class ServiceHistoryRead(ServiceHistoryCreate):
     id: int
     created_at: datetime

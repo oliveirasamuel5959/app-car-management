@@ -17,6 +17,7 @@ import {
   Settings as SettingsIcon,
   Menu as MenuIcon,
   Chat as ChatIcon,
+  Build as BuildIcon,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -39,10 +40,11 @@ export const ClientSidebar = ({
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/client/dashboard' },
-    { text: 'My Car', icon: <CarIcon />, path: '/client/my-car' },
-    { text: 'Find Workshops', icon: <WorkshopIcon />, path: '/client/search-workshops' },
+    { text: 'Meu Carro', icon: <CarIcon />, path: '/client/my-car' },
+    { text: 'Histórico de Manutenção', icon: <BuildIcon />, path: '/client/service-history' },
+    { text: 'Encontrar Oficinas', icon: <WorkshopIcon />, path: '/client/search-workshops' },
     { text: 'Mensagens', icon: <ChatIcon />, path: '/client/messages' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/client/settings' },
+    { text: 'Configurações', icon: <SettingsIcon />, path: '/client/settings' },
   ];
 
   const handleNavigate = (path: string) => {

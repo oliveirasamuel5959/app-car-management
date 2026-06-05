@@ -1,6 +1,6 @@
 # Phase 2 Plan: Service Order Lifecycle
 
-Last Updated: 2026-06-01
+Last Updated: 2026-06-05
 Branch: feature/2026-06-01-service-order-lifecycle
 Status: Implemented
 
@@ -8,7 +8,7 @@ Phase Context: The next active roadmap phase is Phase 2, Service Order Lifecycle
 
 Implementation Note: The backend already exposes a `/service-orders` router, but some service-order behavior still leaks through `services` schemas and service modules. This phase should complete the lifecycle on the existing route surface and remove naming drift where it affects the public contract.
 
-Implementation Result: The phase was implemented against the existing `services` model/table and normalized around the `/service-orders` API contract. No schema migration was required for the delivered branch scope.
+Implementation Result: The order lifecycle was implemented against the existing `services` model/table and normalized around the `/service-orders` API contract, with no schema migration required for that scope. The branch additionally delivered a companion vehicle service-history feature (`POST /services-history`) that did introduce a new `services_history` table and Alembic migrations.
 
 ## Task Groups
 
@@ -100,7 +100,30 @@ Delivered:
 - Workshop dashboard identity was corrected to use the tenant workshop profile through `/workshops/me`.
 - Workshop dashboard, client/workshop messages, and client car page were widened to use the full app content width.
 
-### 6. Testing, Type Safety, and Merge Preparation
+### 6. Vehicle Service History
+Status: Complete for branch scope (full CRUD + frontend); automated test slice deferred
+
+1. Add a `services_history` persistence surface to track completed maintenance per vehicle, kept separate from the order lifecycle. — Done
+2. Model the service-type catalog and a predictive next-service interval table (mileage and days per service type). — Done
+3. Expose a client-only `POST /services-history` endpoint that validates inputs and persists a tenant-scoped record. — Done
+4. Auto-calculate `next_service_mileage` and `next_service_date` on creation from the current mileage, the service date, and the interval table. — Done
+5. Document the schema through Alembic migrations and keep tenant isolation intact. — Done
+6. Complete the CRUD surface with client-only `GET`, `PUT`, and `DELETE` endpoints, all tenant-scoped and restricted to the client's own vehicles. — Done
+7. Deliver the frontend service-history experience: sidebar entry, list page with service-type filter, create/edit modal, and per-row update/delete. — Done
+
+Delivered:
+- New `ServiceHistory` model and `services_history` table with a `tenant_id` foreign key and composite indexes on `(tenant_id, id)` and `(tenant_id, vehicle_id)`; `vehicle_id` is a `CASCADE` foreign key to `vehicles`.
+- `POST /services-history` creates a record for the authenticated client; non-client roles receive `403`, and missing `current_mileage` or `serviced_at` returns `400`.
+- `GET /services-history` lists the client's own records (joined through `vehicles.user_id`) with an optional `service_type` and `vehicle_id` filter, ordered by `serviced_at` descending.
+- `GET /services-history/{id}` returns a single owned record or `404`.
+- `PUT /services-history/{id}` updates an owned record and re-derives `next_service_mileage`/`next_service_date` when `current_mileage`, `service_type`, or `serviced_at` change.
+- `DELETE /services-history/{id}` removes an owned record and returns `204`; a missing or non-owned record returns `404`. All read/write paths stay tenant- and owner-scoped.
+- `calculate_next_service_mileage` and `calculate_next_service_date` in `src/utils/services_history.py` derive predictions from the service-type interval table.
+- Alembic migrations create and evolve the table (`be80440e36bd` create, `89fceb537d51` add `tenant_id` and tighten types/indexes, `81977476ee57` rename `mileage` to `current_mileage`, `3060d85944b0` widen mileage columns to `Float`), with `3060d85944b0` as the current head.
+- Frontend: a `Histórico de Manutenção` client sidebar entry routes to `/client/service-history`. The page (`apps/web/src/pages/client/service-history-page.tsx`) renders a header with title/description and an `Adicionar Manutenção` button, a service-type filter, and a formatted table of all records with per-row edit and delete actions. The create/edit modal posts and updates records through `apps/web/src/services/service-history-service.tsx`.
+- A focused automated test slice for the service-history endpoints remains tracked as follow-up.
+
+### 7. Testing, Type Safety, and Merge Preparation
 Status: Automated checks complete; manual QA deferred
 
 1. Add backend tests for valid transitions, invalid transitions, role restrictions, and tenant isolation.
@@ -114,3 +137,4 @@ Delivered:
 - Focused backend lifecycle coverage was added in `apps/backend/tests/test_service_order_lifecycle.py`.
 - Frontend typechecking passes for the updated branch.
 - Manual QA is intentionally deferred for the later validation round requested by the user.
+- The `services_history` feature has no dedicated automated test slice yet; its migration chain and the `POST /services-history` endpoint are follow-up coverage items.

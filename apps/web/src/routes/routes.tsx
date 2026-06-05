@@ -7,6 +7,7 @@ import { AddCarPage } from '../pages/client/add-car-page.tsx';
 import { SearchWorkshopsPage } from '../pages/client/search-workshops-page.tsx';
 import WorkshopPage from '../pages/client/workshop-page.tsx';
 import CarPage from '../pages/client/car-page.tsx';
+import ServiceHistoryPage from '../pages/client/service-history-page.tsx';
 import { useAuth } from '../context/auth-context';
 import { Navigate } from 'react-router-dom';
 
@@ -78,6 +79,11 @@ export const protectedRoutes = [
     path: '/client/services/:serviceId',
     role: 'CLIENT',
     element: <AppLayout><ServicesPage /></AppLayout>,
+  },
+  {
+    path: '/client/service-history',
+    role: 'CLIENT',
+    element: <AppLayout><ServiceHistoryPage /></AppLayout>,
   },
 
   // WORKSHOP ROUTES

@@ -300,12 +300,33 @@
 - End-to-end navigation flow from list page to detail page to lifecycle action
 - Audit of existing `service-service.tsx` consumers against the final backend route/response contract
 
+#### 2.5 Vehicle Service History (added on this branch)
+
+A companion maintenance-log feature was delivered alongside the lifecycle work. It is a separate, append-only record keyed to a vehicle (not an order workflow state).
+
+- New `services_history` table and `ServiceHistory` model with `tenant_id` FK and composite indexes `(tenant_id, id)` and `(tenant_id, vehicle_id)`; `vehicle_id` is a `CASCADE` FK to `vehicles`.
+- `POST /services-history` — client-only endpoint to record a completed maintenance event.
+  - Input: vehicle_id, service_type, current_mileage, cost, serviced_at, description (optional)
+  - Auto-derives `next_service_mileage` and `next_service_date` from the current mileage, service date, and a per-service-type interval table.
+  - Non-client roles rejected with `403`; missing `current_mileage` or `serviced_at` rejected with `400`.
+- Service-type catalog (11 types): oil change, tire rotation, tire replacement, brake service, battery replacement, air filter, transmission service, coolant flush, belt replacement, inspection, other.
+
+**Deliverables:**
+- `ServiceHistory` model, `ServiceHistoryService`, repository, and Pydantic schemas
+- Alembic migrations creating and evolving `services_history` (head revision `3060d85944b0`)
+- Next-service interval table and calculation utils in `src/utils/services_history.py`
+
+**Follow-up (not yet done):**
+- Frontend adapter and UI for `/services-history`
+- List/detail (`GET`) endpoints and a focused automated test slice
+
 **Tests:**
 - ✅ Valid status transitions allowed
 - ✅ Invalid transitions rejected
 - ✅ Only workshop can confirm order
 - ✅ Notifications sent on status change
 - ✅ Cross-tenant orders cannot be accessed
+- ⚠️ Service-history endpoint: no automated test slice yet (manual verification + follow-up)
 
 ---
 

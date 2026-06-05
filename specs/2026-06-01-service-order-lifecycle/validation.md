@@ -1,6 +1,6 @@
 # Phase 2 Validation: Service Order Lifecycle
 
-Last Updated: 2026-06-01
+Last Updated: 2026-06-05
 Branch: feature/2026-06-01-service-order-lifecycle
 Status: Automated validation passed on 2026-06-01
 
@@ -38,6 +38,16 @@ Purpose: Define the evidence required to confirm the service-order lifecycle imp
 - Status changes create persisted notification records.
 - Notification content identifies the order and the new status.
 
+### 1.5 Vehicle Service History
+
+- A client user can create a vehicle service-history record through `POST /services-history`.
+- A non-client role is rejected (`403`) when attempting to create a service-history record.
+- A request missing `current_mileage` or `serviced_at` is rejected with a validation error (`400`).
+- The created record persists the derived `next_service_mileage` and `next_service_date`.
+- A client can list (`GET /services-history`, with optional `service_type`/`vehicle_id` filters), read (`GET /services-history/{id}`), update (`PUT /services-history/{id}`), and delete (`DELETE /services-history/{id}`) only their own records.
+- Updating `current_mileage`, `service_type`, or `serviced_at` re-derives the next-service predictions; `DELETE` returns `204` and a missing or non-owned record returns `404`.
+- Service-history reads and writes remain tenant-scoped.
+
 ## 2. Backend Validation
 
 ### 2.1 Automated Tests
@@ -74,6 +84,8 @@ Validated behaviors in the focused test slice:
 - client cancellation of a confirmed order is rejected
 - client summary counts reflect the current lifecycle state
 
+Service-history note: the `/services-history` endpoints (now a full client-only CRUD surface) do not yet have a dedicated automated test slice. The behaviors in section 1.5 require manual verification for now, and a focused test slice is tracked as follow-up coverage.
+
 ### 2.2 Migration Verification
 
 If lifecycle fields or constraints change the schema:
@@ -92,7 +104,8 @@ Expected result:
 
 Recorded result for this branch scope:
 
-- No schema migration was required for the delivered lifecycle implementation.
+- The order-lifecycle implementation required no schema migration.
+- The companion service-history feature added migrations that create and evolve the `services_history` table (`be80440e36bd` → `89fceb537d51` → `aa3043742a82` → `81977476ee57` → `3060d85944b0`, with `3060d85944b0` as head). These should be exercised with the upgrade/downgrade/upgrade cycle above to confirm the table applies, downgrades, and re-applies cleanly.
 
 ## 3. Frontend Validation
 
@@ -140,6 +153,7 @@ The branch is merge-ready only if all of the following are true:
 - backend tests for the lifecycle slice pass
 - frontend typecheck passes
 - manual flow verification is completed for workshop create, client accept, workshop progress, and dashboard summary
+- the `POST /services-history` endpoint creates tenant-scoped records with derived next-service fields and enforces the client-only and required-field rules
 - no tenant-isolation regression is introduced
 
 Current gate status on 2026-06-01:
@@ -147,6 +161,7 @@ Current gate status on 2026-06-01:
 - Backend lifecycle slice: passed
 - Frontend typecheck: passed
 - Manual flow verification: pending follow-up validation round
+- Service-history endpoints: full client-only CRUD backend delivered and frontend (sidebar + `/client/service-history` page) delivered; automated test slice pending follow-up
 - Tenant-isolation regression: no automated regression found in the focused lifecycle slice
 
 ## 5. Non-Goals for Validation

@@ -1,6 +1,6 @@
 # Phase 2 Requirements: Service Order Lifecycle
 
-Last Updated: 2026-06-01
+Last Updated: 2026-06-05
 Branch: feature/2026-06-01-service-order-lifecycle
 Status: Implemented
 
@@ -20,6 +20,7 @@ Phase Context: `specs/ROADMAP.md` marks Phase 2, Service Order Lifecycle, as the
 - Keep tenant-aware authorization and data isolation intact for every lifecycle action.
 - Ensure the notification bell consumes persisted lifecycle notifications correctly on the frontend.
 - Keep the workshop dashboard identity tied to the workshop profile rather than the shared auth user label.
+- Provide a vehicle service-history record so clients can log completed maintenance and receive predicted next-service scheduling.
 
 ### Out of Scope
 
@@ -79,6 +80,14 @@ Required endpoints:
 - `PATCH /service-orders/{id}/complete`
 - `PATCH /service-orders/{id}/cancel`
 
+In addition, the branch introduces a companion vehicle service-history resource under its own prefix, with a full client-only CRUD surface:
+
+- `POST /services-history`
+- `GET /services-history` (optional `service_type` and `vehicle_id` filters)
+- `GET /services-history/{id}`
+- `PUT /services-history/{id}`
+- `DELETE /services-history/{id}`
+
 The API contract must expose enough data for:
 
 - workshop creation and management of service orders
@@ -104,6 +113,18 @@ The dashboard summary should be backed by a server response rather than assemble
 - The initial workshop-created `PENDING` order must also create persisted notifications for the workshop and the linked client when they are known users.
 - The frontend notification context must fetch `/notifications` and `/notifications/unread-count` using the API client's parsed JSON response shape.
 
+### 3.7 Service History Requirements
+
+- A client user can record a completed maintenance event against one of their vehicles through `POST /services-history`.
+- A service-history record must capture at least: vehicle reference, service type, current mileage at service, cost, and the date the service was performed (`serviced_at`).
+- The supported service types are a fixed catalog: `oil_change`, `tire_rotation`, `tire_replacement`, `brake_service`, `battery_replacement`, `air_filter`, `transmission_service`, `coolant_flush`, `belt_replacement`, `inspection`, and `other`.
+- On creation, the backend must derive `next_service_mileage` and `next_service_date` from the current mileage, the service date, and a service-type interval table, and persist them on the record.
+- `current_mileage` and `serviced_at` are required inputs; a request missing either must be rejected with a validation error.
+- Only client users can create service-history records; any other role must be rejected.
+- A client can list, read, update, and delete only their own service-history records (those tied to vehicles they own), and updating mileage, service type, or service date must re-derive the next-service predictions.
+- Every service-history read and write must remain tenant-scoped, consistent with the lifecycle isolation rules.
+- The frontend must surface service history to clients through a dedicated page reachable from the client sidebar, supporting create, list with a service-type filter, update, and delete.
+
 ## 4. Delivered Implementation Notes
 
 - The branch kept the current `services` model as the underlying persistence surface and implemented the lifecycle through service-layer rules rather than a table rename.
@@ -111,6 +132,9 @@ The dashboard summary should be backed by a server response rather than assemble
 - The backend exposes `GET /workshops/me` so workshop-facing pages can render the tenant workshop profile directly.
 - The active frontend route surfaces now consume `/service-orders` and the normalized status set.
 - Persisted notifications now reach both client and workshop recipients for creation and status-change events.
+- A companion vehicle service-history feature was delivered on this branch: `POST /services-history` persists a client's maintenance record into a new `services_history` table and auto-calculates next-service mileage and date. Unlike the order lifecycle, this feature required new Alembic migrations.
+- The service-history CRUD surface was completed with client-only, owner-scoped `GET /services-history` (with `service_type`/`vehicle_id` filters), `GET /services-history/{id}`, `PUT /services-history/{id}` (re-deriving next-service predictions on relevant edits), and `DELETE /services-history/{id}`.
+- Service-history frontend consumption is now implemented: a `Histórico de Manutenção` client sidebar entry and `/client/service-history` page provide list/filter/create/edit/delete against the CRUD endpoints. A focused automated test slice for these endpoints remains follow-up work.
 
 ## 5. Technical Decisions
 
@@ -162,6 +186,16 @@ Rationale:
 - The multi-tenancy foundation was the immediately preceding phase.
 - Lifecycle work cannot regress tenant isolation or leak cross-tenant data.
 
+### Decision 6: Service History Uses a Dedicated Persistence Surface
+
+Decision: Unlike the order lifecycle, the vehicle service-history feature introduces a dedicated `services_history` table with Alembic migrations rather than reusing the existing `services` model.
+
+Rationale:
+
+- Service history is an append-only maintenance log keyed to a vehicle, not an order workflow state, so it does not map onto the lifecycle status set.
+- A dedicated table keeps the predictive next-service fields and the service-type catalog isolated from order processing.
+- The table follows the same tenant-scoping and composite-index pattern established in the Phase 1 multi-tenancy foundation.
+
 ## 6. Open Implementation Constraints
 
 - The codebase may still use `services` schemas or service modules beneath the `/service-orders` router. This phase should prioritize public contract clarity and role-correct behavior over broad internal renaming.
@@ -179,4 +213,5 @@ This phase is ready for merge when:
 - client dashboard shows a trustworthy current-user order summary
 - backend and frontend share one consistent `/service-orders` contract
 - notification routes and the notification bell resolve the same persisted notification data
+- clients can create tenant-scoped vehicle service-history records with derived next-service mileage and date
 - validation in `validation.md` passes
