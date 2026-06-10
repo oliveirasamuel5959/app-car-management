@@ -37,6 +37,8 @@ SaaS platform connecting vehicle owners (CLIENT) with mechanical workshops (WORK
 
 - Controllers call Services. Services call Repository. Repository call DB. Never bypass.
 
+- In backend use utils/<domain_name_convention>.py to add utils functions to use in Services Layer, separeted by domain.
+
 ## Commands
 
 Root (Turbo fans out to workspaces): `npm run dev | build | lint | test`.
