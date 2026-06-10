@@ -1,6 +1,6 @@
 # 🗺 Implementation Roadmap
 
-**Current Status:** Pre-Alpha (Phase 1 Complete)  
+**Current Status:** Pre-Alpha (Phase 2 Complete)  
 **Target:** MVP Ready in ~8 weeks  
 **Scale:** Hundreds of tenants with tenant-scoped isolation
 
@@ -38,7 +38,8 @@
 - ✅ `/vehicles/*` — Vehicle CRUD operations
 - ✅ `/workshops/*` — Workshop CRUD operations
 - ✅ `/services/*` — Service CRUD operations
-- ✅ `/create-services-orders/*` — Service order creation
+- ✅ `/service-orders/*` — Service order lifecycle (create, list, summary, accept, start, complete, cancel)
+- ✅ `/services-history/*` — Vehicle service-history CRUD (client-only)
 - ✅ `/workshop-clients/*` — Workshop-client relationship management
 - ✅ `/messages/*` — Message endpoints + WebSocket support
 - ✅ `/notifications/*` — Notification endpoints
@@ -86,12 +87,17 @@
 - ✅ Existing frontend-to-backend integration surface already includes auth, vehicles, workshops, services, workshop-clients, and messages
 - ⚠️ Some frontend service adapters still need contract cleanup where endpoint paths or response handling diverge from the current backend API
 
+### ✅ Recently Completed (Phase 2)
+
+- ✅ **Service order lifecycle** (full state machine: PENDING → CONFIRMED → IN_PROGRESS → COMPLETED, plus role-aware cancellation)
+- ✅ **Vehicle service history** (client-only CRUD with derived next-service predictions)
+- ✅ **Persisted notifications** on order creation and status changes, surfaced via the frontend notification bell
+
 ### ⚠️ Partial / In-Progress
 
-- ⚠️ **Service order lifecycle** (created, not fully implemented)
 - ⚠️ **Reviews & ratings** (model exists, UI not complete)
-- ⚠️ **Real-time notifications** (model/endpoints exist, WebSocket integration incomplete)
-- ⚠️ **Database migrations** (core tenant foundation migrations implemented; future feature migrations still pending)
+- ⚠️ **Real-time chat over WebSocket** (notifications now persisted + delivered to the bell; live chat transport integration still incomplete)
+- ⚠️ **Database migrations** (tenant foundation + `services_history` feature migrations implemented; future feature migrations still pending)
 - ⚠️ **Backend/frontend contract consistency** (many pages and routes already exist, but some service modules still need response/path normalization)
 
 ### ❌ Not Yet Implemented
@@ -114,7 +120,7 @@
 - FR-03: Vehicle management ✅
 - FR-04: Workshop management ✅ (partial)
 - FR-05: Workshop search ✅ (partial - no filtering)
-- FR-06: Scheduling ⚠️ (model exists, lifecycle incomplete)
+- FR-06: Scheduling ✅ (service-order lifecycle complete; appointment scheduling out of scope for Phase 2)
 - FR-07: Reviews & ratings ⚠️ (UI incomplete)
 - FR-08: Messaging ✅ (WebSocket needs integration)
 
@@ -226,37 +232,40 @@
 
 **Objective:** Complete service order workflow with status transitions.
 
+**Status:** Complete on 2026-06-10
+
 #### 2.1 Service Order Model & Status Enum
-- Update ServiceOrder model with lifecycle states:
-  - PENDING (client created, awaiting workshop response)
-  - CONFIRMED (workshop accepted)
-  - IN_PROGRESS (work started)
-  - COMPLETED (work done, awaiting payment)
-  - PAID (payment confirmed)
-  - CANCELLED (either party cancelled)
-- Add state machine logic to prevent invalid transitions
+- Lifecycle states (the order workflow reuses the existing `services` model/table — no new order table was introduced):
+  - PENDING (workshop created the order, awaiting client acceptance)
+  - CONFIRMED (client accepted)
+  - IN_PROGRESS (workshop started the work)
+  - COMPLETED (workshop finished the work)
+  - CANCELLED (either party cancelled, within the allowed states)
+- State machine logic prevents invalid transitions
+- `PAID` was deliberately deferred to the later payment phase (Phase 6); it is not part of the lifecycle on this branch
 
 **Deliverables:**
-- ServiceOrder model with status enum
+- Lifecycle status enum on the `services` model
 - Status transition validation
-- Database migration
+- (No new database migration — implemented on the existing services table)
+
+**Completed:**
+- Status constants and the transition matrix live in `apps/backend/src/services/services.py`
+- Invalid transitions and role-mismatched actions are rejected with `400`/`403`
 
 #### 2.2 Service Order API Endpoints
-- `POST /service-orders/create` — Client creates service request
-  - Input: workshop_id, vehicle_id, description, preferred_date
+
+All endpoints are mounted under `/service-orders` and use `PATCH` for lifecycle transitions.
+
+- `POST /service-orders/` — **Workshop** creates a service order
   - Output: service_order with PENDING status
-  
-- `PUT /service-orders/{id}/confirm` — Workshop accepts (requires auth)
-  - Input: estimated_cost
-  - Output: status → CONFIRMED, cost set
-  
-- `PUT /service-orders/{id}/start-work` — Workshop marks work in progress
-  
-- `PUT /service-orders/{id}/complete` — Workshop marks work complete
-  - Marks the order ready for the later payment phase
-  
-- `PUT /service-orders/{id}/cancel` — Either party cancels
-- `GET /service-orders/my-orders` — List all orders for current user (client or workshop)
+- `GET /service-orders/` — Role-aware list (workshop sees its orders; client sees its own)
+- `GET /service-orders/summary` — **Client** dashboard summary (counts by status + recent orders, `ServiceSummaryRead`)
+- `GET /service-orders/{id}` — Retrieve a single order (role-aware access)
+- `PATCH /service-orders/{id}/accept` — **Client** accepts (PENDING → CONFIRMED)
+- `PATCH /service-orders/{id}/start` — **Workshop** starts work (CONFIRMED → IN_PROGRESS)
+- `PATCH /service-orders/{id}/complete` — **Workshop** marks complete (IN_PROGRESS → COMPLETED)
+- `PATCH /service-orders/{id}/cancel` — Either party cancels (client: PENDING only; workshop: PENDING/CONFIRMED/IN_PROGRESS)
 
 **Deliverables:**
 - Expanded ServiceOrderService with state machine
@@ -265,6 +274,10 @@
 - Real-time notification on status change (via WebSocket)
 - Frontend service adapters updated for the new lifecycle endpoints and response payloads
 - Existing workshop/client service and order pages extended to consume the lifecycle endpoints instead of introducing duplicate flows
+
+**Completed:**
+- All eight endpoints above shipped in `apps/backend/src/api/routes/service_orders.py` with role-based authorization and tenant scoping
+- Persisted notifications fire on creation and on every status change (`apps/backend/src/services/notifications.py`)
 
 #### 2.3 Service Order UI
 - **Client View:**
@@ -288,6 +301,12 @@
 - Card/list/table updates so lifecycle fields from the backend are rendered consistently
 - Reuse and evolve the existing workshop orders, create-orders, client-orders, and client services pages where possible
 
+**Completed:**
+- Client services page exposes the accept flow (`PATCH /service-orders/{id}/accept`) with status badges
+- Workshop orders page exposes start / complete / cancel actions wired to the lifecycle endpoints
+- Client dashboard renders a service-order summary widget (active/pending/confirmed/in-progress counts + recent orders) from `GET /service-orders/summary`
+- Existing pages were extended in place rather than introducing duplicate flows
+
 #### 2.4 Backend/Frontend Synchronization
 - Keep service-order response schemas stable across backend and frontend
 - Update frontend API clients when route names, request payloads, or response bodies change
@@ -300,15 +319,25 @@
 - End-to-end navigation flow from list page to detail page to lifecycle action
 - Audit of existing `service-service.tsx` consumers against the final backend route/response contract
 
+**Completed:**
+- `service-service.tsx` aligned to the canonical `/service-orders` routes and `PATCH` lifecycle verbs
+- Workshop dashboard identity resolved via `getMe()` (`GET /workshops/me`) so orders are scoped to the correct tenant workshop profile
+- Status enums, labels, and badge colors aligned between backend and frontend
+
 #### 2.5 Vehicle Service History (added on this branch)
 
 A companion maintenance-log feature was delivered alongside the lifecycle work. It is a separate, append-only record keyed to a vehicle (not an order workflow state).
 
 - New `services_history` table and `ServiceHistory` model with `tenant_id` FK and composite indexes `(tenant_id, id)` and `(tenant_id, vehicle_id)`; `vehicle_id` is a `CASCADE` FK to `vehicles`.
-- `POST /services-history` — client-only endpoint to record a completed maintenance event.
-  - Input: vehicle_id, service_type, current_mileage, cost, serviced_at, description (optional)
-  - Auto-derives `next_service_mileage` and `next_service_date` from the current mileage, service date, and a per-service-type interval table.
-  - Non-client roles rejected with `403`; missing `current_mileage` or `serviced_at` rejected with `400`.
+- Full client-only CRUD under `/services-history` (all routes reject non-client roles with `403` and are tenant + vehicle-owner scoped):
+  - `POST /services-history/` — record a completed maintenance event.
+    - Input: vehicle_id, service_type, current_mileage, cost, serviced_at, description (optional)
+    - Auto-derives `next_service_mileage` and `next_service_date` from the current mileage, service date, and a per-service-type interval table.
+    - Missing `current_mileage` or `serviced_at` rejected with `400`.
+  - `GET /services-history/` — list own records (optional `service_type` / `vehicle_id` filters).
+  - `GET /services-history/{id}` — retrieve a single record.
+  - `PUT /services-history/{id}` — update a record (re-derives next-service fields when mileage/type/date change).
+  - `DELETE /services-history/{id}` — delete a record (`204 No Content`).
 - Service-type catalog (11 types): oil change, tire rotation, tire replacement, brake service, battery replacement, air filter, transmission service, coolant flush, belt replacement, inspection, other.
 
 **Deliverables:**
@@ -316,17 +345,25 @@ A companion maintenance-log feature was delivered alongside the lifecycle work. 
 - Alembic migrations creating and evolving `services_history` (head revision `3060d85944b0`)
 - Next-service interval table and calculation utils in `src/utils/services_history.py`
 
+**Completed:**
+- Full GET/PUT/DELETE CRUD endpoints shipped alongside the original POST (`apps/backend/src/api/routes/services_history.py`)
+- Frontend adapter `service-history-service.tsx` covering the full CRUD surface
+- Service History page at `/client/service-history` (create/edit modal, service-type filter, per-row edit/delete) plus the client sidebar entry "Histórico de Manutenção"
+
 **Follow-up (not yet done):**
-- Frontend adapter and UI for `/services-history`
-- List/detail (`GET`) endpoints and a focused automated test slice
+- Focused automated test slice for the service-history endpoints
 
 **Tests:**
 - ✅ Valid status transitions allowed
 - ✅ Invalid transitions rejected
-- ✅ Only workshop can confirm order
-- ✅ Notifications sent on status change
+- ✅ Only workshop can start/complete; only client can accept
+- ✅ Notifications sent on creation and status change
 - ✅ Cross-tenant orders cannot be accessed
-- ⚠️ Service-history endpoint: no automated test slice yet (manual verification + follow-up)
+- ✅ `poetry run pytest tests/test_service_order_lifecycle.py` passed with 5 tests
+- ✅ `npm run check` (frontend type check) passed
+- ⚠️ Service-history endpoints: no automated test slice yet (manual verification + follow-up)
+
+**Phase Outcome:** Phase 2 implementation is complete; the next active roadmap phase is Phase 3 (Reviews & Ratings).
 
 ---
 
@@ -796,8 +833,8 @@ A companion maintenance-log feature was delivered alongside the lifecycle work. 
 | Week | Phase | Key Deliverables | Status |
 |------|-------|-----------------|--------|
 | 1 | 1 | Tenant context, multi-tenancy schema | 🚧 |
-| 1.5 | 2 | Service order model and workflow foundation | 🚧 |
-| 2.5 | 2 | Service order lifecycle complete | 🚧 |
+| 1.5 | 2 | Service order model and workflow foundation | ✅ |
+| 2.5 | 2 | Service order lifecycle complete | ✅ |
 | 3 | 3 | Reviews & ratings | 🚧 |
 | 3.5 | 4 | Search and filtering | 🚧 |
 | 4.5 | 5 | WebSocket real-time | 🚧 |
@@ -860,5 +897,5 @@ A companion maintenance-log feature was delivered alongside the lifecycle work. 
 **Status:** Active  
 **Scope:** MVP Implementation (Weeks 1-8)  
 **Ownership:** Engineering Team  
-**Last Updated:** 2026-06-01  
+**Last Updated:** 2026-06-10  
 **Next Review:** Weekly on Friday standup
