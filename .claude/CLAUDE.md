@@ -18,7 +18,24 @@ SaaS platform connecting vehicle owners (CLIENT) with mechanical workshops (WORK
 
 ## Stack
 
--  
+- Frontend, React 18+, Next.js, Modern UI framework
+- Backend, FastAPI + Python 3.11+, REST API, async support
+- Database, PostgreSQL 14+, ACID compliance, multi-tenant isolation
+- Real-time, WebSockets + FastAPI, Live chat, instant notifications
+- State Management, Zustand + React Query, Client and server state
+- Hosting, Vercel (frontend) + Railway/Fly.io (backend), Scalable, multi-tenant ready
+- Authentication, JWT + Refresh Tokens, Stateless, distributed auth
+- Payment, Stripe (split payment API), Secure processing, marketplace support
+- Monitoring, Sentry + CloudWatch, Error tracking, performance
+- Database Migration, Alembic, Version control for schema changes
+  
+- Tests: Pytest, Vitest
+
+## Constraints
+
+- Never use `any`. Use `unknown` + type guards.
+
+- Controllers call Services. Services call Repository. Repository call DB. Never bypass.
 
 ## Commands
 
