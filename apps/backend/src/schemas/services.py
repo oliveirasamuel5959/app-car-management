@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class ServiceCreate(BaseModel):
     """Schema for creating a new service."""
+
     workshop_client_id: Optional[int] = None
     vehicle_id: Optional[int] = None
     name: str
@@ -25,6 +26,7 @@ class ServiceCreate(BaseModel):
 
 class ServiceRead(BaseModel):
     """Schema for reading service information."""
+
     id: int
     tenant_id: UUID
     workshop_id: int
@@ -70,6 +72,7 @@ class ServiceSummaryItem(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class ServiceSummaryRead(BaseModel):
     total_orders: int = Field(default=0)

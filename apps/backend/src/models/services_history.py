@@ -2,11 +2,13 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey, Index, Numeric
+from sqlalchemy import (Column, DateTime, Float, ForeignKey, Index, Integer,
+                        Numeric, String, Text)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
+
 
 class ServiceType(str, Enum):
     OIL_CHANGE = "oil_change"
@@ -30,12 +32,13 @@ class ServiceHistory(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id"), nullable=False, index=True
+    )
 
     # Relationships
     vehicle_id: Mapped[int] = mapped_column(
-        ForeignKey("vehicles.id", ondelete="CASCADE"),
-        nullable=False
+        ForeignKey("vehicles.id", ondelete="CASCADE"), nullable=False
     )
 
     # workshop_id: Mapped[int] = mapped_column(
@@ -59,7 +62,9 @@ class ServiceHistory(Base):
     next_service_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     # Audit
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
 
     # Relationships (ORM)
     tenant = relationship("Tenant", back_populates="services_history")

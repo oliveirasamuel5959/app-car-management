@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
 from typing import List, Optional
+
 from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
 
 from src.models.messages import Message
 from src.models.services import Service
@@ -8,10 +9,8 @@ from src.models.user import User
 from src.models.vehicle import Vehicle
 from src.models.workshop import Workshop
 from src.models.workshop_client import WorkshopClient
-from src.repositories.messages import (
-    repo_create_message,
-    repo_get_conversation,
-)
+from src.repositories.messages import (repo_create_message,
+                                       repo_get_conversation)
 from src.repositories.user import repo_get_user_by_id
 
 
@@ -22,13 +21,19 @@ class MessageService:
     def _get_user_any_tenant(self, user_id: int) -> User | None:
         return self.db.query(User).filter(User.id == user_id).first()
 
-    def _resolve_conversation_tenant(self, user_a: User, user_b: User, preferred_tenant_id=None):
+    def _resolve_conversation_tenant(
+        self, user_a: User, user_b: User, preferred_tenant_id=None
+    ):
         existing_message = (
             self.db.query(Message.tenant_id)
             .filter(
                 or_(
-                    and_(Message.sender_id == user_a.id, Message.receiver_id == user_b.id),
-                    and_(Message.sender_id == user_b.id, Message.receiver_id == user_a.id),
+                    and_(
+                        Message.sender_id == user_a.id, Message.receiver_id == user_b.id
+                    ),
+                    and_(
+                        Message.sender_id == user_b.id, Message.receiver_id == user_a.id
+                    ),
                 )
             )
             .order_by(Message.created_at.desc())
@@ -95,7 +100,9 @@ class MessageService:
         if not sender or not sender.is_active:
             raise ValueError("Sender user not found or inactive")
 
-        conversation_tenant_id = self._resolve_conversation_tenant(sender, receiver, preferred_tenant_id=tenant_id)
+        conversation_tenant_id = self._resolve_conversation_tenant(
+            sender, receiver, preferred_tenant_id=tenant_id
+        )
         if conversation_tenant_id is None:
             raise ValueError("No shared conversation context found")
 
@@ -121,9 +128,13 @@ class MessageService:
         if not sender or not receiver:
             return []
 
-        conversation_tenant_id = self._resolve_conversation_tenant(sender, receiver, preferred_tenant_id=tenant_id)
+        conversation_tenant_id = self._resolve_conversation_tenant(
+            sender, receiver, preferred_tenant_id=tenant_id
+        )
         if conversation_tenant_id is None:
             return []
 
-        messages = repo_get_conversation(self.db, conversation_tenant_id, user_a, user_b, skip=skip, limit=limit)
+        messages = repo_get_conversation(
+            self.db, conversation_tenant_id, user_a, user_b, skip=skip, limit=limit
+        )
         return list(reversed(messages))

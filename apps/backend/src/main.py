@@ -1,24 +1,26 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from src.routers import api_router
-from src.core.middleware import AuthMiddleware, SecurityHeadersMiddleware, RateLimitMiddleware
+from fastapi.staticfiles import StaticFiles
+
 from src.core.config import settings
+from src.core.middleware import (AuthMiddleware, RateLimitMiddleware,
+                                 SecurityHeadersMiddleware)
+from src.routers import api_router
 
 servers = [
-  {"url": "http://localhost:5500", "description": "Staging environment"},
-  {"url": "https://prod.example.com", "description": "Production environment"},
+    {"url": "http://localhost:5500", "description": "Staging environment"},
+    {"url": "https://prod.example.com", "description": "Production environment"},
 ]
 
 tags_metadata = [
-  {
-    "name": "users",
-    "description": "Operations to add users",
-  },
-  {
-    "name": "auth",
-    "description": "Authentication operations",
-  },
+    {
+        "name": "users",
+        "description": "Operations to add users",
+    },
+    {
+        "name": "auth",
+        "description": "Authentication operations",
+    },
 ]
 
 app = FastAPI(
@@ -35,9 +37,9 @@ Banck account transactions management.
 * **List user by ID**.
 * **Delete user by ID**.
   """,
-  openapi_tags=tags_metadata,
-  # openapi_url=None, # disable docs
-  servers=servers,
+    openapi_tags=tags_metadata,
+    # openapi_url=None, # disable docs
+    servers=servers,
 )
 
 app.mount("/images", StaticFiles(directory="static/images"), name="images")
@@ -52,18 +54,28 @@ app.mount("/images", StaticFiles(directory="static/images"), name="images")
 # )
 
 app.add_middleware(
-  CORSMiddleware,
-  allow_origins=["http://localhost:5173"],
-  allow_credentials=True,
-  allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allow_headers=["Authorization","Content-Type"],
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
 
 # Add security middlewares
-app.add_middleware(AuthMiddleware, public_routes=["/", "/docs", "/redoc", "/openapi.json", "/auth/register", "/auth/login", "/messages/ws"])
+app.add_middleware(
+    AuthMiddleware,
+    public_routes=[
+        "/",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        "/auth/register",
+        "/auth/login",
+        "/messages/ws",
+    ],
+)
 
 app.include_router(api_router)
-

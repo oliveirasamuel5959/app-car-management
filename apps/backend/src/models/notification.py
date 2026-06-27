@@ -1,9 +1,10 @@
 import uuid
+from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import Optional
+
 from src.db.base import Base
 
 
@@ -15,12 +16,20 @@ class Notification(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
-    service_id: Mapped[Optional[int]] = mapped_column(ForeignKey("services.id"), nullable=True, index=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id"), nullable=False, index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    service_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("services.id"), nullable=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     message: Mapped[str] = mapped_column(String(500), nullable=False)
-    notification_type: Mapped[str] = mapped_column(String(50), nullable=False)  # 'status_change', 'message', etc.
+    notification_type: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # 'status_change', 'message', etc.
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),

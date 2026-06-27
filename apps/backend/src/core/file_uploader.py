@@ -1,9 +1,9 @@
-from fastapi import UploadFile, File, HTTPException, status
 import os
 import uuid
 from datetime import datetime
 from pathlib import Path
 
+from fastapi import File, HTTPException, UploadFile, status
 
 UPLOAD_DIRECTORY = Path("uploads")
 ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"]
@@ -20,40 +20,42 @@ async def handle_file_upload(file: UploadFile, user_id: int):
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File too large"
+            detail="File too large",
         )
-    
+
     # Validate file type
     mime_type = file.content_type
     file_type = get_file_type(mime_type)
-    
+
     if not file_type:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported file type"
+            detail="Unsupported file type",
         )
-    
+
     # Generate unique filename
     file_extension = Path(file.filename).suffix
     unique_filename = f"{uuid.uuid4()}{file_extension}"
-    
+
     # Create user-specific directory
     user_dir = UPLOAD_DIRECTORY / str(user_id)
     user_dir.mkdir(exist_ok=True)
-    
+
     file_path = user_dir / unique_filename
-    
+
     # Save file
     with open(file_path, "wb") as f:
         f.write(contents)
-    
+
     return {
         "file_url": f"/uploads/{user_id}/{unique_filename}",
         "file_name": file.filename,
         "file_size": len(contents),
         "mime_type": mime_type,
-        "file_type": file_type
+        "file_type": file_type,
     }
+
+
 def get_file_type(mime_type: str) -> str:
     if mime_type in ALLOWED_IMAGE_TYPES:
         return "image"

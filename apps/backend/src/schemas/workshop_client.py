@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class WorkshopClientCreate(BaseModel):
@@ -12,6 +13,7 @@ class WorkshopClientCreate(BaseModel):
     vehicle_model: str
     vehicle_year: int
     vehicle_plate: str
+
 
 class WorkshopClientRead(BaseModel):
     id: int

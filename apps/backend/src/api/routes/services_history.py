@@ -3,49 +3,55 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from src.db.database import get_session
-from src.schemas.services_history import ServiceHistoryCreate, ServiceHistoryRead, ServiceHistoryUpdate
-from src.services.services_history import ServiceHistoryService
 from src.core.auth import get_current_user
-
 from src.core.logger import get_logger
+from src.db.database import get_session
+from src.schemas.services_history import (ServiceHistoryCreate,
+                                          ServiceHistoryRead,
+                                          ServiceHistoryUpdate)
+from src.services.services_history import ServiceHistoryService
 
 logger = get_logger(__name__)
 
 router = APIRouter()
+
 
 @router.post(
     "/",
     response_model=ServiceHistoryRead,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new service order",
-    description="Create a new service order for a workshop client"
+    description="Create a new service order for a workshop client",
 )
 def create_service_history(
     history_in: ServiceHistoryCreate,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     """Create a new service history record with validation of workshop and client."""
     if current_user.get("role") != "CLIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can create service history records")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only clients can create service history records",
+        )
 
     service = ServiceHistoryService(db)
 
     try:
         user_id = current_user.get("user_id")
         tenant_id = current_user.get("tenant_id")
-        logger.info(f"Creating service history record for user_id={user_id}, tenant_id={tenant_id}")
-        return service.create_service_history(history_in, user_id=int(user_id), tenant_id=tenant_id)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+        logger.info(
+            f"Creating service history record for user_id={user_id}, tenant_id={tenant_id}"
         )
+        return service.create_service_history(
+            history_in, user_id=int(user_id), tenant_id=tenant_id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while creating the service history record: {str(e)}"
+            detail=f"An error occurred while creating the service history record: {str(e)}",
         )
 
 
@@ -54,16 +60,19 @@ def create_service_history(
     response_model=list[ServiceHistoryRead],
     status_code=status.HTTP_200_OK,
     summary="List service history records",
-    description="List the authenticated client's vehicle service-history records, optionally filtered by service type or vehicle."
+    description="List the authenticated client's vehicle service-history records, optionally filtered by service type or vehicle.",
 )
 def list_service_history(
     service_type: Optional[str] = Query(None),
     vehicle_id: Optional[int] = Query(None),
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     if current_user.get("role") != "CLIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can access service history records")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only clients can access service history records",
+        )
 
     service = ServiceHistoryService(db)
     return service.get_services_history(
@@ -83,10 +92,13 @@ def list_service_history(
 def get_service_history(
     history_id: int,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     if current_user.get("role") != "CLIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can access service history records")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only clients can access service history records",
+        )
 
     service = ServiceHistoryService(db)
     result = service.get_service_history_by_id(
@@ -96,7 +108,10 @@ def get_service_history(
     )
 
     if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service history record not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service history record not found",
+        )
 
     return result
 
@@ -111,10 +126,13 @@ def update_service_history(
     history_id: int,
     history_in: ServiceHistoryUpdate,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     if current_user.get("role") != "CLIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can update service history records")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only clients can update service history records",
+        )
 
     service = ServiceHistoryService(db)
     try:
@@ -128,7 +146,10 @@ def update_service_history(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service history record not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service history record not found",
+        )
 
     return result
 
@@ -141,10 +162,13 @@ def update_service_history(
 def delete_service_history(
     history_id: int,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     if current_user.get("role") != "CLIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can delete service history records")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only clients can delete service history records",
+        )
 
     service = ServiceHistoryService(db)
     deleted = service.delete_service_history(
@@ -154,6 +178,9 @@ def delete_service_history(
     )
 
     if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service history record not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service history record not found",
+        )
 
     return None

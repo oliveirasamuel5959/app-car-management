@@ -6,11 +6,14 @@ from sqlalchemy.sql import func
 
 from src.db.base import Base
 
+
 class Tenant(Base):
     __tablename__ = "tenants"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    slug: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    slug: Mapped[str] = mapped_column(
+        String(100), unique=True, index=True, nullable=False
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),

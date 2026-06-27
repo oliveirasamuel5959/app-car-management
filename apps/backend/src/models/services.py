@@ -1,7 +1,8 @@
-from datetime import datetime
 import uuid
+from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (DateTime, Float, ForeignKey, Index, Integer, String,
+                        Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
@@ -15,22 +16,21 @@ class Service(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id"), nullable=False, index=True
+    )
 
     # Relationships
     workshop_id: Mapped[int] = mapped_column(
-        ForeignKey("workshops.id", ondelete="CASCADE"),
-        nullable=False
+        ForeignKey("workshops.id", ondelete="CASCADE"), nullable=False
     )
 
     vehicle_id: Mapped[int] = mapped_column(
-        ForeignKey("vehicles.id", ondelete="CASCADE"),
-        nullable=True
+        ForeignKey("vehicles.id", ondelete="CASCADE"), nullable=True
     )
 
     workshop_client_id: Mapped[int] = mapped_column(
-        ForeignKey("workshop_clients.id", ondelete="CASCADE"),
-        nullable=True
+        ForeignKey("workshop_clients.id", ondelete="CASCADE"), nullable=True
     )
 
     # Basic Information
@@ -70,4 +70,3 @@ class Service(Base):
     vehicle = relationship("Vehicle", backref="services")
     workshop_client = relationship("WorkshopClient", backref="services")
     notifications = relationship("Notification", back_populates="service")
-    
