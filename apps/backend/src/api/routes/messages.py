@@ -1,20 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, UploadFile, File
-from sqlalchemy.orm import Session
-from typing import List
 import json
 import logging
+from typing import List
+
+from fastapi import (APIRouter, Depends, File, HTTPException, UploadFile,
+                     WebSocket, WebSocketDisconnect, status)
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
-from src.db.database import get_session
-from src.core.auth import get_current_user, authenticate_websocket
-from src.core.websocket_manager import ConnectionManager
+from src.core.auth import authenticate_websocket, get_current_user
 from src.core.file_uploader import handle_file_upload
-from src.schemas.messages import (
-    MessageRead,
-    WSIncomingMessage,
-    FileUploadResponse,
-)
+from src.core.websocket_manager import ConnectionManager
+from src.db.database import get_session
+from src.schemas.messages import (FileUploadResponse, MessageRead,
+                                  WSIncomingMessage)
 from src.services.messages import MessageService
 
 router = APIRouter()
@@ -24,6 +23,7 @@ manager = ConnectionManager()
 
 
 # ─── WebSocket ────────────────────────────────────────────────────────────────
+
 
 @router.websocket("/ws")
 async def websocket_endpoint(
@@ -87,26 +87,33 @@ async def websocket_endpoint(
                     )
 
             elif payload.type == "typing_start":
-                await manager.send_to_user(payload.receiver_id, {
-                    "type": "user_typing",
-                    "sender_id": user.id,
-                    "sender_name": user.name,
-                    "typing": True,
-                })
+                await manager.send_to_user(
+                    payload.receiver_id,
+                    {
+                        "type": "user_typing",
+                        "sender_id": user.id,
+                        "sender_name": user.name,
+                        "typing": True,
+                    },
+                )
 
             elif payload.type == "typing_stop":
-                await manager.send_to_user(payload.receiver_id, {
-                    "type": "user_typing",
-                    "sender_id": user.id,
-                    "sender_name": user.name,
-                    "typing": False,
-                })
+                await manager.send_to_user(
+                    payload.receiver_id,
+                    {
+                        "type": "user_typing",
+                        "sender_id": user.id,
+                        "sender_name": user.name,
+                        "typing": False,
+                    },
+                )
 
     except WebSocketDisconnect:
         manager.disconnect(user.id)
 
 
 # ─── Conversation History ─────────────────────────────────────────────────────
+
 
 @router.get("/conversation/{other_user_id}", response_model=List[MessageRead])
 def get_conversation(
@@ -127,6 +134,7 @@ def get_conversation(
 
 
 # ─── File Upload ──────────────────────────────────────────────────────────────
+
 
 @router.post("/conversation/{receiver_id}/upload", response_model=FileUploadResponse)
 async def upload_file_to_user(

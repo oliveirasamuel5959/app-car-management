@@ -1,7 +1,8 @@
-from sqlalchemy import or_, and_
-from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
+
+from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
 
 from src.models.messages import Message
 
@@ -51,7 +52,7 @@ def repo_get_conversation(
             or_(
                 and_(Message.sender_id == user_a, Message.receiver_id == user_b),
                 and_(Message.sender_id == user_b, Message.receiver_id == user_a),
-            )
+            ),
         )
         .order_by(Message.created_at.desc())
         .offset(skip)
@@ -60,5 +61,11 @@ def repo_get_conversation(
     )
 
 
-def repo_get_message_by_id(db: Session, message_id: int, tenant_id: UUID | str) -> Optional[Message]:
-    return db.query(Message).filter(Message.id == message_id, Message.tenant_id == tenant_id).first()
+def repo_get_message_by_id(
+    db: Session, message_id: int, tenant_id: UUID | str
+) -> Optional[Message]:
+    return (
+        db.query(Message)
+        .filter(Message.id == message_id, Message.tenant_id == tenant_id)
+        .first()
+    )

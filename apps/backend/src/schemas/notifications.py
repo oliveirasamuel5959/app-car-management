@@ -1,11 +1,13 @@
-from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from pydantic import BaseModel
+
 
 class NotificationCreate(BaseModel):
     """Schema for creating a new notification."""
+
     user_id: int
     service_id: Optional[int] = None
     title: str
@@ -15,6 +17,7 @@ class NotificationCreate(BaseModel):
 
 class NotificationRead(BaseModel):
     """Schema for reading notification information."""
+
     id: int
     tenant_id: UUID
     user_id: int
@@ -32,4 +35,5 @@ class NotificationRead(BaseModel):
 
 class NotificationUpdate(BaseModel):
     """Schema for updating notification status."""
+
     is_read: bool

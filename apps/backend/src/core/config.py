@@ -1,5 +1,7 @@
+from typing import List, Optional
+
 from pydantic_settings import BaseSettings
-from typing import Optional, List
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -34,4 +36,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

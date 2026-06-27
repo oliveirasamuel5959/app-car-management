@@ -1,14 +1,17 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
 from typing import List, Optional
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 
 from src.core.security import verify_token
 
 security = HTTPBearer()
 
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict:
 
     token = credentials.credentials
     payload = verify_token(token)
@@ -21,10 +24,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         )
 
     return payload
-  
+
+
 async def get_user_by_role(
-    required_roles: List[str],
-    current_user: dict = Depends(get_current_user)
+    required_roles: List[str], current_user: dict = Depends(get_current_user)
 ) -> dict:
 
     user_role = current_user.get("role")
@@ -32,12 +35,15 @@ async def get_user_by_role(
     if user_role not in required_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"User role '{user_role}' is not authorized for this action. Required roles: {required_roles}"
+            detail=f"User role '{user_role}' is not authorized for this action. Required roles: {required_roles}",
         )
 
     return current_user
 
-async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Optional[dict]:
+
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> Optional[dict]:
 
     if credentials is None:
         return None
@@ -53,18 +59,19 @@ async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] 
         )
 
     return payload
-  
+
+
 def verify_user_id_ownership(user_id: int, current_user: dict) -> bool:
 
-  current_user_id = current_user.get("user_id")
+    current_user_id = current_user.get("user_id")
 
-  if current_user_id != user_id:
-    raise HTTPException(
-      status_code=status.HTTP_403_FORBIDDEN,
-      detail="You do not have permission to access this resource"
-    )
+    if current_user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this resource",
+        )
 
-  return True
+    return True
 
 
 async def authenticate_websocket(token: str, db: Session):
@@ -102,4 +109,3 @@ async def authenticate_websocket(token: str, db: Session):
         )
 
     return user
-

@@ -2,16 +2,16 @@ import uuid
 from datetime import datetime, timezone
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import event
+from sqlalchemy import create_engine, event
 from sqlalchemy import inspect as sa_inspect
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from src.core.security import create_access_token, hash_password, verify_token
 from src.core.tenant import TenantContext
 from src.db.base import Base
-from src.models import Message, Notification, Tenant, User, Vehicle, Workshop, WorkshopClient
+from src.models import (Message, Notification, Tenant, User, Vehicle, Workshop,
+                        WorkshopClient)
 from src.models.services import Service
 from src.repositories.services import repo_get_services_by_user_id
 from src.repositories.user import repo_get_user_by_id
@@ -55,7 +55,9 @@ def create_user(session, *, tenant_id, email, user_id):
     return user
 
 
-def create_user_with_password(session, *, tenant_id, email, user_id, password, role="CLIENT"):
+def create_user_with_password(
+    session, *, tenant_id, email, user_id, password, role="CLIENT"
+):
     user = User(
         id=user_id,
         tenant_id=tenant_id,
@@ -116,8 +118,22 @@ def test_repo_get_vehicles_by_user_id_filters_by_tenant():
 
     session.add_all(
         [
-            Vehicle(tenant_id=tenant_a.id, brand="Honda", model="Civic", year=2020, plate="AAA-0001", user_id=user_a.id),
-            Vehicle(tenant_id=tenant_b.id, brand="Ford", model="Focus", year=2021, plate="BBB-0002", user_id=user_b.id),
+            Vehicle(
+                tenant_id=tenant_a.id,
+                brand="Honda",
+                model="Civic",
+                year=2020,
+                plate="AAA-0001",
+                user_id=user_a.id,
+            ),
+            Vehicle(
+                tenant_id=tenant_b.id,
+                brand="Ford",
+                model="Focus",
+                year=2021,
+                plate="BBB-0002",
+                user_id=user_b.id,
+            ),
         ]
     )
     session.commit()
@@ -219,7 +235,14 @@ def test_model_relationships_expose_tenant_ownership():
     session.commit()
 
     user = create_user(session, tenant_id=tenant.id, email="owner@test.dev", user_id=1)
-    vehicle = Vehicle(tenant_id=tenant.id, brand="Honda", model="Civic", year=2020, plate="AAA-1111", user_id=user.id)
+    vehicle = Vehicle(
+        tenant_id=tenant.id,
+        brand="Honda",
+        model="Civic",
+        year=2020,
+        plate="AAA-1111",
+        user_id=user.id,
+    )
     session.add(vehicle)
     session.commit()
     session.refresh(vehicle)
@@ -239,11 +262,27 @@ def test_workshop_unique_constraints_are_tenant_scoped():
     session.add_all([tenant_a, tenant_b])
     session.commit()
 
-    user_a = create_user(session, tenant_id=tenant_a.id, email="owner-a@test.dev", user_id=1)
-    user_b = create_user(session, tenant_id=tenant_b.id, email="owner-b@test.dev", user_id=2)
+    user_a = create_user(
+        session, tenant_id=tenant_a.id, email="owner-a@test.dev", user_id=1
+    )
+    user_b = create_user(
+        session, tenant_id=tenant_b.id, email="owner-b@test.dev", user_id=2
+    )
 
-    create_workshop(session, tenant_id=tenant_a.id, user_id=user_a.id, workshop_id=1, email="shop@test.dev")
-    create_workshop(session, tenant_id=tenant_b.id, user_id=user_b.id, workshop_id=2, email="shop@test.dev")
+    create_workshop(
+        session,
+        tenant_id=tenant_a.id,
+        user_id=user_a.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
+    create_workshop(
+        session,
+        tenant_id=tenant_b.id,
+        user_id=user_b.id,
+        workshop_id=2,
+        email="shop@test.dev",
+    )
 
     duplicate_same_tenant = Workshop(
         id=3,
@@ -270,8 +309,16 @@ def test_workshop_client_allows_unregistered_email_and_keeps_user_link_optional(
     session.add(tenant)
     session.commit()
 
-    workshop_owner = create_user(session, tenant_id=tenant.id, email="owner@test.dev", user_id=1)
-    create_workshop(session, tenant_id=tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+    workshop_owner = create_user(
+        session, tenant_id=tenant.id, email="owner@test.dev", user_id=1
+    )
+    create_workshop(
+        session,
+        tenant_id=tenant.id,
+        user_id=workshop_owner.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
 
     service = WorkshopClientService(session)
     client = service.create_client(
@@ -360,9 +407,19 @@ def test_repo_get_services_by_user_id_includes_services_linked_by_workshop_clien
     session.add(tenant)
     session.commit()
 
-    workshop_owner = create_user(session, tenant_id=tenant.id, email="owner@test.dev", user_id=1)
-    client_user = create_user(session, tenant_id=tenant.id, email="client@test.dev", user_id=2)
-    workshop = create_workshop(session, tenant_id=tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+    workshop_owner = create_user(
+        session, tenant_id=tenant.id, email="owner@test.dev", user_id=1
+    )
+    client_user = create_user(
+        session, tenant_id=tenant.id, email="client@test.dev", user_id=2
+    )
+    workshop = create_workshop(
+        session,
+        tenant_id=tenant.id,
+        user_id=workshop_owner.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
 
     workshop_client = WorkshopClient(
         tenant_id=tenant.id,
@@ -407,9 +464,19 @@ def test_repo_get_services_by_user_id_includes_services_linked_by_workshop_clien
     session.add(tenant)
     session.commit()
 
-    workshop_owner = create_user(session, tenant_id=tenant.id, email="owner@test.dev", user_id=1)
-    client_user = create_user(session, tenant_id=tenant.id, email="client@test.dev", user_id=2)
-    workshop = create_workshop(session, tenant_id=tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+    workshop_owner = create_user(
+        session, tenant_id=tenant.id, email="owner@test.dev", user_id=1
+    )
+    client_user = create_user(
+        session, tenant_id=tenant.id, email="client@test.dev", user_id=2
+    )
+    workshop = create_workshop(
+        session,
+        tenant_id=tenant.id,
+        user_id=workshop_owner.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
 
     workshop_client = WorkshopClient(
         tenant_id=tenant.id,
@@ -442,7 +509,9 @@ def test_repo_get_services_by_user_id_includes_services_linked_by_workshop_clien
     session.commit()
     session.refresh(service)
 
-    services = repo_get_services_by_user_id(session, client_user.id, tenant.id, user_email=client_user.email)
+    services = repo_get_services_by_user_id(
+        session, client_user.id, tenant.id, user_email=client_user.email
+    )
 
     assert len(services) == 1
     assert services[0].id == service.id
@@ -451,13 +520,25 @@ def test_repo_get_services_by_user_id_includes_services_linked_by_workshop_clien
 def test_repo_get_services_by_user_id_allows_client_cross_tenant_workshop_access_by_email():
     session = build_session()
     client_tenant = Tenant(id=uuid.uuid4(), slug="client-tenant", name="Client Tenant")
-    workshop_tenant = Tenant(id=uuid.uuid4(), slug="workshop-tenant", name="Workshop Tenant")
+    workshop_tenant = Tenant(
+        id=uuid.uuid4(), slug="workshop-tenant", name="Workshop Tenant"
+    )
     session.add_all([client_tenant, workshop_tenant])
     session.commit()
 
-    client_user = create_user(session, tenant_id=client_tenant.id, email="client@test.dev", user_id=1)
-    workshop_owner = create_user(session, tenant_id=workshop_tenant.id, email="owner@test.dev", user_id=2)
-    workshop = create_workshop(session, tenant_id=workshop_tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+    client_user = create_user(
+        session, tenant_id=client_tenant.id, email="client@test.dev", user_id=1
+    )
+    workshop_owner = create_user(
+        session, tenant_id=workshop_tenant.id, email="owner@test.dev", user_id=2
+    )
+    workshop = create_workshop(
+        session,
+        tenant_id=workshop_tenant.id,
+        user_id=workshop_owner.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
 
     workshop_client = WorkshopClient(
         tenant_id=workshop_tenant.id,
@@ -490,7 +571,9 @@ def test_repo_get_services_by_user_id_allows_client_cross_tenant_workshop_access
     session.commit()
     session.refresh(service)
 
-    services = repo_get_services_by_user_id(session, client_user.id, None, user_email=client_user.email)
+    services = repo_get_services_by_user_id(
+        session, client_user.id, None, user_email=client_user.email
+    )
 
     assert len(services) == 1
     assert services[0].id == service.id
@@ -499,13 +582,25 @@ def test_repo_get_services_by_user_id_allows_client_cross_tenant_workshop_access
 def test_workshop_client_service_backfills_registered_client_user_by_cross_tenant_email():
     session = build_session()
     client_tenant = Tenant(id=uuid.uuid4(), slug="client-tenant", name="Client Tenant")
-    workshop_tenant = Tenant(id=uuid.uuid4(), slug="workshop-tenant", name="Workshop Tenant")
+    workshop_tenant = Tenant(
+        id=uuid.uuid4(), slug="workshop-tenant", name="Workshop Tenant"
+    )
     session.add_all([client_tenant, workshop_tenant])
     session.commit()
 
-    client_user = create_user(session, tenant_id=client_tenant.id, email="client@test.dev", user_id=1)
-    workshop_owner = create_user(session, tenant_id=workshop_tenant.id, email="owner@test.dev", user_id=2)
-    create_workshop(session, tenant_id=workshop_tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+    client_user = create_user(
+        session, tenant_id=client_tenant.id, email="client@test.dev", user_id=1
+    )
+    workshop_owner = create_user(
+        session, tenant_id=workshop_tenant.id, email="owner@test.dev", user_id=2
+    )
+    create_workshop(
+        session,
+        tenant_id=workshop_tenant.id,
+        user_id=workshop_owner.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
 
     service = WorkshopClientService(session)
     client = service.create_client(
@@ -531,11 +626,23 @@ def test_workshop_resolution_falls_back_to_tenant_workshop_for_secondary_worksho
     session.add(tenant)
     session.commit()
 
-    workshop_owner = create_user(session, tenant_id=tenant.id, email="owner@test.dev", user_id=1)
-    secondary_workshop_user = create_user(session, tenant_id=tenant.id, email="staff@test.dev", user_id=2)
-    workshop = create_workshop(session, tenant_id=tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+    workshop_owner = create_user(
+        session, tenant_id=tenant.id, email="owner@test.dev", user_id=1
+    )
+    secondary_workshop_user = create_user(
+        session, tenant_id=tenant.id, email="staff@test.dev", user_id=2
+    )
+    workshop = create_workshop(
+        session,
+        tenant_id=tenant.id,
+        user_id=workshop_owner.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
 
-    resolved = repo_get_workshop_for_user(session, secondary_workshop_user.id, tenant.id)
+    resolved = repo_get_workshop_for_user(
+        session, secondary_workshop_user.id, tenant.id
+    )
 
     assert resolved is not None
     assert resolved.id == workshop.id
@@ -547,9 +654,19 @@ def test_workshop_client_service_uses_tenant_workshop_for_secondary_workshop_use
     session.add(tenant)
     session.commit()
 
-    workshop_owner = create_user(session, tenant_id=tenant.id, email="owner@test.dev", user_id=1)
-    secondary_workshop_user = create_user(session, tenant_id=tenant.id, email="staff@test.dev", user_id=2)
-    workshop = create_workshop(session, tenant_id=tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+    workshop_owner = create_user(
+        session, tenant_id=tenant.id, email="owner@test.dev", user_id=1
+    )
+    secondary_workshop_user = create_user(
+        session, tenant_id=tenant.id, email="staff@test.dev", user_id=2
+    )
+    workshop = create_workshop(
+        session,
+        tenant_id=tenant.id,
+        user_id=workshop_owner.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
 
     session.add(
         WorkshopClient(
@@ -567,7 +684,9 @@ def test_workshop_client_service_uses_tenant_workshop_for_secondary_workshop_use
     )
     session.commit()
 
-    clients = WorkshopClientService(session).get_clients(secondary_workshop_user.id, tenant.id)
+    clients = WorkshopClientService(session).get_clients(
+        secondary_workshop_user.id, tenant.id
+    )
 
     assert len(clients) == 1
     assert clients[0].workshop_id == workshop.id
@@ -576,13 +695,25 @@ def test_workshop_client_service_uses_tenant_workshop_for_secondary_workshop_use
 def test_message_service_allows_cross_tenant_client_workshop_conversation():
     session = build_session()
     client_tenant = Tenant(id=uuid.uuid4(), slug="client-tenant", name="Client Tenant")
-    workshop_tenant = Tenant(id=uuid.uuid4(), slug="workshop-tenant", name="Workshop Tenant")
+    workshop_tenant = Tenant(
+        id=uuid.uuid4(), slug="workshop-tenant", name="Workshop Tenant"
+    )
     session.add_all([client_tenant, workshop_tenant])
     session.commit()
 
-    client_user = create_user(session, tenant_id=client_tenant.id, email="client@test.dev", user_id=1)
-    workshop_owner = create_user(session, tenant_id=workshop_tenant.id, email="owner@test.dev", user_id=2)
-    workshop = create_workshop(session, tenant_id=workshop_tenant.id, user_id=workshop_owner.id, workshop_id=1, email="shop@test.dev")
+    client_user = create_user(
+        session, tenant_id=client_tenant.id, email="client@test.dev", user_id=1
+    )
+    workshop_owner = create_user(
+        session, tenant_id=workshop_tenant.id, email="owner@test.dev", user_id=2
+    )
+    workshop = create_workshop(
+        session,
+        tenant_id=workshop_tenant.id,
+        user_id=workshop_owner.id,
+        workshop_id=1,
+        email="shop@test.dev",
+    )
 
     workshop_client = WorkshopClient(
         tenant_id=workshop_tenant.id,
@@ -621,7 +752,9 @@ def test_message_service_allows_cross_tenant_client_workshop_conversation():
         receiver_id=workshop_owner.id,
         content="Hello workshop",
     )
-    conversation = message_service.get_conversation(client_tenant.id, client_user.id, workshop_owner.id)
+    conversation = message_service.get_conversation(
+        client_tenant.id, client_user.id, workshop_owner.id
+    )
 
     assert sent_message.tenant_id == workshop_tenant.id
     assert len(conversation) == 1
@@ -630,7 +763,9 @@ def test_message_service_allows_cross_tenant_client_workshop_conversation():
 
 def test_tenant_context_holds_user_and_tenant_values():
     tenant_id = uuid.uuid4()
-    context = TenantContext(tenant_id=tenant_id, tenant_slug="oficina-silva", user_id=42)
+    context = TenantContext(
+        tenant_id=tenant_id, tenant_slug="oficina-silva", user_id=42
+    )
 
     assert context.tenant_id == tenant_id
     assert context.tenant_slug == "oficina-silva"
@@ -643,7 +778,15 @@ def test_schema_contains_tenant_columns_and_indexes():
 
     tenant_columns = {
         table_name: {column["name"] for column in inspector.get_columns(table_name)}
-        for table_name in ["users", "vehicles", "workshops", "services", "workshop_clients", "messages", "notifications"]
+        for table_name in [
+            "users",
+            "vehicles",
+            "workshops",
+            "services",
+            "workshop_clients",
+            "messages",
+            "notifications",
+        ]
     }
 
     for table_name, columns in tenant_columns.items():
@@ -657,7 +800,9 @@ def test_schema_contains_tenant_columns_and_indexes():
 def test_migration_files_exist_for_phase_foundation():
     import pathlib
 
-    versions_dir = pathlib.Path(__file__).resolve().parents[1] / "migrations" / "versions"
+    versions_dir = (
+        pathlib.Path(__file__).resolve().parents[1] / "migrations" / "versions"
+    )
     migration_files = {path.name for path in versions_dir.glob("*.py")}
 
     assert "0001_initial_core_schema.py" in migration_files

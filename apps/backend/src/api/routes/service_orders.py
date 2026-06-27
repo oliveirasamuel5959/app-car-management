@@ -3,10 +3,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from src.db.database import get_session
-from src.schemas.services import ServiceActionUpdate, ServiceCreate, ServiceRead, ServiceSummaryRead
-from src.services.services import ServiceService
 from src.core.auth import get_current_user
+from src.db.database import get_session
+from src.schemas.services import (ServiceActionUpdate, ServiceCreate,
+                                  ServiceRead, ServiceSummaryRead)
+from src.services.services import ServiceService
 
 router = APIRouter()
 
@@ -16,31 +17,33 @@ router = APIRouter()
     response_model=ServiceRead,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new service order",
-    description="Create a new service order for a workshop client"
+    description="Create a new service order for a workshop client",
 )
 def create_service_order(
     service_in: ServiceCreate,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     """Create a new service order with validation of workshop and client."""
     if current_user.get("role") != "WORKSHOP":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only workshops can create service orders")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only workshops can create service orders",
+        )
 
     service = ServiceService(db)
 
     try:
         user_id = current_user.get("user_id")
-        return service.create_service(service_in, user_id=int(user_id), tenant_id=current_user.get("tenant_id"))
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+        return service.create_service(
+            service_in, user_id=int(user_id), tenant_id=current_user.get("tenant_id")
         )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the service order"
+            detail="An error occurred while creating the service order",
         )
 
 
@@ -65,7 +68,9 @@ def list_service_orders(
 
     if role == "WORKSHOP":
         if workshop_client_id is not None:
-            return service.get_services_by_workshop_client_id(workshop_client_id, tenant_id)
+            return service.get_services_by_workshop_client_id(
+                workshop_client_id, tenant_id
+            )
         if workshop_id is not None:
             return service.get_services_by_workshop_id(workshop_id, tenant_id)
         if vehicle_id is not None:
@@ -86,7 +91,10 @@ def get_service_order_summary(
     db: Session = Depends(get_session),
 ):
     if current_user.get("role") != "CLIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can access service-order summary")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only clients can access service-order summary",
+        )
 
     service = ServiceService(db)
     return service.get_client_summary(
@@ -110,12 +118,20 @@ def get_service_order(
     role = current_user.get("role")
 
     if role == "WORKSHOP":
-        result = service.get_service_order_for_workshop(service_id, int(current_user.get("user_id")), current_user.get("tenant_id"))
+        result = service.get_service_order_for_workshop(
+            service_id, int(current_user.get("user_id")), current_user.get("tenant_id")
+        )
     else:
-        result = service.get_service_order_for_client(service_id, int(current_user.get("user_id")), user_email=current_user.get("sub"))
+        result = service.get_service_order_for_client(
+            service_id,
+            int(current_user.get("user_id")),
+            user_email=current_user.get("sub"),
+        )
 
     if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found"
+        )
 
     return result
 
@@ -132,7 +148,10 @@ def accept_service_order(
     db: Session = Depends(get_session),
 ):
     if current_user.get("role") != "CLIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can accept service orders")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only clients can accept service orders",
+        )
 
     service = ServiceService(db)
     try:
@@ -145,7 +164,9 @@ def accept_service_order(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     if not updated_service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found"
+        )
 
     return updated_service
 
@@ -163,7 +184,10 @@ def start_service_order(
     db: Session = Depends(get_session),
 ):
     if current_user.get("role") != "WORKSHOP":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only workshops can start service orders")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only workshops can start service orders",
+        )
 
     service = ServiceService(db)
     try:
@@ -178,7 +202,9 @@ def start_service_order(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     if not updated_service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found"
+        )
 
     return updated_service
 
@@ -196,7 +222,10 @@ def complete_service_order(
     db: Session = Depends(get_session),
 ):
     if current_user.get("role") != "WORKSHOP":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only workshops can complete service orders")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only workshops can complete service orders",
+        )
 
     service = ServiceService(db)
     try:
@@ -211,7 +240,9 @@ def complete_service_order(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     if not updated_service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found"
+        )
 
     return updated_service
 
@@ -242,6 +273,8 @@ def cancel_service_order(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     if not updated_service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found"
+        )
 
     return updated_service

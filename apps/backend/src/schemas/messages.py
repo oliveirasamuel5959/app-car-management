@@ -1,8 +1,9 @@
-from pydantic import BaseModel, field_validator
 from datetime import datetime
-from typing import Optional, Literal
 from enum import Enum
+from typing import Literal, Optional
 from uuid import UUID
+
+from pydantic import BaseModel, field_validator
 
 
 class MessageType(str, Enum):
@@ -14,6 +15,7 @@ class MessageType(str, Enum):
 
 
 # ─── Message ──────────────────────────────────────────────────────────────────
+
 
 class MessageRead(BaseModel):
     id: int
@@ -36,8 +38,10 @@ class MessageRead(BaseModel):
 
 # ─── WebSocket Payloads ───────────────────────────────────────────────────────
 
+
 class WSIncomingMessage(BaseModel):
     """Payload sent by the client over WebSocket."""
+
     type: Literal["chat_message", "typing_start", "typing_stop"]
     receiver_id: int
     content: Optional[str] = None
@@ -58,6 +62,7 @@ class WSIncomingMessage(BaseModel):
 
 
 # ─── File Upload ──────────────────────────────────────────────────────────────
+
 
 class FileUploadResponse(BaseModel):
     success: bool

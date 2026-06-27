@@ -1,12 +1,13 @@
-from src.schemas.user import UserRead
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from typing import Optional
 
-from src.db.database import get_session
-from src.schemas.workshop import WorkshopRead, WorkshopCreate
-from src.services.workshop import WorkshopService
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
 from src.core.auth import get_current_user, get_user_by_role
+from src.db.database import get_session
+from src.schemas.user import UserRead
+from src.schemas.workshop import WorkshopCreate, WorkshopRead
+from src.services.workshop import WorkshopService
 
 router = APIRouter()
 
@@ -16,13 +17,13 @@ router = APIRouter()
     response_model=list[WorkshopRead],
     status_code=status.HTTP_200_OK,
     summary="Get nearby workshops",
-    description="Provide latitude and longitude query parameters to find nearby workshops."
+    description="Provide latitude and longitude query parameters to find nearby workshops.",
 )
 def get_nearby_workshops(
     lat: float,
     lng: float,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     """Returns a list of workshops roughly within a 10km radius of the coordinates."""
     service = WorkshopService(db)
@@ -33,7 +34,7 @@ def get_nearby_workshops(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch workshops"
+            detail="Failed to fetch workshops",
         )
 
 
@@ -43,12 +44,12 @@ def get_nearby_workshops(
     response_model=WorkshopRead,
     status_code=status.HTTP_201_CREATED,
     summary="Create workshop profile",
-    description="Workshop owners can create their workshop details"
+    description="Workshop owners can create their workshop details",
 )
 def create_workshop(
     workshop_in: WorkshopCreate,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     service = WorkshopService(db)
     try:
@@ -56,14 +57,14 @@ def create_workshop(
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Unable to determine authenticated user id"
+                detail="Unable to determine authenticated user id",
             )
-        return service.create_workshop(workshop_in, user_id=int(user_id), tenant_id=current_user.get("tenant_id"))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+        return service.create_workshop(
+            workshop_in, user_id=int(user_id), tenant_id=current_user.get("tenant_id")
         )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 
 @router.get(
     "/me",
@@ -120,12 +121,12 @@ def get_workshop_by_id(
     response_model=list[UserRead],
     status_code=status.HTTP_200_OK,
     summary="Get all clients of a workshop",
-    description="Returns all distinct users with role CLIENT that have services in this workshop."
+    description="Returns all distinct users with role CLIENT that have services in this workshop.",
 )
 def get_workshop_clients(
     workshop_id: int,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     service = WorkshopService(db)
 
@@ -147,5 +148,5 @@ def get_workshop_clients(
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch workshop clients"
+            detail="Failed to fetch workshop clients",
         )
