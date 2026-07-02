@@ -43,7 +43,7 @@ SaaS platform connecting vehicle owners (CLIENT) with mechanical workshops (WORK
 
 Root (Turbo fans out to workspaces): `npm run dev | build | lint | test`.
 
-Backend (`cd apps/backend`, uses Poetry — run via `poetry run` or an activated venv):
+Backend (`cd apps/backend`, uses uv — run via `uv run` ):
 - `make run` — uvicorn on **port 5500** with `--reload`.
 - `make migrate` — `alembic upgrade head`.
 - `make migrations msg="..."` — autogenerate a migration.
