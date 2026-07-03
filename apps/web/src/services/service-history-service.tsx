@@ -17,14 +17,21 @@ export interface ServiceHistory {
   id: number;
   tenant_id: string;
   vehicle_id: number;
+  workshop_id?: number | null;
+  status: string;
   service_type: ServiceHistoryType;
   description?: string | null;
   current_mileage?: number | null;
-  cost?: number | null;
+  next_service_mileage?: number | null;
+  labor_cost?: number | null;
+  parts_cost?: number | null;
+  invoice_number?: string | null;
+  warranty_until_date?: string | null;
+  warranty_mileage?: number | null;
   serviced_at: string;
   next_service_date?: string | null;
-  next_service_mileage?: number | null;
   created_at: string;
+  updated_at?: string | null;
 }
 
 export interface ServiceHistoryCreate {
@@ -32,7 +39,11 @@ export interface ServiceHistoryCreate {
   service_type: ServiceHistoryType;
   description?: string | null;
   current_mileage?: number | null;
-  cost?: number | null;
+  labor_cost?: number | null;
+  parts_cost?: number | null;
+  invoice_number?: string | null;
+  warranty_until_date?: string | null;
+  warranty_mileage?: number | null;
   serviced_at: string;
 }
 
@@ -85,6 +96,26 @@ export const serviceHistoryService = {
   },
 };
 
+export const workshopServiceHistoryService = {
+  /**
+   * List service-history records authored by the authenticated workshop
+   * (i.e. created automatically when a service order was completed).
+   */
+  list: async (filters?: { service_type?: string; vehicle_id?: number }): Promise<ServiceHistory[]> => {
+    const params = new URLSearchParams();
+    if (filters?.service_type) {
+      params.append('service_type', filters.service_type);
+    }
+    if (filters?.vehicle_id) {
+      params.append('vehicle_id', filters.vehicle_id.toString());
+    }
+
+    const query = params.toString();
+    const response = await api.get(`/services-history/workshop${query ? `?${query}` : ''}`);
+    return Array.isArray(response) ? response : [];
+  },
+};
+
 export const SERVICE_TYPE_OPTIONS: { value: ServiceHistoryType; label: string }[] = [
   { value: 'oil_change', label: 'Troca de Óleo' },
   { value: 'tire_rotation', label: 'Rodízio de Pneus' },
@@ -106,3 +137,20 @@ export const SERVICE_TYPE_LABELS: Record<ServiceHistoryType, string> = SERVICE_T
   },
   {} as Record<ServiceHistoryType, string>,
 );
+
+export const formatServiceHistoryDate = (value?: string | null) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('pt-BR');
+};
+
+export const formatServiceHistoryCurrency = (value?: number | null) => {
+  if (value === null || value === undefined) return '-';
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+export const formatServiceHistoryMileage = (value?: number | null) => {
+  if (value === null || value === undefined) return '-';
+  return `${value.toLocaleString('pt-BR')} km`;
+};

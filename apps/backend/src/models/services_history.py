@@ -27,6 +27,7 @@ class ServiceHistory(Base):
     __table_args__ = (
         Index("ix_services_history_tenant_id_id", "tenant_id", "id"),
         Index("ix_services_history_tenant_id_vehicle_id", "tenant_id", "vehicle_id"),
+        Index("ix_services_history_tenant_id_workshop_id", "tenant_id", "workshop_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -38,10 +39,13 @@ class ServiceHistory(Base):
         nullable=False
     )
 
-    # workshop_id: Mapped[int] = mapped_column(
-    #     ForeignKey("workshops.id", ondelete="CASCADE"),
-    #     nullable=False
-    # )
+    workshop_id: Mapped[int | None] = mapped_column(
+        ForeignKey("workshops.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Lifecycle
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="completed", server_default="completed")
 
     # Service Info
     service_type: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -52,7 +56,13 @@ class ServiceHistory(Base):
     next_service_mileage: Mapped[int] = mapped_column(Integer, nullable=True)
 
     # Financial
-    cost: Mapped[float] = mapped_column(Numeric(precision=10, scale=2), nullable=True)
+    labor_cost: Mapped[float] = mapped_column(Numeric(precision=10, scale=2), nullable=True)
+    parts_cost: Mapped[float] = mapped_column(Numeric(precision=10, scale=2), nullable=True)
+    invoice_number: Mapped[str] = mapped_column(String(100), nullable=True)
+
+    # Warranty
+    warranty_until_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    warranty_mileage: Mapped[int] = mapped_column(Integer, nullable=True)
 
     # Scheduling
     serviced_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
@@ -60,8 +70,9 @@ class ServiceHistory(Base):
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, onupdate=datetime.utcnow)
 
     # Relationships (ORM)
     tenant = relationship("Tenant", back_populates="services_history")
     vehicle = relationship("Vehicle", backref="services_history")
-    # workshop = relationship("Workshop", backref="services_history")
+    workshop = relationship("Workshop", back_populates="services_history")

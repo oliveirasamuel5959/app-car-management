@@ -22,12 +22,16 @@ import {
   Divider,
   IconButton,
   Chip,
+  Tooltip,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   serviceHistoryService,
   SERVICE_TYPE_OPTIONS,
   SERVICE_TYPE_LABELS,
+  formatServiceHistoryDate as formatDate,
+  formatServiceHistoryCurrency as formatCurrency,
+  formatServiceHistoryMileage as formatMileage,
   type ServiceHistory,
   type ServiceHistoryType,
 } from '../../services/service-history-service';
@@ -45,7 +49,8 @@ interface FormState {
   service_type: ServiceHistoryType;
   description: string;
   current_mileage: string;
-  cost: string;
+  labor_cost: string;
+  parts_cost: string;
   serviced_at: string;
 }
 
@@ -56,25 +61,9 @@ const initialFormState: FormState = {
   service_type: 'oil_change',
   description: '',
   current_mileage: '',
-  cost: '',
+  labor_cost: '',
+  parts_cost: '',
   serviced_at: todayISODate(),
-};
-
-const formatDate = (value?: string | null) => {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleDateString('pt-BR');
-};
-
-const formatCurrency = (value?: number | null) => {
-  if (value === null || value === undefined) return '-';
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
-const formatMileage = (value?: number | null) => {
-  if (value === null || value === undefined) return '-';
-  return `${value.toLocaleString('pt-BR')} km`;
 };
 
 export default function ServiceHistoryPage() {
@@ -143,13 +132,15 @@ export default function ServiceHistoryPage() {
   };
 
   const handleOpenEdit = (record: ServiceHistory) => {
+    if (record.workshop_id != null) return;
     setEditingId(record.id);
     setFormData({
       vehicle_id: String(record.vehicle_id),
       service_type: record.service_type,
       description: record.description ?? '',
       current_mileage: record.current_mileage != null ? String(record.current_mileage) : '',
-      cost: record.cost != null ? String(record.cost) : '',
+      labor_cost: record.labor_cost != null ? String(record.labor_cost) : '',
+      parts_cost: record.parts_cost != null ? String(record.parts_cost) : '',
       serviced_at: record.serviced_at ? record.serviced_at.slice(0, 10) : todayISODate(),
     });
     setFormError(null);
@@ -188,7 +179,8 @@ export default function ServiceHistoryPage() {
       service_type: formData.service_type,
       description: formData.description.trim() || null,
       current_mileage: Number(formData.current_mileage),
-      cost: formData.cost ? Number(formData.cost) : null,
+      labor_cost: formData.labor_cost ? Number(formData.labor_cost) : null,
+      parts_cost: formData.parts_cost ? Number(formData.parts_cost) : null,
       serviced_at: new Date(formData.serviced_at).toISOString(),
     };
 
@@ -211,7 +203,9 @@ export default function ServiceHistoryPage() {
     }
   };
 
-  const handleDelete = async (historyId: number) => {
+  const handleDelete = async (record: ServiceHistory) => {
+    if (record.workshop_id != null) return;
+    const historyId = record.id;
     if (!confirm('Tem certeza que deseja remover este registro de manutenção?')) return;
     try {
       await serviceHistoryService.delete(historyId);
@@ -290,44 +284,68 @@ export default function ServiceHistoryPage() {
                 <TableCell>Tipo de Serviço</TableCell>
                 <TableCell>Descrição</TableCell>
                 <TableCell>Quilometragem</TableCell>
-                <TableCell>Custo</TableCell>
+                <TableCell>Mão de Obra</TableCell>
+                <TableCell>Peças</TableCell>
                 <TableCell>Data do Serviço</TableCell>
                 <TableCell>Próxima Revisão</TableCell>
                 <TableCell align="right">Ações</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {records.map((record) => (
-                <TableRow key={record.id} hover>
-                  <TableCell>{vehicleLabel(record.vehicle_id)}</TableCell>
-                  <TableCell>
-                    <Chip label={SERVICE_TYPE_LABELS[record.service_type] ?? record.service_type} size="small" />
-                  </TableCell>
-                  <TableCell>{record.description || '-'}</TableCell>
-                  <TableCell>{formatMileage(record.current_mileage)}</TableCell>
-                  <TableCell>{formatCurrency(record.cost)}</TableCell>
-                  <TableCell>{formatDate(record.serviced_at)}</TableCell>
-                  <TableCell>
-                    {formatDate(record.next_service_date)}
-                    {record.next_service_mileage != null && (
-                      <Typography variant="caption" display="block" color="text.secondary">
-                        {formatMileage(record.next_service_mileage)}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton size="small" color="primary" onClick={() => handleOpenEdit(record)}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => handleDelete(record.id)}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {records.map((record) => {
+                const isWorkshopAuthored = record.workshop_id != null;
+                return (
+                  <TableRow key={record.id} hover>
+                    <TableCell>{vehicleLabel(record.vehicle_id)}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
+                        <Chip label={SERVICE_TYPE_LABELS[record.service_type] ?? record.service_type} size="small" />
+                        {isWorkshopAuthored && (
+                          <Chip label="Adicionado pela oficina" size="small" color="info" variant="outlined" />
+                        )}
+                      </Stack>
+                    </TableCell>
+                    <TableCell>{record.description || '-'}</TableCell>
+                    <TableCell>{formatMileage(record.current_mileage)}</TableCell>
+                    <TableCell>{formatCurrency(record.labor_cost)}</TableCell>
+                    <TableCell>{formatCurrency(record.parts_cost)}</TableCell>
+                    <TableCell>{formatDate(record.serviced_at)}</TableCell>
+                    <TableCell>
+                      {formatDate(record.next_service_date)}
+                      {record.next_service_mileage != null && (
+                        <Typography variant="caption" display="block" color="text.secondary">
+                          {formatMileage(record.next_service_mileage)}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Tooltip title={isWorkshopAuthored ? 'Registro criado pela oficina — somente leitura' : ''}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            disabled={isWorkshopAuthored}
+                            onClick={() => handleOpenEdit(record)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            disabled={isWorkshopAuthored}
+                            onClick={() => handleDelete(record)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
               {records.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
+                  <TableCell colSpan={9} align="center">
                     Nenhuma manutenção registrada. Clique em "Adicionar Manutenção" para começar.
                   </TableCell>
                 </TableRow>
@@ -406,11 +424,21 @@ export default function ServiceHistoryPage() {
             />
 
             <TextField
-              label="Custo (R$)"
-              name="cost"
+              label="Mão de Obra (R$)"
+              name="labor_cost"
               type="number"
               fullWidth
-              value={formData.cost}
+              value={formData.labor_cost}
+              onChange={handleInputChange}
+              InputProps={{ inputProps: { min: 0, step: '0.01' } }}
+            />
+
+            <TextField
+              label="Peças (R$)"
+              name="parts_cost"
+              type="number"
+              fullWidth
+              value={formData.parts_cost}
               onChange={handleInputChange}
               InputProps={{ inputProps: { min: 0, step: '0.01' } }}
             />

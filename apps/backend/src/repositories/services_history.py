@@ -45,6 +45,29 @@ def repo_get_services_history_for_user(
   return query.order_by(ServiceHistory.serviced_at.desc()).all()
 
 
+def repo_get_services_history_for_workshop(
+    db: Session,
+    tenant_id: UUID | str,
+    workshop_id: int,
+    service_type: Optional[str] = None,
+    vehicle_id: Optional[int] = None,
+) -> List[ServiceHistory]:
+  """List service-history records authored by this workshop, scoped to the tenant."""
+  query = db.query(ServiceHistory).filter(
+      ServiceHistory.tenant_id == tenant_id,
+      ServiceHistory.workshop_id == workshop_id,
+  )
+  
+  logger.info(f"Query for services history for workshop: {query}")
+
+  if service_type is not None:
+      query = query.filter(ServiceHistory.service_type == service_type)
+  if vehicle_id is not None:
+      query = query.filter(ServiceHistory.vehicle_id == vehicle_id)
+
+  return query.order_by(ServiceHistory.serviced_at.desc()).all()
+
+
 def repo_get_service_history_by_id(
     db: Session,
     history_id: int,

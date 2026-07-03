@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from uuid import UUID
 
 class ServiceType(str, Enum):
     OIL_CHANGE = "oil_change"
@@ -22,7 +23,11 @@ class ServiceHistoryCreate(BaseModel):
     service_type: ServiceType
     description: Optional[str] = None
     current_mileage: Optional[int] = None
-    cost: Optional[float] = None
+    labor_cost: Optional[float] = None
+    parts_cost: Optional[float] = None
+    invoice_number: Optional[str] = None
+    warranty_until_date: Optional[datetime] = None
+    warranty_mileage: Optional[int] = None
     serviced_at: datetime
     next_service_date: Optional[datetime] = None
     next_service_mileage: Optional[int] = None
@@ -33,15 +38,35 @@ class ServiceHistoryUpdate(BaseModel):
     service_type: Optional[ServiceType] = None
     description: Optional[str] = None
     current_mileage: Optional[int] = None
-    cost: Optional[float] = None
+    labor_cost: Optional[float] = None
+    parts_cost: Optional[float] = None
+    invoice_number: Optional[str] = None
+    warranty_until_date: Optional[datetime] = None
+    warranty_mileage: Optional[int] = None
     serviced_at: Optional[datetime] = None
     next_service_date: Optional[datetime] = None
     next_service_mileage: Optional[int] = None
 
 
-class ServiceHistoryRead(ServiceHistoryCreate):
+class ServiceHistoryRead(BaseModel):
     id: int
+    tenant_id: UUID
+    vehicle_id: int
+    workshop_id: Optional[int] = None
+    status: str
+    service_type: ServiceType
+    description: Optional[str] = None
+    current_mileage: Optional[int] = None
+    next_service_mileage: Optional[int] = None
+    labor_cost: Optional[float] = None
+    parts_cost: Optional[float] = None
+    invoice_number: Optional[str] = None
+    warranty_until_date: Optional[datetime] = None
+    warranty_mileage: Optional[int] = None
+    serviced_at: datetime
+    next_service_date: Optional[datetime] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

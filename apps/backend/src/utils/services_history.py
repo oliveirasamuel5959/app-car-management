@@ -27,17 +27,17 @@ def calculate_next_service_mileage(current_mileage: int, service_type: str) -> i
     next_service_mileage = current_mileage + interval["mileage"]
     return next_service_mileage 
 
-def calculate_next_service_date(serviced_at: datetime, service_type: str) -> str:
+def calculate_next_service_date(serviced_at: datetime, service_type: str) -> datetime:
     """Calculate the next service date based on the last serviced date."""
     if serviced_at is None:
         raise ValueError("Service date is required to calculate next service date")
-    
+
     last_service_date = serviced_at if isinstance(serviced_at, datetime) else datetime.fromisoformat(serviced_at)
-    
+
     if service_type not in next_service_intervals:
         raise ValueError(f"Unknown service type: {service_type}")
-    
+
     interval = next_service_intervals[service_type]
     next_service_date = last_service_date + timedelta(days=interval["days"])
-    
-    return next_service_date.isoformat()
+
+    return next_service_date
