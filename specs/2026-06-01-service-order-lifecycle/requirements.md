@@ -215,3 +215,29 @@ This phase is ready for merge when:
 - notification routes and the notification bell resolve the same persisted notification data
 - clients can create tenant-scoped vehicle service-history records with derived next-service mileage and date
 - validation in `validation.md` passes
+
+## 8. Extension (2026-07-03): Workshop-Aware Service History
+
+Status: Implemented
+
+Context: The original service-history feature (section 3.7) was client-only and disconnected from the service-order lifecycle. This extension connects the two: workshops now automatically log completed orders into the same `services_history` table, and can view their own contribution to it, while client-manual entries remain unchanged in spirit.
+
+### 8.1 Functional Requirements
+
+- A client can still manually add a service-history record; the backend always forces `workshop_id = null` and `status = "completed"` on manual records regardless of request body content.
+- When a workshop transitions a service order to `COMPLETED` (`PATCH /service-orders/{id}/complete`), the backend automatically creates a `services_history` row attributed to that workshop (`workshop_id` set, `status = "completed"`), using optional fields supplied on the same request: `service_type`, `current_mileage`, `labor_cost`, `parts_cost`, `invoice_number`, `warranty_until_date`, `warranty_mileage`.
+  - If `service_type` and `current_mileage` are not both supplied, no history row is created — the order still completes normally.
+  - If the order's `vehicle_id` is null at completion time, no history row is created (safety net; order creation is expected to normally resolve `vehicle_id`).
+- A new `GET /services-history/workshop` endpoint (workshop-role only) lists service-history rows where `workshop_id` equals the authenticated workshop's own id, scoped by `tenant_id`.
+- Once a `services_history` row has `workshop_id` set, it becomes read-only for the client: `PUT`/`DELETE /services-history/{id}` reject with `409 Conflict`. Manual rows (`workshop_id` null) remain fully editable/deletable by the client.
+- The `services_history` table gains: `workshop_id`, `status`, `labor_cost`, `parts_cost` (replacing the single `cost` field), `invoice_number`, `warranty_until_date`, `warranty_mileage`, `updated_at`.
+- The frontend surfaces this on both sides: the client's `/client/service-history` page marks workshop-authored rows read-only with a "Adicionado pela oficina" indicator; a new `/workshop/service-history` page (with sidebar entry) lists the workshop's own auto-created records; the workshop's complete-order dialog gains an optional "Dados da Manutenção" section to supply the new fields.
+
+### 8.2 Success Definition Addendum
+
+This extension is merge-ready when, in addition to section 7's criteria:
+
+- workshops can complete orders with optional maintenance data that auto-populates `services_history`
+- workshops can view their own service-history records via `/workshop/service-history`
+- clients can no longer edit or delete workshop-authored service-history records
+- the `services_history` migration applies/downgrades/reapplies cleanly and preserves existing `cost` data into `labor_cost`

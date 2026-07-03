@@ -28,3 +28,4 @@ class Workshop(Base):
     user = relationship("User", back_populates="workshops")
     workshop_clients = relationship("WorkshopClient", back_populates="workshop")
     services = relationship("Service", back_populates="workshop")
+    services_history = relationship("ServiceHistory", back_populates="workshop")

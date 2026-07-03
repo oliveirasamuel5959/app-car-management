@@ -171,4 +171,50 @@ The following are not required to merge this phase:
 - payment confirmation
 - review creation after completion
 - broader analytics dashboards unrelated to service orders
+
+## 6. Extension (2026-07-03): Workshop-Aware Service History
+
+### 6.1 Functional Acceptance Criteria
+
+- Manual client creation always persists `workshop_id = null` and `status = "completed"`, regardless of request body.
+- Completing a service order with `service_type` + `current_mileage` supplied creates exactly one `services_history` row with `workshop_id` set to the completing workshop and `status = "completed"`; optional `labor_cost`/`parts_cost`/`invoice_number`/`warranty_until_date`/`warranty_mileage` persist when supplied.
+- Completing an order without `service_type`/`current_mileage`, or whose `vehicle_id` is null, completes normally and creates zero history rows.
+- `GET /services-history/workshop` returns only the authenticated workshop's own rows (excludes other tenants' rows and same-tenant client-manual rows).
+- `PUT`/`DELETE /services-history/{id}` on a workshop-authored row (`workshop_id is not None`) return `409 Conflict`; manual rows remain fully editable/deletable.
+
+### 6.2 Backend Validation
+
+Automated tests: `apps/backend/tests/test_services_history.py` (13 cases — manual-create forcing, completion auto-create present/skipped-missing-fields/skipped-null-vehicle, workshop-scoped listing isolation, read-only enforcement on update/delete, manual-row regression).
+
+Recorded result on 2026-07-03:
+
+```text
+cd apps/backend && uv run pytest tests/test_services_history.py tests/test_service_order_lifecycle.py -q
+13 passed
+```
+
+Migration verification:
+
+```text
+cd apps/backend && uv run alembic upgrade head && uv run alembic downgrade -1 && uv run alembic upgrade head
+```
+
+Recorded result: migration `6b1f2a9c4d3e` (down_revision `2cfd483fe51f`) applied, downgraded, and re-applied cleanly against the local Postgres instance, including the `cost` → `labor_cost` data-copy step.
+
+Note: `apps/backend/tests/test_tenant_isolation.py` fails to collect on this branch due to a pre-existing, unrelated `.env`/`Settings` validation error (extra `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` fields) — confirmed present on the unmodified tree via `git stash` before this extension's changes, so it is not a regression introduced here.
+
+### 6.3 Frontend Validation
+
+```text
+cd apps/web && npm run check
+```
+
+Recorded result on 2026-07-03: passed with no TypeScript errors.
+
+### 6.4 Merge Gate Addendum
+
+- Backend `services_history` extension test slice: passed (13/13)
+- Migration upgrade/downgrade/upgrade cycle: passed
+- Frontend typecheck: passed
+- Manual UI verification (workshop completing an order with maintenance data, viewing `/workshop/service-history`, client seeing a read-only workshop-authored row): deferred to the same follow-up validation round as the rest of this phase's manual QA
 - unrelated UI polish outside the touched lifecycle and dashboard surfaces

@@ -56,6 +56,15 @@ class ServiceActionUpdate(BaseModel):
     workshop_notes: Optional[str] = None
     estimated_cost: Optional[float] = None
     final_cost: Optional[float] = None
+    # Optional service-history fields, only used when completing an order
+    # (next_status == "completed"). Ignored on /start and /cancel.
+    service_type: Optional[str] = None
+    current_mileage: Optional[int] = None
+    labor_cost: Optional[float] = None
+    parts_cost: Optional[float] = None
+    invoice_number: Optional[str] = None
+    warranty_until_date: Optional[datetime] = None
+    warranty_mileage: Optional[int] = None
 
 
 class ServiceSummaryItem(BaseModel):

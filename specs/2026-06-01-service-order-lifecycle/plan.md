@@ -138,3 +138,22 @@ Delivered:
 - Frontend typechecking passes for the updated branch.
 - Manual QA is intentionally deferred for the later validation round requested by the user.
 - The `services_history` feature has no dedicated automated test slice yet; its migration chain and the `POST /services-history` endpoint are follow-up coverage items.
+
+### 8. Extension (2026-07-03): Workshop-Aware Service History
+Status: Complete
+
+Connects `services_history` to the service-order lifecycle and gives workshops read access to their own contributions, closing the previously-tracked "no automated test slice" gap at the same time.
+
+1. Migration `6b1f2a9c4d3e` (down_revision `2cfd483fe51f`) adds `workshop_id` (FK `workshops.id`, `ON DELETE SET NULL`), `status` (default `"completed"`), `labor_cost`/`parts_cost` (replacing `cost`, with a data-copy step), `invoice_number`, `warranty_until_date`, `warranty_mileage`, `updated_at`, and a `(tenant_id, workshop_id)` composite index.
+2. `ServiceHistory` model, `ServiceHistoryCreate`/`Update`/`Read` schemas, and the service/repository layers were updated accordingly; `ServiceHistoryRead` is now a standalone schema (no longer inherits `Create`) so read-only fields can't leak onto the write schemas.
+3. `ServiceHistoryService` gained `create_service_history_from_completion` (skips row creation when `vehicle_id`, or `service_type`+`current_mileage`, are missing) and `get_services_history_for_workshop`; `update_service_history`/`delete_service_history` now raise `ServiceHistoryReadOnlyError` when `workshop_id is not None`, mapped to `409 Conflict` at the route layer.
+4. New `GET /services-history/workshop` route (workshop-role only, declared before `GET /{history_id}` for route-matching order).
+5. `ServiceActionUpdate` (used by `/service-orders/{id}/complete`) gained optional `service_type`, `current_mileage`, `labor_cost`, `parts_cost`, `invoice_number`, `warranty_until_date`, `warranty_mileage` fields. `ServiceService.transition_service_order_for_workshop` pops these into a separate `history_fields` dict *before* calling `repo_update_service` (which does a blind `setattr` with no column allowlist — leaving them in `update_data` would have set bogus non-mapped attributes on the `Service` ORM object) and only uses them, inside the `completed` branch, to call `create_service_history_from_completion`.
+6. Fixed a latent bug surfaced by the new tests: `calculate_next_service_date` (`apps/backend/src/utils/services_history.py`) returned an ISO **string** instead of a `datetime`, which only worked by accident on Postgres (implicit text→timestamp cast) and failed outright under SQLite. Now returns a `datetime`, matching its schema/model type annotations.
+7. New `apps/backend/tests/test_services_history.py` (13 cases) covers manual-create forcing, auto-create-on-completion (present/skipped-missing-fields/skipped-null-vehicle), workshop-scoped listing isolation, and read-only enforcement — closing the test-debt item from section 6 above.
+8. Frontend: `service-history-service.tsx` types updated (drop `cost`, add the new fields; new `workshopServiceHistoryService.list()`; lifted shared formatters). Client `service-history-page.tsx` disables edit/delete and shows an "Adicionado pela oficina" chip for workshop-authored rows. New `pages/workshop/service-history-page.tsx` (read-only list), `/workshop/service-history` route, and a workshop sidebar entry. `client-orders-page.tsx`'s complete-order dialog gained an optional "Dados da Manutenção" section, shown only while the order is `in_progress`.
+
+Delivered:
+- `uv run alembic upgrade head && uv run alembic downgrade -1 && uv run alembic upgrade head` passed cleanly.
+- `uv run pytest tests/test_services_history.py tests/test_service_order_lifecycle.py -q` — 13 passed.
+- `npm run check` in `apps/web` — passed with no errors.

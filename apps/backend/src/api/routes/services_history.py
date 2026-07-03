@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.db.database import get_session
 from src.schemas.services_history import ServiceHistoryCreate, ServiceHistoryRead, ServiceHistoryUpdate
-from src.services.services_history import ServiceHistoryService
+from src.services.services_history import ServiceHistoryService, ServiceHistoryReadOnlyError
 from src.core.auth import get_current_user
 
 from src.core.logger import get_logger
@@ -75,6 +75,31 @@ def list_service_history(
 
 
 @router.get(
+    "/workshop",
+    response_model=list[ServiceHistoryRead],
+    status_code=status.HTTP_200_OK,
+    summary="List service history records authored by the workshop",
+    description="List the authenticated workshop's own service-history records (created via completed service orders), optionally filtered by service type or vehicle."
+)
+def list_service_history_for_workshop(
+    service_type: Optional[str] = Query(None),
+    vehicle_id: Optional[int] = Query(None),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_session)
+):
+    if current_user.get("role") != "WORKSHOP":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only workshops can access this resource")
+
+    service = ServiceHistoryService(db)
+    return service.get_services_history_for_workshop(
+        tenant_id=current_user.get("tenant_id"),
+        user_id=int(current_user.get("user_id")),
+        service_type=service_type,
+        vehicle_id=vehicle_id,
+    )
+
+
+@router.get(
     "/{history_id}",
     response_model=ServiceHistoryRead,
     status_code=status.HTTP_200_OK,
@@ -124,6 +149,8 @@ def update_service_history(
             tenant_id=current_user.get("tenant_id"),
             user_id=int(current_user.get("user_id")),
         )
+    except ServiceHistoryReadOnlyError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -147,11 +174,14 @@ def delete_service_history(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can delete service history records")
 
     service = ServiceHistoryService(db)
-    deleted = service.delete_service_history(
-        history_id=history_id,
-        tenant_id=current_user.get("tenant_id"),
-        user_id=int(current_user.get("user_id")),
-    )
+    try:
+        deleted = service.delete_service_history(
+            history_id=history_id,
+            tenant_id=current_user.get("tenant_id"),
+            user_id=int(current_user.get("user_id")),
+        )
+    except ServiceHistoryReadOnlyError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service history record not found")

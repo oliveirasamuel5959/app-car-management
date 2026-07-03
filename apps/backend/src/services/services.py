@@ -23,6 +23,7 @@ from src.schemas.services import ServiceActionUpdate, ServiceCreate, ServiceSumm
 from src.models.user import User
 from src.models.services import Service
 from src.services.notifications import NotificationService
+from src.services.services_history import ServiceHistoryService
 
 
 SERVICE_STATUS_PENDING = "pending"
@@ -37,6 +38,19 @@ VALID_SERVICE_STATUSES = {
     SERVICE_STATUS_IN_PROGRESS,
     SERVICE_STATUS_COMPLETED,
     SERVICE_STATUS_CANCELLED,
+}
+
+# Fields on ServiceActionUpdate that only feed the auto-created service-history
+# record on completion; they aren't real columns on Service and must never
+# reach repo_update_service's blind setattr loop.
+SERVICE_HISTORY_ONLY_FIELDS = {
+    "service_type",
+    "current_mileage",
+    "labor_cost",
+    "parts_cost",
+    "invoice_number",
+    "warranty_until_date",
+    "warranty_mileage",
 }
 
 
@@ -236,6 +250,11 @@ class ServiceService:
 
         self._validate_transition(service.status, next_status, "WORKSHOP")
         update_data = update.model_dump(exclude_unset=True) if update else {}
+        history_fields = {
+            key: update_data.pop(key)
+            for key in list(update_data)
+            if key in SERVICE_HISTORY_ONLY_FIELDS
+        }
         update_data["status"] = next_status
 
         if next_status == SERVICE_STATUS_IN_PROGRESS and "progress_percentage" not in update_data:
@@ -250,6 +269,25 @@ class ServiceService:
 
         old_status = service.status
         updated_service = repo_update_service(self.db, service, update_data)
+
+        if next_status == SERVICE_STATUS_COMPLETED:
+            service_type_value = getattr(
+                history_fields.get("service_type"), "value", history_fields.get("service_type")
+            )
+            ServiceHistoryService(self.db).create_service_history_from_completion(
+                tenant_id=tenant_id,
+                workshop_id=updated_service.workshop_id,
+                vehicle_id=updated_service.vehicle_id,
+                service_type=service_type_value,
+                current_mileage=history_fields.get("current_mileage"),
+                serviced_at=updated_service.finished_at,
+                labor_cost=history_fields.get("labor_cost"),
+                parts_cost=history_fields.get("parts_cost"),
+                invoice_number=history_fields.get("invoice_number"),
+                warranty_until_date=history_fields.get("warranty_until_date"),
+                warranty_mileage=history_fields.get("warranty_mileage"),
+            )
+
         self._notify_status_change(
             updated_service,
             old_status,
