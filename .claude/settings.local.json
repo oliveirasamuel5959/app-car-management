@@ -42,6 +42,7 @@
       "Bash(cat:*)",
       "Bash(grep:*)",
       "Bash(tree:*)"
-    ]
+    ],
+    "deny": []
   }
 }
