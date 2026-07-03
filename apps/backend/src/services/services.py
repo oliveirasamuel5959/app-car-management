@@ -16,7 +16,7 @@ from src.repositories.services import (
     repo_delete_service,
 )
 from src.repositories.workshop_client import repo_get_workshop_client_by_id
-from src.repositories.vehicle import repo_get_vehicle_by_id, repo_get_vehicles_by_user_id, check_duplicate_plate
+from src.repositories.vehicle import repo_get_vehicle_by_id, repo_get_vehicle_by_user_id, check_duplicate_plate
 from src.repositories.workshop import repo_get_workshop_by_id, repo_get_workshop_for_user
 from src.models.workshop import Workshop
 from src.schemas.services import ServiceActionUpdate, ServiceCreate, ServiceSummaryRead
@@ -24,6 +24,10 @@ from src.models.user import User
 from src.models.services import Service
 from src.services.notifications import NotificationService
 from src.services.services_history import ServiceHistoryService
+
+from src.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 SERVICE_STATUS_PENDING = "pending"
@@ -61,30 +65,36 @@ class ServiceService:
     def create_service(self, service_in: ServiceCreate, user_id: int, tenant_id) -> Service:
         """Create a new service with validation."""
         # Derive workshop from current user
-        workshop = repo_get_workshop_for_user(self.db, user_id, tenant_id)
-        client = None
-        if service_in.workshop_client_id:
-            client = repo_get_workshop_client_by_id(self.db, service_in.workshop_client_id, tenant_id)
         
+        workshop = repo_get_workshop_for_user(self.db, user_id, tenant_id)
         if not workshop:
             raise ValueError("No workshop found for current user")
+        
+        client = repo_get_workshop_client_by_id(self.db, service_in.workshop_client_id, tenant_id)
+        if not client:
+            raise ValueError(f"No client found for workshop id {workshop.id}")
+                
+        vehicle = repo_get_vehicle_by_user_id(self.db, user_id=client.user_id)
+        if not vehicle:
+            raise ValueError(f"No vehicle found for user id {client.user_id}")
+        
+        logger.info(f"Vehicle info: {vehicle.id}")
+        
+        # if service_in.workshop_client_id:
+        #     client = repo_get_workshop_client_by_id(self.db, service_in.workshop_client_id, tenant_id)
 
         # Validate exactly one of vehicle_id or workshop_client_id
-        if service_in.vehicle_id and service_in.workshop_client_id:
-            raise ValueError("Provide either vehicle_id or workshop_client_id, not both")
-        if not service_in.vehicle_id and not service_in.workshop_client_id:
-            raise ValueError("Either vehicle_id or workshop_client_id must be provided")
+        # if service_in.vehicle_id and service_in.workshop_client_id:
+        #     raise ValueError("Provide either vehicle_id or workshop_client_id, not both")
+        
+        # if not service_in.vehicle_id and not service_in.workshop_client_id:
+        #     raise ValueError("Either vehicle_id or workshop_client_id must be provided")
 
         # Validate the referenced entity
         if service_in.workshop_client_id:
             if not client or client.workshop_id != workshop.id:
                 raise ValueError("Workshop client not found or does not belong to your workshop")
-
-        if service_in.vehicle_id:
-            vehicle = repo_get_vehicle_by_id(self.db, service_in.vehicle_id, tenant_id)
-            if not vehicle:
-                raise ValueError(f"Vehicle with ID {service_in.vehicle_id} not found")
-
+        
         # Validate status
         if service_in.status not in VALID_SERVICE_STATUSES:
             raise ValueError(f"Invalid status. Must be one of: {', '.join(sorted(VALID_SERVICE_STATUSES))}")
@@ -98,12 +108,7 @@ class ServiceService:
         service_data["workshop_id"] = workshop.id
         service_data["status"] = SERVICE_STATUS_PENDING
         service_data["progress_percentage"] = 0
-
-        # Derive vehicle_id from workshop client's plate
-        if service_in.workshop_client_id and not service_in.vehicle_id:
-            vehicle = check_duplicate_plate(self.db, tenant_id, client.vehicle_plate)
-            if vehicle:
-                service_data["vehicle_id"] = vehicle.id
+        service_data["vehicle_id"] = vehicle.id
 
         created_service = repo_create_service(self.db, tenant_id=tenant_id, service_data=service_data)
         self._notify_status_change(
@@ -246,7 +251,7 @@ class ServiceService:
     ) -> Optional[Service]:
         service = repo_get_service_for_workshop_user(self.db, tenant_id, user_id, service_id)
         if not service:
-            return None
+            return None 
 
         self._validate_transition(service.status, next_status, "WORKSHOP")
         update_data = update.model_dump(exclude_unset=True) if update else {}
@@ -270,6 +275,8 @@ class ServiceService:
         old_status = service.status
         updated_service = repo_update_service(self.db, service, update_data)
 
+        logger.info(f"Next Status {next_status}")
+        
         if next_status == SERVICE_STATUS_COMPLETED:
             service_type_value = getattr(
                 history_fields.get("service_type"), "value", history_fields.get("service_type")

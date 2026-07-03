@@ -32,7 +32,7 @@ def repo_get_services_history_for_user(
       db.query(ServiceHistory)
       .join(Vehicle, ServiceHistory.vehicle_id == Vehicle.id)
       .filter(
-          ServiceHistory.tenant_id == tenant_id,
+        #   ServiceHistory.tenant_id == tenant_id,
           Vehicle.user_id == user_id,
       )
   )
