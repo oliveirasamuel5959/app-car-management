@@ -1,30 +1,3 @@
-<<<<<<< HEAD
-from typing import Annotated
-from uuid import UUID
-
-from pydantic import BaseModel, Field
-
-from src.schemas.user import UserCreate
-
-
-class VehicleCreate(BaseModel):
-    brand: str
-    model: str
-    year: int
-    plate: str | None
-
-
-class VehicleRead(BaseModel):
-    id: int
-    tenant_id: UUID
-    brand: str
-    model: str
-    year: int
-    plate: str | None
-
-    class Config:
-        from_attributes = True
-=======
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -49,4 +22,3 @@ class VehicleRead(BaseModel):
 
     class Config:
         from_attributes = True
->>>>>>> c5ef6a45 (WIP: salva alterações locais)
