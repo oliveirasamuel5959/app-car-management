@@ -40,7 +40,7 @@ def create_service_order(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the service order"
+            detail=f"An error occurred while creating the service order - ERROR: {str(e)}"
         )
 
 
@@ -164,6 +164,8 @@ def start_service_order(
 ):
     if current_user.get("role") != "WORKSHOP":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only workshops can start service orders")
+    
+    print(f"Service order ID: {service_id}")
 
     service = ServiceService(db)
     try:
