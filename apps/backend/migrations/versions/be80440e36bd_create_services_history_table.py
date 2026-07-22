@@ -39,7 +39,7 @@ def upgrade() -> None:
                 "BELT_REPLACEMENT",
                 "INSPECTION",
                 "OTHER",
-                name="servicetype",
+                name="service_type",
             ),
             nullable=False,
         ),
