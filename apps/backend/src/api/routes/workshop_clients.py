@@ -1,11 +1,15 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
-from src.db.database import get_session
-from src.schemas.workshop_client import WorkshopClientCreate, WorkshopClientRead, WorkshopClientUpdate
-from src.services.workshop_client import WorkshopClientService
 from src.core.auth import get_current_user
+from src.db.database import get_session
+from src.schemas.workshop_client import (
+    WorkshopClientCreate,
+    WorkshopClientRead,
+    WorkshopClientUpdate,
+)
+from src.services.workshop_client import WorkshopClientService
 
 router = APIRouter()
 
@@ -24,14 +28,16 @@ def create_workshop_client(
     service = WorkshopClientService(db)
     try:
         user_id = current_user.get("user_id")
-        return service.create_client(client_in, user_id=int(user_id), tenant_id=current_user.get("tenant_id"))
+        return service.create_client(
+            client_in, user_id=int(user_id), tenant_id=current_user.get("tenant_id")
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get(
     "/",
-    response_model=List[WorkshopClientRead],
+    response_model=list[WorkshopClientRead],
     status_code=status.HTTP_200_OK,
     summary="List all clients of your workshop",
 )
@@ -42,7 +48,9 @@ def get_workshop_clients(
     service = WorkshopClientService(db)
     try:
         user_id = current_user.get("user_id")
-        return service.get_clients(user_id=int(user_id), tenant_id=current_user.get("tenant_id"))
+        return service.get_clients(
+            user_id=int(user_id), tenant_id=current_user.get("tenant_id")
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -60,9 +68,13 @@ def get_workshop_client(
 ):
     service = WorkshopClientService(db)
     user_id = current_user.get("user_id")
-    client = service.get_client_by_id(client_id, user_id=int(user_id), tenant_id=current_user.get("tenant_id"))
+    client = service.get_client_by_id(
+        client_id, user_id=int(user_id), tenant_id=current_user.get("tenant_id")
+    )
     if not client:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Client not found"
+        )
     return client
 
 
@@ -81,9 +93,16 @@ def update_workshop_client(
     service = WorkshopClientService(db)
     try:
         user_id = current_user.get("user_id")
-        result = service.update_client(client_id, client_update, user_id=int(user_id), tenant_id=current_user.get("tenant_id"))
+        result = service.update_client(
+            client_id,
+            client_update,
+            user_id=int(user_id),
+            tenant_id=current_user.get("tenant_id"),
+        )
         if not result:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Client not found"
+            )
         return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -101,6 +120,10 @@ def delete_workshop_client(
 ):
     service = WorkshopClientService(db)
     user_id = current_user.get("user_id")
-    deleted = service.delete_client(client_id, user_id=int(user_id), tenant_id=current_user.get("tenant_id"))
+    deleted = service.delete_client(
+        client_id, user_id=int(user_id), tenant_id=current_user.get("tenant_id")
+    )
     if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Client not found"
+        )

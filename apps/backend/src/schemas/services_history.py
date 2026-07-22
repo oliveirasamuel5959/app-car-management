@@ -1,8 +1,9 @@
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
+
+from pydantic import BaseModel
+
 
 class ServiceType(str, Enum):
     OIL_CHANGE = "oil_change"
@@ -21,52 +22,52 @@ class ServiceType(str, Enum):
 class ServiceHistoryCreate(BaseModel):
     vehicle_id: int
     service_type: ServiceType
-    description: Optional[str] = None
-    current_mileage: Optional[int] = None
-    labor_cost: Optional[float] = None
-    parts_cost: Optional[float] = None
-    invoice_number: Optional[str] = None
-    warranty_until_date: Optional[datetime] = None
-    warranty_mileage: Optional[int] = None
+    description: str | None = None
+    current_mileage: int | None = None
+    labor_cost: float | None = None
+    parts_cost: float | None = None
+    invoice_number: str | None = None
+    warranty_until_date: datetime | None = None
+    warranty_mileage: int | None = None
     serviced_at: datetime
-    next_service_date: Optional[datetime] = None
-    next_service_mileage: Optional[int] = None
+    next_service_date: datetime | None = None
+    next_service_mileage: int | None = None
 
 
 class ServiceHistoryUpdate(BaseModel):
-    vehicle_id: Optional[int] = None
-    service_type: Optional[ServiceType] = None
-    description: Optional[str] = None
-    current_mileage: Optional[int] = None
-    labor_cost: Optional[float] = None
-    parts_cost: Optional[float] = None
-    invoice_number: Optional[str] = None
-    warranty_until_date: Optional[datetime] = None
-    warranty_mileage: Optional[int] = None
-    serviced_at: Optional[datetime] = None
-    next_service_date: Optional[datetime] = None
-    next_service_mileage: Optional[int] = None
+    vehicle_id: int | None = None
+    service_type: ServiceType | None = None
+    description: str | None = None
+    current_mileage: int | None = None
+    labor_cost: float | None = None
+    parts_cost: float | None = None
+    invoice_number: str | None = None
+    warranty_until_date: datetime | None = None
+    warranty_mileage: int | None = None
+    serviced_at: datetime | None = None
+    next_service_date: datetime | None = None
+    next_service_mileage: int | None = None
 
 
 class ServiceHistoryRead(BaseModel):
     id: int
     tenant_id: UUID
     vehicle_id: int
-    workshop_id: Optional[int] = None
+    workshop_id: int | None = None
     status: str
     service_type: ServiceType
-    description: Optional[str] = None
-    current_mileage: Optional[int] = None
-    next_service_mileage: Optional[int] = None
-    labor_cost: Optional[float] = None
-    parts_cost: Optional[float] = None
-    invoice_number: Optional[str] = None
-    warranty_until_date: Optional[datetime] = None
-    warranty_mileage: Optional[int] = None
+    description: str | None = None
+    current_mileage: int | None = None
+    next_service_mileage: int | None = None
+    labor_cost: float | None = None
+    parts_cost: float | None = None
+    invoice_number: str | None = None
+    warranty_until_date: datetime | None = None
+    warranty_mileage: int | None = None
     serviced_at: datetime
-    next_service_date: Optional[datetime] = None
+    next_service_date: datetime | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True

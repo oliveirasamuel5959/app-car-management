@@ -12,7 +12,10 @@ from src.models.services_history import ServiceHistory
 from src.schemas.services import ServiceActionUpdate
 from src.schemas.services_history import ServiceHistoryCreate, ServiceHistoryUpdate
 from src.services.services import ServiceService
-from src.services.services_history import ServiceHistoryReadOnlyError, ServiceHistoryService
+from src.services.services_history import (
+    ServiceHistoryReadOnlyError,
+    ServiceHistoryService,
+)
 
 
 def build_session():
@@ -213,7 +216,10 @@ def test_completion_auto_creates_history_when_fields_present():
     g = seed_graph()
 
     completed = complete_order(
-        g["session"], g["tenant"], g["workshop_user"], g["service"],
+        g["session"],
+        g["tenant"],
+        g["workshop_user"],
+        g["service"],
         service_type="oil_change",
         current_mileage=15000,
         labor_cost=100.0,
@@ -245,7 +251,10 @@ def test_completion_skips_history_without_service_type_or_mileage():
     g = seed_graph()
 
     completed = complete_order(
-        g["session"], g["tenant"], g["workshop_user"], g["service"],
+        g["session"],
+        g["tenant"],
+        g["workshop_user"],
+        g["service"],
         workshop_notes="All good",
     )
 
@@ -259,7 +268,10 @@ def test_completion_skips_history_when_vehicle_id_is_null():
     g["session"].commit()
 
     completed = complete_order(
-        g["session"], g["tenant"], g["workshop_user"], g["service"],
+        g["session"],
+        g["tenant"],
+        g["workshop_user"],
+        g["service"],
         service_type="oil_change",
         current_mileage=15000,
     )
@@ -272,7 +284,10 @@ def test_workshop_scoped_list_excludes_other_workshops_and_manual_entries():
     g = seed_graph(second_workshop=True)
 
     complete_order(
-        g["session"], g["tenant"], g["workshop_user"], g["service"],
+        g["session"],
+        g["tenant"],
+        g["workshop_user"],
+        g["service"],
         service_type="oil_change",
         current_mileage=15000,
     )
@@ -313,7 +328,10 @@ def test_workshop_scoped_list_excludes_other_workshops_and_manual_entries():
 def test_client_cannot_update_workshop_authored_row():
     g = seed_graph()
     complete_order(
-        g["session"], g["tenant"], g["workshop_user"], g["service"],
+        g["session"],
+        g["tenant"],
+        g["workshop_user"],
+        g["service"],
         service_type="oil_change",
         current_mileage=15000,
     )
@@ -331,7 +349,10 @@ def test_client_cannot_update_workshop_authored_row():
 def test_client_cannot_delete_workshop_authored_row():
     g = seed_graph()
     complete_order(
-        g["session"], g["tenant"], g["workshop_user"], g["service"],
+        g["session"],
+        g["tenant"],
+        g["workshop_user"],
+        g["service"],
         service_type="oil_change",
         current_mileage=15000,
     )

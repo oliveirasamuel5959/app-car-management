@@ -1,10 +1,18 @@
 import uuid
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from src.db.base import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -15,7 +23,9 @@ class User(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id"), nullable=False, index=True
+    )
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     age: Mapped[int] = mapped_column(nullable=False)
     sex: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -30,8 +40,14 @@ class User(Base):
 
     tenant = relationship("Tenant", back_populates="users")
     vehicles = relationship("Vehicle", back_populates="user")
-    workshops: Mapped[list["Workshop"]] = relationship("Workshop", back_populates="user")
-    sent_messages = relationship("Message", foreign_keys="Message.sender_id", back_populates="sender")
-    received_messages = relationship("Message", foreign_keys="Message.receiver_id", back_populates="receiver")
+    workshops: Mapped[list["Workshop"]] = relationship(
+        "Workshop", back_populates="user"
+    )
+    sent_messages = relationship(
+        "Message", foreign_keys="Message.sender_id", back_populates="sender"
+    )
+    received_messages = relationship(
+        "Message", foreign_keys="Message.receiver_id", back_populates="receiver"
+    )
     workshop_client_profiles = relationship("WorkshopClient", back_populates="user")
     notifications = relationship("Notification", back_populates="user")

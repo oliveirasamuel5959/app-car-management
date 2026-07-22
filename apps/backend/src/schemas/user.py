@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, field_validator
 
+
 class UserCreate(BaseModel):
     name: str
     age: int
@@ -32,6 +33,7 @@ class UserRead(BaseModel):
 # Auth-specific schemas
 class UserRegister(BaseModel):
     """Schema for user registration endpoint."""
+
     name: str
     age: int
     sex: str
@@ -42,34 +44,35 @@ class UserRegister(BaseModel):
     tenant_slug: str | None = None
     tenant_name: str | None = None
 
-    @field_validator('age')
+    @field_validator("age")
     @classmethod
     def validate_age(cls, v):
         if v < 18:
-            raise ValueError('User must be at least 18 years old')
+            raise ValueError("User must be at least 18 years old")
         return v
 
-    @field_validator('password')
+    @field_validator("password")
     @classmethod
     def validate_password(cls, v):
         if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters long')
+            raise ValueError("Password must be at least 8 characters long")
         if not any(char.isupper() for char in v):
-            raise ValueError('Password must contain at least one uppercase letter')
+            raise ValueError("Password must contain at least one uppercase letter")
         if not any(char.isdigit() for char in v):
-            raise ValueError('Password must contain at least one digit')
+            raise ValueError("Password must contain at least one digit")
         return v
 
-    @field_validator('password_confirm')
+    @field_validator("password_confirm")
     @classmethod
     def validate_password_match(cls, v, info):
-        if 'password' in info.data and v != info.data['password']:
-            raise ValueError('Passwords do not match')
+        if "password" in info.data and v != info.data["password"]:
+            raise ValueError("Passwords do not match")
         return v
 
 
 class UserLogin(BaseModel):
     """Schema for user login endpoint."""
+
     email: EmailStr
     password: str
     tenant_slug: str | None = None
@@ -77,6 +80,7 @@ class UserLogin(BaseModel):
 
 class TokenResponse(BaseModel):
     """Schema for token response."""
+
     access_token: str
     token_type: str = "bearer"
     user: UserRead
@@ -84,6 +88,7 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """Schema for user response."""
+
     id: int
     tenant_id: UUID
     email: EmailStr
@@ -95,4 +100,3 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
-

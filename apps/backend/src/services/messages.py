@@ -1,6 +1,6 @@
-from sqlalchemy.orm import Session
-from typing import List, Optional
+
 from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
 
 from src.models.messages import Message
 from src.models.services import Service
@@ -8,11 +8,7 @@ from src.models.user import User
 from src.models.vehicle import Vehicle
 from src.models.workshop import Workshop
 from src.models.workshop_client import WorkshopClient
-from src.repositories.messages import (
-    repo_create_message,
-    repo_get_conversation,
-)
-from src.repositories.user import repo_get_user_by_id
+from src.repositories.messages import repo_create_message, repo_get_conversation
 
 
 class MessageService:
@@ -22,13 +18,19 @@ class MessageService:
     def _get_user_any_tenant(self, user_id: int) -> User | None:
         return self.db.query(User).filter(User.id == user_id).first()
 
-    def _resolve_conversation_tenant(self, user_a: User, user_b: User, preferred_tenant_id=None):
+    def _resolve_conversation_tenant(
+        self, user_a: User, user_b: User, preferred_tenant_id=None
+    ):
         existing_message = (
             self.db.query(Message.tenant_id)
             .filter(
                 or_(
-                    and_(Message.sender_id == user_a.id, Message.receiver_id == user_b.id),
-                    and_(Message.sender_id == user_b.id, Message.receiver_id == user_a.id),
+                    and_(
+                        Message.sender_id == user_a.id, Message.receiver_id == user_b.id
+                    ),
+                    and_(
+                        Message.sender_id == user_b.id, Message.receiver_id == user_a.id
+                    ),
                 )
             )
             .order_by(Message.created_at.desc())
@@ -78,12 +80,12 @@ class MessageService:
         tenant_id,
         sender_id: int,
         receiver_id: int,
-        content: Optional[str],
+        content: str | None,
         message_type: str = "text",
-        file_url: Optional[str] = None,
-        file_name: Optional[str] = None,
-        file_size: Optional[int] = None,
-        mime_type: Optional[str] = None,
+        file_url: str | None = None,
+        file_name: str | None = None,
+        file_size: int | None = None,
+        mime_type: str | None = None,
     ) -> Message:
         if sender_id == receiver_id:
             raise ValueError("Cannot send a message to yourself")
@@ -95,7 +97,9 @@ class MessageService:
         if not sender or not sender.is_active:
             raise ValueError("Sender user not found or inactive")
 
-        conversation_tenant_id = self._resolve_conversation_tenant(sender, receiver, preferred_tenant_id=tenant_id)
+        conversation_tenant_id = self._resolve_conversation_tenant(
+            sender, receiver, preferred_tenant_id=tenant_id
+        )
         if conversation_tenant_id is None:
             raise ValueError("No shared conversation context found")
 
@@ -114,16 +118,20 @@ class MessageService:
 
     def get_conversation(
         self, tenant_id, user_a: int, user_b: int, skip: int = 0, limit: int = 50
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Return messages between two users in chronological order (oldest first)."""
         sender = self._get_user_any_tenant(user_a)
         receiver = self._get_user_any_tenant(user_b)
         if not sender or not receiver:
             return []
 
-        conversation_tenant_id = self._resolve_conversation_tenant(sender, receiver, preferred_tenant_id=tenant_id)
+        conversation_tenant_id = self._resolve_conversation_tenant(
+            sender, receiver, preferred_tenant_id=tenant_id
+        )
         if conversation_tenant_id is None:
             return []
 
-        messages = repo_get_conversation(self.db, conversation_tenant_id, user_a, user_b, skip=skip, limit=limit)
+        messages = repo_get_conversation(
+            self.db, conversation_tenant_id, user_a, user_b, skip=skip, limit=limit
+        )
         return list(reversed(messages))

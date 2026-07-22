@@ -1,7 +1,7 @@
-from sqlalchemy import or_, and_
-from sqlalchemy.orm import Session
-from typing import List, Optional
 from uuid import UUID
+
+from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
 
 from src.models.messages import Message
 
@@ -11,12 +11,12 @@ def repo_create_message(
     tenant_id: UUID | str,
     sender_id: int,
     receiver_id: int,
-    content: Optional[str],
+    content: str | None,
     message_type: str = "text",
-    file_url: Optional[str] = None,
-    file_name: Optional[str] = None,
-    file_size: Optional[int] = None,
-    mime_type: Optional[str] = None,
+    file_url: str | None = None,
+    file_name: str | None = None,
+    file_size: int | None = None,
+    mime_type: str | None = None,
 ) -> Message:
     message = Message(
         tenant_id=tenant_id,
@@ -42,7 +42,7 @@ def repo_get_conversation(
     user_b: int,
     skip: int = 0,
     limit: int = 50,
-) -> List[Message]:
+) -> list[Message]:
     """Return messages exchanged between two users, newest first."""
     return (
         db.query(Message)
@@ -51,7 +51,7 @@ def repo_get_conversation(
             or_(
                 and_(Message.sender_id == user_a, Message.receiver_id == user_b),
                 and_(Message.sender_id == user_b, Message.receiver_id == user_a),
-            )
+            ),
         )
         .order_by(Message.created_at.desc())
         .offset(skip)
@@ -60,5 +60,11 @@ def repo_get_conversation(
     )
 
 
-def repo_get_message_by_id(db: Session, message_id: int, tenant_id: UUID | str) -> Optional[Message]:
-    return db.query(Message).filter(Message.id == message_id, Message.tenant_id == tenant_id).first()
+def repo_get_message_by_id(
+    db: Session, message_id: int, tenant_id: UUID | str
+) -> Message | None:
+    return (
+        db.query(Message)
+        .filter(Message.id == message_id, Message.tenant_id == tenant_id)
+        .first()
+    )
