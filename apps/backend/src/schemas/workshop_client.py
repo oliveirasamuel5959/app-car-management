@@ -12,6 +12,8 @@ class WorkshopClientCreate(BaseModel):
     vehicle_model: str
     vehicle_year: int
     vehicle_plate: str
+    notes: str | None = None
+    status: str = "active"
 
 
 class WorkshopClientRead(BaseModel):
@@ -25,6 +27,8 @@ class WorkshopClientRead(BaseModel):
     vehicle_model: str
     vehicle_year: int
     vehicle_plate: str
+    notes: str | None = None
+    status: str
     user_id: int | None = None
     created_at: datetime
 
@@ -40,3 +44,5 @@ class WorkshopClientUpdate(BaseModel):
     vehicle_model: str | None = None
     vehicle_year: int | None = None
     vehicle_plate: str | None = None
+    notes: str | None = None
+    status: str | None = None

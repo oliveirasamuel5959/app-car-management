@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.core.security import hash_password
 from src.models.user import User
-from src.schemas.user import UserCreate
+from src.schemas.user import UserCreate, UserUpdate
 
 
 def repo_create_user(db: Session, user: UserCreate, tenant_id: UUID | str) -> User:
@@ -60,3 +60,19 @@ def repo_get_user_by_id(
     return (
         db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id).first()
     )
+
+
+def repo_update_user(
+    db: Session, user_id: int, tenant_id: UUID | str, updates: UserUpdate
+) -> User | None:
+    """Apply a partial profile update to a tenant-scoped user."""
+    user = repo_get_user_by_id(db, user_id, tenant_id)
+    if not user:
+        return None
+
+    for field, value in updates.model_dump(exclude_unset=True).items():
+        setattr(user, field, value)
+
+    db.commit()
+    db.refresh(user)
+    return user

@@ -149,6 +149,22 @@ export const api = {
     return handleResponse(response);
   },
 
+  // Multipart file upload (POST). Does not set Content-Type so the browser
+  // adds the correct multipart boundary; auth header is still attached.
+  upload: async (endpoint: string, file: File, fieldName = 'file') => {
+    const token = localStorage.getItem('access_token');
+    const formData = new FormData();
+    formData.append(fieldName, file);
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
+
   /**
    * Authentication endpoints
    */
@@ -273,14 +289,26 @@ export const api = {
    * User endpoints
    */
   users: {
-    // Get user profile
+    // Get the authenticated user's full profile (includes phone/address/avatar)
     getProfile: async () => {
-      return api.get('/auth/me');
+      return api.get('/users/me');
     },
 
-    // Update user profile (if backend implements)
-    updateProfile: async (userData: any) => {
-      return api.put('/users/profile', userData);
+    // Update the authenticated user's profile
+    updateProfile: async (userData: {
+      name?: string;
+      phone?: string | null;
+      address?: string | null;
+      city?: string | null;
+      state?: string | null;
+      avatar_url?: string | null;
+    }) => {
+      return api.put('/users/me', userData);
+    },
+
+    // Upload a profile photo; returns the updated user
+    uploadAvatar: async (file: File) => {
+      return api.upload('/users/me/avatar', file);
     },
 
     // Get user by ID

@@ -80,6 +80,7 @@ class ServiceHistoryService:
         tenant_id: uuid.UUID,
         workshop_id: int,
         vehicle_id: int | None,
+        workshop_client_id: int | None = None,
         service_type: str | None,
         current_mileage: int | None,
         serviced_at: datetime,
@@ -115,6 +116,7 @@ class ServiceHistoryService:
 
         history_data = {
             "vehicle_id": vehicle_id,
+            "workshop_client_id": workshop_client_id,
             "service_type": service_type,
             "description": description,
             "current_mileage": current_mileage,
@@ -138,6 +140,7 @@ class ServiceHistoryService:
         user_id: int,
         service_type: str | None = None,
         vehicle_id: int | None = None,
+        workshop_client_id: int | None = None,
     ) -> list[ServiceHistory]:
         """List service-history records authored by the authenticated workshop."""
         workshop = repo_get_workshop_for_user(self.db, user_id, tenant_id)
@@ -149,6 +152,7 @@ class ServiceHistoryService:
             workshop_id=workshop.id,
             service_type=service_type,
             vehicle_id=vehicle_id,
+            workshop_client_id=workshop_client_id,
         )
 
     def get_services_history(

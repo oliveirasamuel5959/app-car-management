@@ -10,8 +10,9 @@ from src.repositories.workshop import (
     repo_get_workshop_by_id_for_client,
     repo_get_workshop_for_user,
     repo_get_workshops_nearby,
+    repo_update_workshop,
 )
-from src.schemas.workshop import WorkshopCreate
+from src.schemas.workshop import WorkshopCreate, WorkshopUpdate
 
 
 class WorkshopService:
@@ -34,6 +35,16 @@ class WorkshopService:
         if not workshop:
             raise ValueError("Workshop profile not found")
         return workshop
+
+    def update_workshop(
+        self, user_id: int, tenant_id, updates: WorkshopUpdate
+    ) -> Workshop:
+        workshop = repo_get_workshop_for_user(self.db, user_id, tenant_id)
+        if not workshop:
+            raise ValueError("Workshop profile not found")
+        return repo_update_workshop(
+            self.db, workshop, updates.model_dump(exclude_unset=True)
+        )
 
     def get_workshop_by_id(self, workshop_id: int, tenant_id) -> Workshop:
         workshop = repo_get_workshop_by_id(self.db, workshop_id, tenant_id)

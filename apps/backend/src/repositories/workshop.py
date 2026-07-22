@@ -23,8 +23,25 @@ def repo_create_workshop(
         latitude=workshop_data.get("latitude"),
         longitude=workshop_data.get("longitude"),
         rating_avg=workshop_data.get("rating_avg", 0.0),
+        phone=workshop_data.get("phone"),
+        address=workshop_data.get("address"),
+        city=workshop_data.get("city"),
+        state=workshop_data.get("state"),
+        opening_hours=workshop_data.get("opening_hours"),
+        logo_url=workshop_data.get("logo_url"),
     )
     db.add(workshop)
+    db.commit()
+    db.refresh(workshop)
+    return workshop
+
+
+def repo_update_workshop(
+    db: Session, workshop: Workshop, updates: dict
+) -> Workshop:
+    """Apply a partial update to an already-resolved workshop row."""
+    for field, value in updates.items():
+        setattr(workshop, field, value)
     db.commit()
     db.refresh(workshop)
     return workshop

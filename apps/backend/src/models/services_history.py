@@ -36,6 +36,11 @@ class ServiceHistory(Base):
         Index("ix_services_history_tenant_id_id", "tenant_id", "id"),
         Index("ix_services_history_tenant_id_vehicle_id", "tenant_id", "vehicle_id"),
         Index("ix_services_history_tenant_id_workshop_id", "tenant_id", "workshop_id"),
+        Index(
+            "ix_services_history_tenant_id_workshop_client_id",
+            "tenant_id",
+            "workshop_client_id",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -50,6 +55,11 @@ class ServiceHistory(Base):
 
     workshop_id: Mapped[int | None] = mapped_column(
         ForeignKey("workshops.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    workshop_client_id: Mapped[int | None] = mapped_column(
+        ForeignKey("workshop_clients.id", ondelete="SET NULL"),
         nullable=True,
     )
 

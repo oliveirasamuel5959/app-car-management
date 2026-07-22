@@ -24,10 +24,27 @@ class UserRead(BaseModel):
     age: int
     sex: str
     role: str
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    state: str | None = None
+    avatar_url: str | None = None
     created_at: datetime
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating the authenticated user's profile."""
+
+    name: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    state: str | None = None
+    avatar_url: str | None = None
 
 
 # Auth-specific schemas
@@ -96,7 +113,13 @@ class UserResponse(BaseModel):
     age: int
     sex: str
     role: str
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    state: str | None = None
+    avatar_url: str | None = None
     created_at: datetime
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True

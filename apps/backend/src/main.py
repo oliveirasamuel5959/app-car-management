@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -45,6 +47,10 @@ Banck account transactions management.
 )
 
 app.mount("/images", StaticFiles(directory="static/images"), name="images")
+
+# Serve user-uploaded files (avatars, workshop logos, chat attachments)
+Path("uploads").mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS Configuration for React frontend (from environment variables)
 # app.add_middleware(

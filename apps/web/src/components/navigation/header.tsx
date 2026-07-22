@@ -23,7 +23,14 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const dashboardPath = user?.role === 'WORKSHOP' ? '/workshop/dashboard' : '/client/dashboard';
+  const profilePath = user?.role === 'WORKSHOP' ? '/workshop/profile' : '/client/profile';
   const isWorkshop = user?.role === 'WORKSHOP';
+  const API_BASE_URL = 'http://localhost:5500';
+  const avatarSrc = user?.avatar_url
+    ? user.avatar_url.startsWith('http')
+      ? user.avatar_url
+      : `${API_BASE_URL}${user.avatar_url}`
+    : null;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +74,7 @@ const Header = () => {
                     placeholder="Procurar cliente pelo nome..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-gray border border-gray-200 text-gray-400 placeholder-gray-400 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+                    className="w-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
                   />
                 </div>
               </form>
@@ -83,8 +90,12 @@ const Header = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" aria-label="Menu do Usuário" className="flex items-center space-x-2 pl-2 pr-4 rounded-full border border-transparent hover:bg-white/10 hover:border-white/20 transition-all focus-visible:ring-2 focus-visible:ring-blue-400">
-                      <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold shadow-md">
-                        {user?.name?.charAt(0) || <User className="w-4 h-4" aria-hidden="true" />}
+                      <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold shadow-md overflow-hidden">
+                        {avatarSrc ? (
+                          <img src={avatarSrc} alt={user?.name || 'Avatar'} className="w-full h-full object-cover" />
+                        ) : (
+                          user?.name?.charAt(0) || <User className="w-4 h-4" aria-hidden="true" />
+                        )}
                       </div>
                       <span className="text-sm font-medium text-slate-200">
                         {user?.name?.split(' ')[0] || 'Usuário'}
@@ -103,10 +114,7 @@ const Header = () => {
                       <Link to={dashboardPath} className="cursor-pointer text-gray-700 hover:text-gray-900">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/client/appointments" className="cursor-pointer text-gray-700 hover:text-gray-900">Meus Agendamentos</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/client/profile" className="cursor-pointer text-gray-700 hover:text-gray-900">Meu Perfil</Link>
+                      <Link to={profilePath} className="cursor-pointer text-gray-700 hover:text-gray-900">Meu Perfil</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer focus:text-red-600">
@@ -175,9 +183,8 @@ const Header = () => {
 
               {isAuthenticated ? (
                 <>
-                   {!isWorkshop && <Link to={dashboardPath} className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>}
-                   <Link to="/cliente/agendamentos" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Meus Agendamentos</Link>
-                   <Link to="/profile" className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Meu Perfil</Link>
+                   <Link to={dashboardPath} className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+                   <Link to={profilePath} className="flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/10" onClick={() => setIsMobileMenuOpen(false)}>Meu Perfil</Link>
                    <button 
                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium text-red-400 text-left"
                      onClick={() => {

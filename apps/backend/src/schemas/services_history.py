@@ -21,6 +21,7 @@ class ServiceType(str, Enum):
 
 class ServiceHistoryCreate(BaseModel):
     vehicle_id: int
+    workshop_client_id: int | None = None
     service_type: ServiceType
     description: str | None = None
     current_mileage: int | None = None
@@ -54,6 +55,7 @@ class ServiceHistoryRead(BaseModel):
     tenant_id: UUID
     vehicle_id: int
     workshop_id: int | None = None
+    workshop_client_id: int | None = None
     status: str
     service_type: ServiceType
     description: str | None = None

@@ -2,14 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light Mode */
+/*
+ * Design tokens for the Tailwind + shadcn UI layer.
+ * `primary` is the DrivePluss brand blue (#0E71AE ≈ hsl(203 85% 37%)),
+ * kept in sync with the MUI theme primary in src/theme.ts.
+ */
 :root {
   color-scheme: light;
+
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --card-border: 214 32% 91%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --popover-border: 214 32% 91%;
+  --primary: 203 85% 37%;
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 203 85% 30%;
+  --secondary: 187 96% 43%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 203 85% 95%;
+  --accent-foreground: 203 85% 30%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 203 85% 37%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-border: 214 32% 91%;
+  --sidebar-ring: 203 85% 37%;
+  --sidebar-primary: 203 85% 37%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 203 85% 95%;
+  --sidebar-accent-foreground: 203 85% 30%;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Inter", Georgia, serif;
+  --font-mono: "SFMono-Regular", Menlo, monospace;
 }
 
 /* Dark Mode */
 .dark {
   color-scheme: dark;
+
+  --background: 0 0% 7%;
+  --foreground: 0 0% 87%;
+  --card: 0 0% 13%;
+  --card-foreground: 0 0% 87%;
+  --card-border: 0 0% 20%;
+  --popover: 0 0% 13%;
+  --popover-foreground: 0 0% 87%;
+  --popover-border: 0 0% 20%;
+  --primary: 203 75% 45%;
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 203 75% 38%;
+  --secondary: 187 80% 40%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 16%;
+  --muted-foreground: 0 0% 63%;
+  --accent: 0 0% 16%;
+  --accent-foreground: 0 0% 87%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 203 75% 45%;
+  --sidebar: 0 0% 10%;
+  --sidebar-foreground: 0 0% 87%;
+  --sidebar-border: 0 0% 20%;
+  --sidebar-ring: 203 75% 45%;
+  --sidebar-primary: 203 75% 45%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 16%;
+  --sidebar-accent-foreground: 0 0% 87%;
 }
 
 /* Reset mínimo seguro */
@@ -216,12 +285,12 @@ html.dark .MuiDivider-root {
 
 /* Keep buttons styled properly */
 html.dark .MuiButton-contained {
-  background-color: #2563EB;
+  background-color: #0E71AE;
   color: #ffffff;
 }
 
 html.dark .MuiButton-contained:hover {
-  background-color: #1d4ed8;
+  background-color: #0A5583;
 }
 
 html.dark .MuiButton-outlined {
@@ -252,7 +321,7 @@ html.dark .MuiListItemButton-root:hover {
 }
 
 html.dark .MuiListItemButton-root.Mui-selected {
-  background-color: #2563EB;
+  background-color: #0E71AE;
   color: #ffffff;
 }
 
