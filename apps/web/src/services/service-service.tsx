@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { ServiceHistoryType } from './service-history-service';
 
 export interface ServiceOrder {
   id: number;
@@ -112,7 +113,20 @@ export const serviceService = {
     return api.patch(`/service-orders/${serviceId}/start`, data ?? {});
   },
 
-  completeServiceOrder: async (serviceId: number, data?: { workshop_notes?: string; final_cost?: number }) => {
+  completeServiceOrder: async (
+    serviceId: number,
+    data?: {
+      workshop_notes?: string;
+      final_cost?: number;
+      service_type?: ServiceHistoryType;
+      current_mileage?: number;
+      labor_cost?: number;
+      parts_cost?: number;
+      invoice_number?: string;
+      warranty_until_date?: string;
+      warranty_mileage?: number;
+    },
+  ) => {
     return api.patch(`/service-orders/${serviceId}/complete`, data ?? {});
   },
 

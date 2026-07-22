@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -7,55 +6,66 @@ from pydantic import BaseModel, Field
 
 class ServiceCreate(BaseModel):
     """Schema for creating a new service."""
-    workshop_client_id: Optional[int] = None
-    vehicle_id: Optional[int] = None
+
+    workshop_client_id: int | None = None
+    vehicle_id: int | None = None
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     status: str = "pending"
     progress_percentage: int = 0
     checkin_date: datetime
-    estimated_finish_date: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
-    estimated_hours: Optional[float] = None
-    actual_hours: Optional[float] = None
-    estimated_cost: Optional[float] = None
-    final_cost: Optional[float] = None
-    workshop_notes: Optional[str] = None
+    estimated_finish_date: datetime | None = None
+    finished_at: datetime | None = None
+    estimated_hours: float | None = None
+    actual_hours: float | None = None
+    estimated_cost: float | None = None
+    final_cost: float | None = None
+    workshop_notes: str | None = None
 
 
 class ServiceRead(BaseModel):
     """Schema for reading service information."""
+
     id: int
     tenant_id: UUID
     workshop_id: int
-    workshop_client_id: Optional[int] = None
-    vehicle_id: Optional[int] = None
+    workshop_client_id: int | None = None
+    vehicle_id: int | None = None
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     status: str
     progress_percentage: int
     checkin_date: datetime
-    estimated_finish_date: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
-    estimated_hours: Optional[float] = None
-    actual_hours: Optional[float] = None
-    estimated_cost: Optional[float] = None
-    final_cost: Optional[float] = None
-    workshop_notes: Optional[str] = None
+    estimated_finish_date: datetime | None = None
+    finished_at: datetime | None = None
+    estimated_hours: float | None = None
+    actual_hours: float | None = None
+    estimated_cost: float | None = None
+    final_cost: float | None = None
+    workshop_notes: str | None = None
 
     class Config:
         from_attributes = True
 
 
 class ServiceUpdate(BaseModel):
-    workshop_notes: Optional[str] = None
-    status: Optional[str] = None
+    workshop_notes: str | None = None
+    status: str | None = None
 
 
 class ServiceActionUpdate(BaseModel):
-    workshop_notes: Optional[str] = None
-    estimated_cost: Optional[float] = None
-    final_cost: Optional[float] = None
+    workshop_notes: str | None = None
+    estimated_cost: float | None = None
+    final_cost: float | None = None
+    # Optional service-history fields, only used when completing an order
+    # (next_status == "completed"). Ignored on /start and /cancel.
+    service_type: str | None = None
+    current_mileage: int | None = None
+    labor_cost: float | None = None
+    parts_cost: float | None = None
+    invoice_number: str | None = None
+    warranty_until_date: datetime | None = None
+    warranty_mileage: int | None = None
 
 
 class ServiceSummaryItem(BaseModel):
@@ -63,9 +73,9 @@ class ServiceSummaryItem(BaseModel):
     name: str
     status: str
     checkin_date: datetime
-    estimated_finish_date: Optional[datetime] = None
+    estimated_finish_date: datetime | None = None
     workshop_id: int
-    estimated_cost: Optional[float] = None
+    estimated_cost: float | None = None
     progress_percentage: int
 
     class Config:

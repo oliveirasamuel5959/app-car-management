@@ -1,14 +1,15 @@
+import logging
+from collections.abc import Callable
+from functools import wraps
 
-from fastapi import Request, HTTPException, status
+from fastapi import HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from typing import Callable, List
-from functools import wraps
-import logging
 
 from src.core.security import verify_token
 
 logger = logging.getLogger(__name__)
+
 
 def auth_middleware(func: Callable) -> Callable:
 
@@ -27,7 +28,7 @@ def auth_middleware(func: Callable) -> Callable:
         if request is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Request object not found"
+                detail="Request object not found",
             )
 
         # Extract and validate token
@@ -36,7 +37,7 @@ def auth_middleware(func: Callable) -> Callable:
         if not auth_header:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Missing authorization token"
+                detail="Missing authorization token",
             )
 
         try:
@@ -46,7 +47,7 @@ def auth_middleware(func: Callable) -> Callable:
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authorization header format. Use: Bearer <token>"
+                detail="Invalid authorization header format. Use: Bearer <token>",
             )
 
         # Verify token
@@ -55,7 +56,7 @@ def auth_middleware(func: Callable) -> Callable:
         if payload is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token"
+                detail="Invalid or expired token",
             )
 
         # Attach user data to request state
@@ -66,13 +67,17 @@ def auth_middleware(func: Callable) -> Callable:
         request.state.tenant_slug = payload.get("tenant_slug")
 
         # Call the actual route handler
-        return await func(*args, **kwargs) if hasattr(func, '__call__') else func(*args, **kwargs)
+        return (
+            await func(*args, **kwargs)
+            if hasattr(func, "__call__")
+            else func(*args, **kwargs)
+        )
 
     return wrapper
 
 
-def role_protected(allowed_roles: List[str]) -> Callable:
- 
+def role_protected(allowed_roles: list[str]) -> Callable:
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -90,7 +95,7 @@ def role_protected(allowed_roles: List[str]) -> Callable:
             if not hasattr(request.state, "user"):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Authentication required"
+                    detail="Authentication required",
                 )
 
             # Check role
@@ -98,12 +103,17 @@ def role_protected(allowed_roles: List[str]) -> Callable:
             if user_role not in allowed_roles:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Role '{user_role}' is not authorized. Required roles: {', '.join(allowed_roles)}"
+                    detail=f"Role '{user_role}' is not authorized. Required roles: {', '.join(allowed_roles)}",
                 )
 
-            return await func(*args, **kwargs) if hasattr(func, '__call__') else func(*args, **kwargs)
+            return (
+                await func(*args, **kwargs)
+                if hasattr(func, "__call__")
+                else func(*args, **kwargs)
+            )
 
         return wrapper
+
     return decorator
 
 
@@ -125,7 +135,7 @@ def owner_protected(func: Callable) -> Callable:
         if not hasattr(request.state, "user"):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication required"
+                detail="Authentication required",
             )
 
         # Get resource user_id from path parameters
@@ -136,7 +146,7 @@ def owner_protected(func: Callable) -> Callable:
         if resource_user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Resource user_id not found in path"
+                detail="Resource user_id not found in path",
             )
 
         # Verify ownership
@@ -144,10 +154,14 @@ def owner_protected(func: Callable) -> Callable:
         if current_user_id != int(resource_user_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to access this resource"
+                detail="You do not have permission to access this resource",
             )
 
-        return await func(*args, **kwargs) if hasattr(func, '__call__') else func(*args, **kwargs)
+        return (
+            await func(*args, **kwargs)
+            if hasattr(func, "__call__")
+            else func(*args, **kwargs)
+        )
 
     return wrapper
 
@@ -155,6 +169,7 @@ def owner_protected(func: Callable) -> Callable:
 # ============================================================================
 # GLOBAL MIDDLEWARE CLASSES
 # ============================================================================
+
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """
@@ -176,16 +191,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/",
     }
 
-    def __init__(self, app, public_routes: List[str] = None):
+    def __init__(self, app, public_routes: list[str] = None):
         super().__init__(app)
         if public_routes:
             self.PUBLIC_ROUTES.update(public_routes)
 
     async def dispatch(self, request: Request, call_next: Callable) -> JSONResponse:
-        
+
         if request.method == "OPTIONS":
             return await call_next(request)
-    
+
         # Check if route requires authentication
         if self._is_public_route(request.url.path):
             return await call_next(request)
@@ -194,10 +209,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:
-            logger.warning(f"Missing authorization header for {request.method} {request.url.path}")
+            logger.warning(
+                f"Missing authorization header for {request.method} {request.url.path}"
+            )
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Missing authorization token"}
+                content={"detail": "Missing authorization token"},
             )
 
         # Extract token from "Bearer <token>" format
@@ -206,10 +223,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
             if scheme.lower() != "bearer":
                 raise ValueError("Invalid authentication scheme")
         except ValueError:
-            logger.warning(f"Invalid authorization header format for {request.url.path}")
+            logger.warning(
+                f"Invalid authorization header format for {request.url.path}"
+            )
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Invalid authorization header format"}
+                content={"detail": "Invalid authorization header format"},
             )
 
         # Verify token
@@ -219,7 +238,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             logger.warning(f"Invalid or expired token for {request.url.path}")
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Invalid or expired token"}
+                content={"detail": "Invalid or expired token"},
             )
 
         # Attach user data to request state
@@ -238,12 +257,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if path in AuthMiddleware.PUBLIC_ROUTES:
             return True
 
-        # Check prefix matches
-        public_prefixes = ["/docs", "/redoc", "/openapi"]
+        # Check prefix matches (docs + statically served public assets)
+        public_prefixes = ["/docs", "/redoc", "/openapi", "/images", "/uploads"]
         return any(path.startswith(prefix) for prefix in public_prefixes)
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
 
+class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, requests_per_minute: int = 60):
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
@@ -256,6 +275,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # Check rate limit
         import time
+
         current_time = time.time()
         minute_ago = current_time - 60
 
@@ -272,7 +292,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             logger.warning(f"Rate limit exceeded for user {user_id}")
             return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                content={"detail": "Too many requests. Please try again later."}
+                content={"detail": "Too many requests. Please try again later."},
             )
 
         # Add current request
@@ -282,7 +302,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-
     async def dispatch(self, request: Request, call_next: Callable):
 
         response = await call_next(request)
@@ -291,7 +310,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
         response.headers["Content-Security-Policy"] = "default-src 'self'"
 
         return response

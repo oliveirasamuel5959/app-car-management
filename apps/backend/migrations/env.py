@@ -1,17 +1,13 @@
-from logging.config import fileConfig
 import os
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from logging.config import fileConfig
 
 from alembic import context
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+
 load_dotenv()
 
 from src.db.base import Base
-from src.models import Message, Tenant, User, Vehicle, Workshop, WorkshopClient
-from src.models.services import Service
-from src.models.notification import Notification
 
 config = context.config
 
@@ -42,12 +38,11 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

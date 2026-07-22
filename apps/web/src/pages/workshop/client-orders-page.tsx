@@ -24,6 +24,7 @@ import {
   DialogActions,
   TextField,
   Grid,
+  MenuItem,
 } from '@mui/material';
 
 import { ArrowBack as ArrowBackIcon, Visibility as ViewIcon } from '@mui/icons-material';
@@ -31,6 +32,7 @@ import { ArrowBack as ArrowBackIcon, Visibility as ViewIcon } from '@mui/icons-m
 import { serviceService } from '../../services/service-service';
 import { workshopClientService } from '../../services/workshop-client-service';
 import type { WorkshopClient } from '../../services/workshop-client-service';
+import { SERVICE_TYPE_OPTIONS, type ServiceHistoryType } from '../../services/service-history-service';
 
 interface Service {
   id: number;
@@ -47,6 +49,26 @@ interface Service {
   final_cost?: number;
   workshop_notes?: string;
 }
+
+interface CompletionFormState {
+  service_type: ServiceHistoryType | '';
+  current_mileage: string;
+  labor_cost: string;
+  parts_cost: string;
+  invoice_number: string;
+  warranty_until_date: string;
+  warranty_mileage: string;
+}
+
+const initialCompletionForm: CompletionFormState = {
+  service_type: '',
+  current_mileage: '',
+  labor_cost: '',
+  parts_cost: '',
+  invoice_number: '',
+  warranty_until_date: '',
+  warranty_mileage: '',
+};
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -76,6 +98,7 @@ export default function ClientOrdersPage() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [completionForm, setCompletionForm] = useState<CompletionFormState>(initialCompletionForm);
 
   useEffect(() => {
     if (!clientId) return;
@@ -108,6 +131,7 @@ export default function ClientOrdersPage() {
   const handleViewOrder = (service: Service) => {
     setSelectedService(service);
     setEditNotes(service.workshop_notes || '');
+    setCompletionForm(initialCompletionForm);
     setOpenDialog(true);
   };
 
@@ -116,12 +140,31 @@ export default function ClientOrdersPage() {
     setSelectedService(null);
   };
 
+  const handleCompletionFormChange = (field: keyof CompletionFormState) => (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setCompletionForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
   const handleUpdateStatus = async (action: 'start' | 'complete' | 'cancel') => {
     if (!selectedService) return;
 
     try {
       setUpdating(true);
-      const payload = { workshop_notes: editNotes };
+      const payload: Record<string, unknown> = { workshop_notes: editNotes };
+
+      if (action === 'complete') {
+        if (completionForm.service_type) payload.service_type = completionForm.service_type;
+        if (completionForm.current_mileage) payload.current_mileage = Number(completionForm.current_mileage);
+        if (completionForm.labor_cost) payload.labor_cost = Number(completionForm.labor_cost);
+        if (completionForm.parts_cost) payload.parts_cost = Number(completionForm.parts_cost);
+        if (completionForm.invoice_number) payload.invoice_number = completionForm.invoice_number;
+        if (completionForm.warranty_until_date) {
+          payload.warranty_until_date = new Date(completionForm.warranty_until_date).toISOString();
+        }
+        if (completionForm.warranty_mileage) payload.warranty_mileage = Number(completionForm.warranty_mileage);
+      }
+
       const updatedService = action === 'start'
         ? await serviceService.startServiceOrder(selectedService.id, payload)
         : action === 'complete'
@@ -287,6 +330,94 @@ export default function ClientOrdersPage() {
                 <Typography variant="subtitle2" color="textSecondary">Progress</Typography>
                 <Typography variant="body1">{selectedService.progress_percentage}%</Typography>
               </Grid>
+
+              {selectedService.status === 'in_progress' && (
+                <>
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 1 }} />
+                    <Typography variant="subtitle2" color="textSecondary">
+                      Dados da Manutenção (opcional)
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Informe o tipo de serviço e a quilometragem para registrar automaticamente esta manutenção no histórico do veículo.
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Tipo de Serviço"
+                      value={completionForm.service_type}
+                      onChange={handleCompletionFormChange('service_type')}
+                    >
+                      <MenuItem value="">Não informado</MenuItem>
+                      {SERVICE_TYPE_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Quilometragem atual (km)"
+                      value={completionForm.current_mileage}
+                      onChange={handleCompletionFormChange('current_mileage')}
+                      InputProps={{ inputProps: { min: 0 } }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Mão de Obra (R$)"
+                      value={completionForm.labor_cost}
+                      onChange={handleCompletionFormChange('labor_cost')}
+                      InputProps={{ inputProps: { min: 0, step: '0.01' } }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Peças (R$)"
+                      value={completionForm.parts_cost}
+                      onChange={handleCompletionFormChange('parts_cost')}
+                      InputProps={{ inputProps: { min: 0, step: '0.01' } }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      label="Nota Fiscal"
+                      value={completionForm.invoice_number}
+                      onChange={handleCompletionFormChange('invoice_number')}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Garantia até (km)"
+                      value={completionForm.warranty_mileage}
+                      onChange={handleCompletionFormChange('warranty_mileage')}
+                      InputProps={{ inputProps: { min: 0 } }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="Garantia até (data)"
+                      value={completionForm.warranty_until_date}
+                      onChange={handleCompletionFormChange('warranty_until_date')}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                </>
+              )}
             </Grid>
           )}
         </DialogContent>

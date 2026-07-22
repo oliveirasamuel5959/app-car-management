@@ -11,7 +11,9 @@ class Tenant(Base):
     __tablename__ = "tenants"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    slug: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    slug: Mapped[str] = mapped_column(
+        String(100), unique=True, index=True, nullable=False
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
@@ -26,3 +28,4 @@ class Tenant(Base):
     workshop_clients = relationship("WorkshopClient", back_populates="tenant")
     messages = relationship("Message", back_populates="tenant")
     notifications = relationship("Notification", back_populates="tenant")
+    services_history = relationship("ServiceHistory", back_populates="tenant")

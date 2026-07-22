@@ -1,30 +1,35 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
 from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class WorkshopClientCreate(BaseModel):
     name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    email: str | None = None
+    phone: str | None = None
     vehicle_brand: str
     vehicle_model: str
     vehicle_year: int
     vehicle_plate: str
+    notes: str | None = None
+    status: str = "active"
+
 
 class WorkshopClientRead(BaseModel):
     id: int
     tenant_id: UUID
     workshop_id: int
     name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    email: str | None = None
+    phone: str | None = None
     vehicle_brand: str
     vehicle_model: str
     vehicle_year: int
     vehicle_plate: str
-    user_id: Optional[int] = None
+    notes: str | None = None
+    status: str
+    user_id: int | None = None
     created_at: datetime
 
     class Config:
@@ -32,10 +37,12 @@ class WorkshopClientRead(BaseModel):
 
 
 class WorkshopClientUpdate(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    vehicle_brand: Optional[str] = None
-    vehicle_model: Optional[str] = None
-    vehicle_year: Optional[int] = None
-    vehicle_plate: Optional[str] = None
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    vehicle_brand: str | None = None
+    vehicle_model: str | None = None
+    vehicle_year: int | None = None
+    vehicle_plate: str | None = None
+    notes: str | None = None
+    status: str | None = None

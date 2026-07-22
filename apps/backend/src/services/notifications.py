@@ -1,14 +1,15 @@
+
 from sqlalchemy.orm import Session
-from typing import List, Optional
+
+from src.models.notification import Notification
 from src.repositories.notifications import (
     repo_create_notification,
     repo_get_notification_by_id,
     repo_get_notifications_by_user_id,
     repo_get_unread_notifications_count,
-    repo_mark_notification_as_read,
     repo_mark_all_notifications_as_read,
+    repo_mark_notification_as_read,
 )
-from src.models.notification import Notification
 
 
 class NotificationService:
@@ -22,7 +23,7 @@ class NotificationService:
         title: str,
         message: str,
         notification_type: str,
-        service_id: Optional[int] = None
+        service_id: int | None = None,
     ) -> Notification:
         """Create a new notification."""
         notification_data = {
@@ -34,11 +35,15 @@ class NotificationService:
         }
         return repo_create_notification(self.db, tenant_id, notification_data)
 
-    def get_notification_by_id(self, tenant_id, notification_id: int) -> Optional[Notification]:
+    def get_notification_by_id(
+        self, tenant_id, notification_id: int
+    ) -> Notification | None:
         """Get a notification by ID."""
         return repo_get_notification_by_id(self.db, notification_id, tenant_id)
 
-    def get_notifications_by_user_id(self, tenant_id, user_id: int, limit: int = 20) -> List[Notification]:
+    def get_notifications_by_user_id(
+        self, tenant_id, user_id: int, limit: int = 20
+    ) -> list[Notification]:
         """Get all notifications for a user."""
         return repo_get_notifications_by_user_id(self.db, tenant_id, user_id, limit)
 
@@ -46,7 +51,7 @@ class NotificationService:
         """Get count of unread notifications for a user."""
         return repo_get_unread_notifications_count(self.db, tenant_id, user_id)
 
-    def mark_as_read(self, tenant_id, notification_id: int) -> Optional[Notification]:
+    def mark_as_read(self, tenant_id, notification_id: int) -> Notification | None:
         """Mark a notification as read."""
         return repo_mark_notification_as_read(self.db, tenant_id, notification_id)
 
@@ -61,7 +66,7 @@ class NotificationService:
         service_name: str,
         old_status: str,
         new_status: str,
-        service_id: Optional[int] = None
+        service_id: int | None = None,
     ) -> Notification:
         """Create a status change notification."""
         status_names = {

@@ -112,7 +112,7 @@ def seed_service_graph():
     return session, tenant, workshop_user, client_user, service
 
 
-def test_service_order_creation_notifies_client_and_workshop():
+def test_service_order_creation_notifies_only_client():
     session, tenant, workshop_user, client_user, _ = seed_service_graph()
 
     created_service = ServiceService(session).create_service(
@@ -130,14 +130,21 @@ def test_service_order_creation_notifies_client_and_workshop():
         tenant_id=tenant.id,
     )
 
-    notifications = session.query(Notification).filter(Notification.service_id == created_service.id).all()
+    notifications = (
+        session.query(Notification)
+        .filter(Notification.service_id == created_service.id)
+        .all()
+    )
 
-    assert len(notifications) == 2
-    assert {notification.user_id for notification in notifications} == {workshop_user.id, client_user.id}
-    assert all(notification.notification_type == "status_change" for notification in notifications)
+    assert len(notifications) == 1
+    assert {notification.user_id for notification in notifications} == {client_user.id}
+    assert all(
+        notification.notification_type == "status_change"
+        for notification in notifications
+    )
 
 
-def test_client_can_accept_pending_service_order_and_notification_is_created():
+def test_client_can_accept_pending_service_order_and_notify_workshop():
     session, tenant, workshop_user, client_user, service = seed_service_graph()
 
     updated_service = ServiceService(session).accept_service_order_for_client(
@@ -148,10 +155,17 @@ def test_client_can_accept_pending_service_order_and_notification_is_created():
 
     assert updated_service is not None
     assert updated_service.status == "confirmed"
-    notifications = session.query(Notification).filter(Notification.service_id == service.id).all()
-    assert len(notifications) == 2
-    assert {notification.user_id for notification in notifications} == {workshop_user.id, client_user.id}
-    assert all(notification.notification_type == "status_change" for notification in notifications)
+    notifications = (
+        session.query(Notification).filter(Notification.service_id == service.id).all()
+    )
+    assert len(notifications) == 1
+    assert {notification.user_id for notification in notifications} == {
+        workshop_user.id
+    }
+    assert all(
+        notification.notification_type == "status_change"
+        for notification in notifications
+    )
 
 
 def test_workshop_must_follow_transition_matrix():
@@ -218,7 +232,9 @@ def test_client_summary_counts_current_orders():
         user_email=client_user.email,
     )
 
-    summary = service_service.get_client_summary(client_user.id, user_email=client_user.email)
+    summary = service_service.get_client_summary(
+        client_user.id, user_email=client_user.email
+    )
 
     assert summary.total_orders == 1
     assert summary.active_orders == 1

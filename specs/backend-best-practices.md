@@ -1,0 +1,12 @@
+## Backend Best Practices
+
+Regra de ouro
+- Router → Service → Repository → DB
+- Sem lógica de negócio nos routers.
+
+Client
+ → FastAPI Route
+ → Service (Business Logic)
+ → Repository (Data)
+ → External Systems (if any)
+ → Response

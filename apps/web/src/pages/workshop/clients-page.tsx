@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -11,6 +12,7 @@ import {
   TableContainer,
   CircularProgress,
   Button,
+  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,6 +26,7 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { workshopClientService } from '../../services/workshop-client-service';
 import type { WorkshopClient, WorkshopClientCreate } from '../../services/workshop-client-service';
+import ConfirmDialog from '../../components/ui/confirm-dialog';
 
 const initialFormData: WorkshopClientCreate = {
   name: '',
@@ -36,6 +39,7 @@ const initialFormData: WorkshopClientCreate = {
 };
 
 export default function WorkshopClientsPage() {
+  const navigate = useNavigate();
   const [clients, setClients] = useState<WorkshopClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
@@ -43,6 +47,8 @@ export default function WorkshopClientsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<WorkshopClient | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchClients = async () => {
     try {
@@ -108,13 +114,18 @@ export default function WorkshopClientsPage() {
     }
   };
 
-  const handleDelete = async (clientId: number) => {
-    if (!confirm('Are you sure you want to remove this client?')) return;
+  const handleConfirmDelete = async () => {
+    if (!clientToDelete) return;
     try {
-      await workshopClientService.deleteClient(clientId);
+      setDeleting(true);
+      await workshopClientService.deleteClient(clientToDelete.id);
+      setClientToDelete(null);
       fetchClients();
     } catch (err) {
       console.error('Failed to delete client:', err);
+      setError(err instanceof Error ? err.message : 'Falha ao remover cliente');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -131,9 +142,9 @@ export default function WorkshopClientsPage() {
   return (
     <Box sx={{ width: '100%' }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">Clients</Typography>
+        <Typography variant="h4">Clientes</Typography>
         <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleOpenDialog}>
-          Add Client
+          Adicionar Cliente
         </Button>
       </Box>
 
@@ -153,12 +164,13 @@ export default function WorkshopClientsPage() {
         <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
+              <TableCell>Nome</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Phone</TableCell>
-              <TableCell>Vehicle</TableCell>
-              <TableCell>Plate</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell>Telefone</TableCell>
+              <TableCell>Veículo</TableCell>
+              <TableCell>Placa</TableCell>
+              <TableCell>Situação</TableCell>
+              <TableCell align="right">Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -166,6 +178,8 @@ export default function WorkshopClientsPage() {
               <TableRow
                 key={client.id}
                 hover
+                onClick={() => navigate(`/workshop/clients/${client.id}`)}
+                sx={{ cursor: 'pointer' }}
               >
                 <TableCell>{client.name}</TableCell>
                 <TableCell>{client.email || '-'}</TableCell>
@@ -174,8 +188,20 @@ export default function WorkshopClientsPage() {
                   {client.vehicle_brand} {client.vehicle_model} ({client.vehicle_year})
                 </TableCell>
                 <TableCell>{client.vehicle_plate}</TableCell>
+                <TableCell>
+                  <Chip
+                    size="small"
+                    label={client.status === 'inactive' ? 'Inativo' : 'Ativo'}
+                    color={client.status === 'inactive' ? 'default' : 'success'}
+                    variant={client.status === 'inactive' ? 'outlined' : 'filled'}
+                  />
+                </TableCell>
                 <TableCell align="right">
-                  <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={(e) => { e.stopPropagation(); setClientToDelete(client); }}
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -183,14 +209,25 @@ export default function WorkshopClientsPage() {
             ))}
             {clients.length === 0 && !error && (
               <TableRow>
-                <TableCell colSpan={6} align="center">
-                  No clients yet. Click "Add Client" to register your first client.
+                <TableCell colSpan={7} align="center">
+                  Nenhum cliente ainda. Clique em "Adicionar Cliente" para cadastrar o primeiro.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <ConfirmDialog
+        open={clientToDelete !== null}
+        title="Remover cliente"
+        message={`Tem certeza que deseja remover ${clientToDelete?.name ?? 'este cliente'}? Esta ação não pode ser desfeita.`}
+        confirmLabel="Remover"
+        destructive
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setClientToDelete(null)}
+      />
 
       {/* Add Client Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

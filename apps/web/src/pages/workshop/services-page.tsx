@@ -38,7 +38,7 @@ interface ClientSummary {
 }
 
 const statusLabelMap: Record<string, string> = {
-  pending: 'Pendente',
+  pending: 'Pendente - Aguardando Confirmação',
   confirmed: 'Confirmado',
   in_progress: 'Em progresso',
   completed: 'Concluído',

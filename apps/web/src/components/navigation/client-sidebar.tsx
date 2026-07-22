@@ -17,6 +17,7 @@ import {
   Settings as SettingsIcon,
   Menu as MenuIcon,
   Chat as ChatIcon,
+  Build as BuildIcon,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -39,10 +40,11 @@ export const ClientSidebar = ({
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/client/dashboard' },
-    { text: 'My Car', icon: <CarIcon />, path: '/client/my-car' },
-    { text: 'Find Workshops', icon: <WorkshopIcon />, path: '/client/search-workshops' },
+    { text: 'Meu Carro', icon: <CarIcon />, path: '/client/my-car' },
+    { text: 'Histórico de Manutenção', icon: <BuildIcon />, path: '/client/service-history' },
+    { text: 'Encontrar Oficinas', icon: <WorkshopIcon />, path: '/client/search-workshops' },
     { text: 'Mensagens', icon: <ChatIcon />, path: '/client/messages' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/client/settings' },
+    { text: 'Configurações', icon: <SettingsIcon />, path: '/client/settings' },
   ];
 
   const handleNavigate = (path: string) => {
@@ -78,7 +80,7 @@ export const ClientSidebar = ({
             noWrap
             sx={{
               fontWeight: 700,
-              color: '#0E71AE',
+              color: 'primary.main',
             }}
           >
             DrivePluss
@@ -88,10 +90,10 @@ export const ClientSidebar = ({
           onClick={onToggleCollapse}
           sx={{
             borderRadius: 2,
-            color: '#64748B',
+            color: 'text.secondary',
             '&:hover': {
-              backgroundColor: 'rgba(0,0,0,0.05)',
-              color: '#0E71AE',
+              backgroundColor: 'action.hover',
+              color: 'primary.main',
             },
           }}
         >
@@ -99,7 +101,7 @@ export const ClientSidebar = ({
         </IconButton>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(0,0,0,0.08)' }} />
+      <Divider />
 
       {/* Navigation items */}
       <List sx={{ px: collapsed ? 0.5 : 1, py: 1, flexGrow: 1 }}>
@@ -117,20 +119,20 @@ export const ClientSidebar = ({
                 justifyContent: collapsed ? 'center' : 'flex-start',
                 px: collapsed ? 1.5 : 2,
                 transition: 'all 0.2s ease',
-                color: '#475569',
+                color: 'text.secondary',
                 '&.Mui-selected': {
-                  backgroundColor: 'rgba(14,113,174,0.12)',
-                  color: '#0E71AE',
+                  backgroundColor: 'action.selected',
+                  color: 'primary.main',
                   '&:hover': {
-                    backgroundColor: 'rgba(14,113,174,0.18)',
+                    backgroundColor: 'action.selected',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: '#0E71AE',
+                    color: 'primary.main',
                   },
                 },
                 '&:hover': {
-                  backgroundColor: 'rgba(0,0,0,0.04)',
-                  color: '#0E71AE',
+                  backgroundColor: 'action.hover',
+                  color: 'primary.main',
                 },
               }}
             >
@@ -138,7 +140,7 @@ export const ClientSidebar = ({
                 sx={{
                   minWidth: collapsed ? 0 : 40,
                   justifyContent: 'center',
-                  color: isSelected ? '#0E71AE' : '#64748B',
+                  color: isSelected ? 'primary.main' : 'text.secondary',
                   transition: 'all 0.2s ease',
                 }}
               >
@@ -147,9 +149,8 @@ export const ClientSidebar = ({
               {!collapsed && (
                 <ListItemText
                   primary={item.text}
-                  sx={{ padding: '0 0 0 28px' }}
                   primaryTypographyProps={{
-                    fontSize: '13px',
+                    fontSize: '0.875rem',
                     fontWeight: isSelected ? 600 : 400,
                   }}
                 />
