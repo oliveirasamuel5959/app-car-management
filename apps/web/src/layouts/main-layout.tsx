@@ -27,7 +27,7 @@ const MainLayout = ({ children }) => {
       >
         {children}
       </Box>
-      <Footer />
+      {/* <Footer /> */}
     </Box>
   );
 };
