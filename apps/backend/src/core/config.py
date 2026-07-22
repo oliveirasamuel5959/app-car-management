@@ -1,9 +1,10 @@
+
 from pydantic_settings import BaseSettings
-from typing import Optional, List
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
-    
+
     # Database
     DATABASE_URL: str
 
@@ -17,7 +18,7 @@ class Settings(BaseSettings):
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: str
     CORS_ALLOW_HEADERS: str
-    
+
     # AI Settings
     ANTHROPIC_API_KEY: str
     OPENAI_API_KEY: str
@@ -27,15 +28,14 @@ class Settings(BaseSettings):
         case_sensitive = True
 
     @property
-    def cors_origins_list(self) -> List[str]:
+    def cors_origins_list(self) -> list[str]:
         """Convert CORS_ORIGINS string to list."""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
     @property
-    def cors_methods_list(self) -> List[str]:
+    def cors_methods_list(self) -> list[str]:
         """Convert CORS_ALLOW_METHODS string to list."""
         return [method.strip() for method in self.CORS_ALLOW_METHODS.split(",")]
 
 
 settings = Settings()
-

@@ -1,5 +1,5 @@
-from datetime import datetime
 import uuid
+from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,13 +12,17 @@ class WorkshopClient(Base):
     __tablename__ = "workshop_clients"
 
     __table_args__ = (
-        UniqueConstraint("workshop_id", "vehicle_plate", name="uq_workshop_vehicle_plate"),
+        UniqueConstraint(
+            "workshop_id", "vehicle_plate", name="uq_workshop_vehicle_plate"
+        ),
         Index("ix_workshop_clients_tenant_id_id", "tenant_id", "id"),
         Index("ix_workshop_clients_tenant_id_created_at", "tenant_id", "created_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id"), nullable=False, index=True
+    )
 
     workshop_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("workshops.id", ondelete="CASCADE"), nullable=False

@@ -12,5 +12,5 @@ downgrade:
 	uv run alembic downgrade -1
 
 format:
-	uv run black .
-	uv run isort .
+	uv run ruff format .
+	uv run ruff check --fix .

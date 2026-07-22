@@ -23,7 +23,9 @@ class UserService:
         if user.age < 18:
             raise ValueError("User must be at least 18 years old")
         tenant_name = getattr(user, "tenant_name", None) or user.name
-        tenant_slug = getattr(user, "tenant_slug", None) or slugify_tenant_name(tenant_name)
+        tenant_slug = getattr(user, "tenant_slug", None) or slugify_tenant_name(
+            tenant_name
+        )
         tenant = repo_get_or_create_tenant(self.db, slug=tenant_slug, name=tenant_name)
         return repo_create_user(self.db, user, tenant.id)
 
@@ -65,7 +67,7 @@ class UserService:
         # Create JWT token
         access_token = create_access_token(
             data={
-                "sub": user.email, 
+                "sub": user.email,
                 "user_id": user.id,
                 "role": user.role,
                 "tenant_id": str(user.tenant_id),
@@ -75,7 +77,9 @@ class UserService:
 
         return user, access_token
 
-    def login_user(self, email: str, password: str, tenant_slug: str | None = None) -> tuple:
+    def login_user(
+        self, email: str, password: str, tenant_slug: str | None = None
+    ) -> tuple:
         """
         Authenticate user and generate JWT token.
 
@@ -109,7 +113,9 @@ class UserService:
                 raise ValueError("Invalid email or password")
 
             if len(matching_users) > 1:
-                raise ValueError("Multiple accounts match these credentials. Provide tenant_slug to select the correct tenant.")
+                raise ValueError(
+                    "Multiple accounts match these credentials. Provide tenant_slug to select the correct tenant."
+                )
 
             user = matching_users[0]
             tenant = user.tenant
@@ -126,14 +132,12 @@ class UserService:
         )
 
         return user, access_token
-    
+
     def get_all_users(self, tenant_id) -> list[User]:
         return repo_get_all_users(self.db, tenant_id)
-    
+
     def get_user_by_id(self, user_id: int, tenant_id) -> User:
         user = repo_get_user_by_id(self.db, user_id, tenant_id)
         if not user:
             raise ValueError("User not found")
         return user
-
-  

@@ -1,8 +1,9 @@
-from pydantic import BaseModel, field_validator
 from datetime import datetime
-from typing import Optional, Literal
 from enum import Enum
+from typing import Literal
 from uuid import UUID
+
+from pydantic import BaseModel, field_validator
 
 
 class MessageType(str, Enum):
@@ -15,18 +16,19 @@ class MessageType(str, Enum):
 
 # ─── Message ──────────────────────────────────────────────────────────────────
 
+
 class MessageRead(BaseModel):
     id: int
     uuid: str
     tenant_id: UUID
     sender_id: int
     receiver_id: int
-    content: Optional[str] = None
+    content: str | None = None
     message_type: str
-    file_url: Optional[str] = None
-    file_name: Optional[str] = None
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
+    file_url: str | None = None
+    file_name: str | None = None
+    file_size: int | None = None
+    mime_type: str | None = None
     is_edited: bool
     created_at: datetime
 
@@ -36,16 +38,18 @@ class MessageRead(BaseModel):
 
 # ─── WebSocket Payloads ───────────────────────────────────────────────────────
 
+
 class WSIncomingMessage(BaseModel):
     """Payload sent by the client over WebSocket."""
+
     type: Literal["chat_message", "typing_start", "typing_stop"]
     receiver_id: int
-    content: Optional[str] = None
+    content: str | None = None
     message_type: MessageType = MessageType.text
 
     @field_validator("content")
     @classmethod
-    def content_required_for_chat(cls, v: Optional[str], info) -> Optional[str]:
+    def content_required_for_chat(cls, v: str | None, info) -> str | None:
         if info.data.get("type") == "chat_message" and not v:
             raise ValueError("content is required for chat_message type")
         if v is not None:
@@ -59,6 +63,7 @@ class WSIncomingMessage(BaseModel):
 
 # ─── File Upload ──────────────────────────────────────────────────────────────
 
+
 class FileUploadResponse(BaseModel):
     success: bool
     file_url: str
@@ -66,5 +71,5 @@ class FileUploadResponse(BaseModel):
     file_size: int
     mime_type: str
     file_type: str
-    message_id: Optional[str] = None
+    message_id: str | None = None
     message: str = "File uploaded successfully"

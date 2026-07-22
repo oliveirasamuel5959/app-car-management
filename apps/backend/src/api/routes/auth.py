@@ -2,20 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 
-from src.db.database import get_session
 from src.core.auth import get_current_user
-
+from src.db.database import get_session
 from src.schemas.user import (
-    UserRegister,
-    UserLogin,
     TokenResponse,
+    UserLogin,
     UserRead,
+    UserRegister,
     UserResponse,
 )
 from src.services.user import UserService
 
 router = APIRouter()
 security = HTTPBearer()
+
 
 @router.post(
     "/register",
@@ -24,10 +24,7 @@ security = HTTPBearer()
     summary="Register a new user",
     description="Create a new user account with email validation and password requirements",
 )
-def register(
-    register_data: UserRegister,
-    db: Session = Depends(get_session)
-):
+def register(register_data: UserRegister, db: Session = Depends(get_session)):
     """
     Register a new user.
 
@@ -49,20 +46,15 @@ def register(
         user, access_token = user_service.register_user(register_data)
 
         return TokenResponse(
-            access_token=access_token,
-            token_type="bearer",
-            user=UserRead.from_orm(user)
+            access_token=access_token, token_type="bearer", user=UserRead.from_orm(user)
         )
-        
+
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred during registration: {str(e)}"
+            detail=f"An error occurred during registration: {str(e)}",
         )
 
 
@@ -73,10 +65,7 @@ def register(
     summary="User login",
     description="Authenticate user with email and password, returns JWT token",
 )
-def login(
-    login_data: UserLogin,
-    db: Session = Depends(get_session)
-):
+def login(login_data: UserLogin, db: Session = Depends(get_session)):
     """
     Authenticate user and generate JWT token.
 
@@ -98,19 +87,14 @@ def login(
         )
 
         return TokenResponse(
-            access_token=access_token,
-            token_type="bearer",
-            user=UserRead.from_orm(user)
+            access_token=access_token, token_type="bearer", user=UserRead.from_orm(user)
         )
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
-    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred during login"
+            detail="An error occurred during login",
         )
 
 
@@ -121,8 +105,7 @@ def login(
     description="Get the authenticated user's information",
 )
 async def get_me(
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_session)
+    current_user: dict = Depends(get_current_user), db: Session = Depends(get_session)
 ):
     """
     Get the current authenticated user's information.
@@ -132,19 +115,20 @@ async def get_me(
     from src.repositories.user import repo_get_user_by_email
 
     try:
-        user = repo_get_user_by_email(db, current_user.get("sub"), current_user.get("tenant_id"))
+        user = repo_get_user_by_email(
+            db, current_user.get("sub"), current_user.get("tenant_id")
+        )
 
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
 
         return user
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while fetching user data"
+            detail="An error occurred while fetching user data",
         )

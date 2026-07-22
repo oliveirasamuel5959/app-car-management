@@ -1,9 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-from typing import Annotated
-
-from src.schemas.user import UserCreate
+from pydantic import BaseModel
 
 
 class VehicleCreate(BaseModel):
@@ -11,6 +8,7 @@ class VehicleCreate(BaseModel):
     model: str
     year: int
     plate: str | None
+
 
 class VehicleRead(BaseModel):
     id: int
