@@ -358,6 +358,7 @@ class ServiceService:
                 tenant_id=tenant_id,
                 workshop_id=updated_service.workshop_id,
                 vehicle_id=updated_service.vehicle_id,
+                workshop_client_id=updated_service.workshop_client_id,
                 service_type=service_type_value,
                 current_mileage=history_fields.get("current_mileage"),
                 serviced_at=updated_service.finished_at,

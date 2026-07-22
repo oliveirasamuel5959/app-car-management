@@ -1,5 +1,4 @@
 import { Box } from '@mui/material';
-import Navbar from '../components/navigation/navbar';
 import Footer from '../components/navigation/footer';
 import Header from '../components/navigation/header';
 
@@ -13,6 +12,10 @@ const MainLayout = ({ children }) => {
       position: 'relative'
     }}>
       <Header />
+      {/*
+        Full-bleed main: the nested AppLayout owns the single fixed-header
+        offset and all content padding, so this wrapper adds no extra margins.
+      */}
       <Box
         component="main"
         sx={{
@@ -20,10 +23,6 @@ const MainLayout = ({ children }) => {
           display: 'flex',
           flexDirection: 'column',
           width: '100%',
-          py: 3,
-          px: { xs: 2, sm: 3, md: 4 },
-          mt: 8,
-          mb: 10
         }}
       >
         {children}

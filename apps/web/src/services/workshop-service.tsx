@@ -1,13 +1,53 @@
 import { api } from './api';
 
+export interface Workshop {
+  id: number;
+  tenant_id: string;
+  name: string;
+  email?: string | null;
+  description?: string | null;
+  latitude: number;
+  longitude: number;
+  rating_avg: number;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  opening_hours?: string | null;
+  logo_url?: string | null;
+  user_id: number;
+}
+
+export interface WorkshopUpdate {
+  name?: string;
+  email?: string | null;
+  description?: string | null;
+  latitude?: number;
+  longitude?: number;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  opening_hours?: string | null;
+  logo_url?: string | null;
+}
+
 export const workshopService = {
-  getCurrentWorkshop: async () => {
+  getCurrentWorkshop: async (): Promise<Workshop> => {
     try {
       const response = await api.get('/workshops/me');
       return response;
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch current workshop');
     }
+  },
+
+  updateCurrentWorkshop: async (data: WorkshopUpdate): Promise<Workshop> => {
+    return api.put('/workshops/me', data);
+  },
+
+  uploadLogo: async (file: File): Promise<Workshop> => {
+    return api.upload('/workshops/me/logo', file);
   },
 
   /**

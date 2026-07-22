@@ -10,6 +10,8 @@ export interface WorkshopClient {
   vehicle_model: string;
   vehicle_year: number;
   vehicle_plate: string;
+  notes?: string | null;
+  status: string;
   user_id?: number;
   created_at: string;
 }
@@ -22,6 +24,8 @@ export interface WorkshopClientCreate {
   vehicle_model: string;
   vehicle_year: number;
   vehicle_plate: string;
+  notes?: string | null;
+  status?: string;
 }
 
 export const workshopClientService = {

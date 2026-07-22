@@ -257,8 +257,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if path in AuthMiddleware.PUBLIC_ROUTES:
             return True
 
-        # Check prefix matches
-        public_prefixes = ["/docs", "/redoc", "/openapi"]
+        # Check prefix matches (docs + statically served public assets)
+        public_prefixes = ["/docs", "/redoc", "/openapi", "/images", "/uploads"]
         return any(path.startswith(prefix) for prefix in public_prefixes)
 
 

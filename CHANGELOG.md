@@ -2,6 +2,18 @@
 
 Chronological project changes grouped by commit date. Newest entries appear first.
 
+## 2026-07-22
+- FEAT: Workshop client rows are now clickable and open a client detail page (contact, vehicle, "cliente desde", last-service summary)
+- FEAT: Services history page can filter by client (with a deep link from the client detail page)
+- FEAT: Add profile fields — User (phone, address, city, state, avatar, updated_at), Workshop (phone, address, city, state, opening hours, logo), WorkshopClient (notes, status)
+- FEAT: Link `services_history` records to a workshop client (`workshop_client_id`) so history groups per client
+- FEAT: New shared profile page at `/client/profile` and `/workshop/profile` with avatar/logo upload; serve uploads under `/uploads`
+- FEAT: New endpoints `GET/PUT /users/me`, `POST /users/me/avatar`, `PUT /workshops/me`, `POST /workshops/me/logo`
+- UI: Unify all primary blues on the brand `#0E71AE` (MUI theme + Tailwind design tokens)
+- UI: Fix double header offset (single 64px), sidebar label alignment, dark-mode drawer backgrounds, dead nav links, and the broken header search style; reduce oversized base font
+- UI: Add a reusable ConfirmDialog and replace native confirm() for client deletion
+- DB: Alembic migration `7d2e9f4a1c8b_add_profile_and_client_fields` (reversible)
+
 ## 2026-06-01
 - UPDATE: Revise roadmap phases and objectives for clarity and accuracy
 - FIX: Fix create workshop clients after tenant feature merge

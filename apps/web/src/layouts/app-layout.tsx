@@ -15,7 +15,9 @@ import { WorkshopSidebar } from '../components/navigation/workshop-sidebar';
 
 const DRAWER_WIDTH = 240;
 const COLLAPSED_WIDTH = 64;
-const NAVBAR_HEIGHT = 65;
+// Matches the fixed Header height (Tailwind h-16 = 64px) so the sidebar top
+// and content top line up exactly under the header.
+const NAVBAR_HEIGHT = 64;
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -95,8 +97,9 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
               boxSizing: 'border-box',
               top: `${NAVBAR_HEIGHT}px`,
               height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-              bgcolor: '#FFFFFF',
-              borderRight: '1px solid rgba(0,0,0,0.08)',
+              bgcolor: 'background.paper',
+              borderRight: '1px solid',
+              borderColor: 'divider',
             },
           }}
         >
@@ -114,8 +117,9 @@ export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
               boxSizing: 'border-box',
               top: `${NAVBAR_HEIGHT}px`,
               height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-              bgcolor: '#FFFFFF',
-              borderRight: '1px solid rgba(0,0,0,0.08)',
+              bgcolor: 'background.paper',
+              borderRight: '1px solid',
+              borderColor: 'divider',
               overflowX: 'hidden',
               overflowY: 'auto',
               transition: theme.transitions.create('width', {

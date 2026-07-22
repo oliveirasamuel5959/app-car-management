@@ -25,6 +25,14 @@ class Workshop(Base):
     longitude: Mapped[float] = mapped_column(nullable=False)
     rating_avg: Mapped[float] = mapped_column(default=0.0)
 
+    # Contact / address / branding
+    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    opening_hours: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    logo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), name="user_id", nullable=False
     )

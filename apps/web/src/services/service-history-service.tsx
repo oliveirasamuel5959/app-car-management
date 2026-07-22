@@ -18,6 +18,7 @@ export interface ServiceHistory {
   tenant_id: string;
   vehicle_id: number;
   workshop_id?: number | null;
+  workshop_client_id?: number | null;
   status: string;
   service_type: ServiceHistoryType;
   description?: string | null;
@@ -101,13 +102,16 @@ export const workshopServiceHistoryService = {
    * List service-history records authored by the authenticated workshop
    * (i.e. created automatically when a service order was completed).
    */
-  list: async (filters?: { service_type?: string; vehicle_id?: number }): Promise<ServiceHistory[]> => {
+  list: async (filters?: { service_type?: string; vehicle_id?: number; workshop_client_id?: number }): Promise<ServiceHistory[]> => {
     const params = new URLSearchParams();
     if (filters?.service_type) {
       params.append('service_type', filters.service_type);
     }
     if (filters?.vehicle_id) {
       params.append('vehicle_id', filters.vehicle_id.toString());
+    }
+    if (filters?.workshop_client_id) {
+      params.append('workshop_client_id', filters.workshop_client_id.toString());
     }
 
     const query = params.toString();

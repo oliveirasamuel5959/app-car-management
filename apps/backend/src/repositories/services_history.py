@@ -52,6 +52,7 @@ def repo_get_services_history_for_workshop(
     workshop_id: int,
     service_type: str | None = None,
     vehicle_id: int | None = None,
+    workshop_client_id: int | None = None,
 ) -> list[ServiceHistory]:
     """List service-history records authored by this workshop, scoped to the tenant."""
     query = db.query(ServiceHistory).filter(
@@ -65,6 +66,10 @@ def repo_get_services_history_for_workshop(
         query = query.filter(ServiceHistory.service_type == service_type)
     if vehicle_id is not None:
         query = query.filter(ServiceHistory.vehicle_id == vehicle_id)
+    if workshop_client_id is not None:
+        query = query.filter(
+            ServiceHistory.workshop_client_id == workshop_client_id
+        )
 
     return query.order_by(ServiceHistory.serviced_at.desc()).all()
 

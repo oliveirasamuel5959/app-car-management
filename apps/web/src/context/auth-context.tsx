@@ -5,6 +5,7 @@ interface User {
   email: string;
   name: string;
   role: 'CLIENT' | 'WORKSHOP';
+  avatar_url?: string | null;
 }
 
 interface AuthContextType {
@@ -14,6 +15,7 @@ interface AuthContextType {
   loading: boolean;
   login: (authData: any) => void;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -64,13 +66,22 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    setUser((prev) => {
+      const next = { ...(prev ?? {}), ...updates } as User;
+      localStorage.setItem('user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const value: AuthContextType = {
     isAuthenticated,
     token,
     user,
     loading,
     login,
-    logout
+    logout,
+    updateUser,
   };
 
   if (loading) {

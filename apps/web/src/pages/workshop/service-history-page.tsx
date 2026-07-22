@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -24,19 +25,27 @@ import {
   formatServiceHistoryMileage as formatMileage,
   type ServiceHistory,
 } from '../../services/service-history-service';
+import { workshopClientService } from '../../services/workshop-client-service';
+import type { WorkshopClient } from '../../services/workshop-client-service';
 
 export default function WorkshopServiceHistoryPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [records, setRecords] = useState<ServiceHistory[]>([]);
+  const [clients, setClients] = useState<WorkshopClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('');
+  const [filterClient, setFilterClient] = useState<string>(searchParams.get('client') ?? '');
 
-  const fetchRecords = async (serviceType?: string) => {
+  const fetchRecords = async (serviceType?: string, clientId?: string) => {
     try {
       setLoading(true);
       setError(null);
+      const filters: { service_type?: string; workshop_client_id?: number } = {};
+      if (serviceType) filters.service_type = serviceType;
+      if (clientId) filters.workshop_client_id = Number(clientId);
       const data = await workshopServiceHistoryService.list(
-        serviceType ? { service_type: serviceType } : undefined,
+        Object.keys(filters).length ? filters : undefined,
       );
       setRecords(data);
     } catch (err) {
@@ -49,13 +58,34 @@ export default function WorkshopServiceHistoryPage() {
   };
 
   useEffect(() => {
-    fetchRecords();
+    // Load the client list once for the filter dropdown.
+    workshopClientService
+      .getClients()
+      .then((data) => setClients(Array.isArray(data) ? data : []))
+      .catch(() => setClients([]));
   }, []);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    fetchRecords(filterType || undefined, filterClient || undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFilterType(value);
-    fetchRecords(value || undefined);
+    fetchRecords(value || undefined, filterClient || undefined);
+  };
+
+  const handleClientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFilterClient(value);
+    // keep the URL in sync so the filter is shareable / survives refresh
+    if (value) {
+      setSearchParams({ client: value });
+    } else {
+      setSearchParams({});
+    }
+    fetchRecords(filterType || undefined, value || undefined);
   };
 
   return (
@@ -78,9 +108,25 @@ export default function WorkshopServiceHistoryPage() {
       <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <TextField
           select
+          label="Filtrar por cliente"
+          value={filterClient}
+          onChange={handleClientChange}
+          size="small"
+          sx={{ minWidth: 260 }}
+        >
+          <MenuItem value="">Todos os clientes</MenuItem>
+          {clients.map((client) => (
+            <MenuItem key={client.id} value={String(client.id)}>
+              {client.name} — {client.vehicle_plate}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
           label="Filtrar por tipo de serviço"
           value={filterType}
-          onChange={handleFilterChange}
+          onChange={handleTypeChange}
           size="small"
           sx={{ minWidth: 260 }}
         >

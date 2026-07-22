@@ -97,6 +97,7 @@ def list_service_history(
 def list_service_history_for_workshop(
     service_type: str | None = Query(None),
     vehicle_id: int | None = Query(None),
+    workshop_client_id: int | None = Query(None),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_session),
 ):
@@ -112,6 +113,7 @@ def list_service_history_for_workshop(
         user_id=int(current_user.get("user_id")),
         service_type=service_type,
         vehicle_id=vehicle_id,
+        workshop_client_id=workshop_client_id,
     )
 
 

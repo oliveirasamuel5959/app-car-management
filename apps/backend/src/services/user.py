@@ -11,8 +11,9 @@ from src.repositories.user import (
     repo_get_user_by_email,
     repo_get_user_by_id,
     repo_get_users_by_email,
+    repo_update_user,
 )
-from src.schemas.user import UserCreate
+from src.schemas.user import UserCreate, UserUpdate
 
 
 class UserService:
@@ -138,6 +139,12 @@ class UserService:
 
     def get_user_by_id(self, user_id: int, tenant_id) -> User:
         user = repo_get_user_by_id(self.db, user_id, tenant_id)
+        if not user:
+            raise ValueError("User not found")
+        return user
+
+    def update_user(self, user_id: int, tenant_id, updates: UserUpdate) -> User:
+        user = repo_update_user(self.db, user_id, tenant_id, updates)
         if not user:
             raise ValueError("User not found")
         return user

@@ -19,8 +19,10 @@ import CreateOrdersPage from '../pages/workshop/create-orders-page';
 import ServicesPage from '../pages/client/services-page.tsx';
 import WorkshopUsersPage from '../pages/workshop/users-page.tsx';
 import WorkshopClientsPage from '../pages/workshop/clients-page.tsx';
+import ClientDetailPage from '../pages/workshop/client-detail-page.tsx';
 import ClientOrdersPage from '../pages/workshop/client-orders-page.tsx';
 import WorkshopServiceHistoryPage from '../pages/workshop/service-history-page.tsx';
+import ProfilePage from '../pages/shared/profile-page.tsx';
 
 // Messages Pages
 import ClientMessagesPage from '../pages/client/messages-page.tsx';
@@ -86,6 +88,11 @@ export const protectedRoutes = [
     role: 'CLIENT',
     element: <AppLayout><ServiceHistoryPage /></AppLayout>,
   },
+  {
+    path: '/client/profile',
+    role: 'CLIENT',
+    element: <AppLayout><ProfilePage /></AppLayout>,
+  },
 
   // WORKSHOP ROUTES
   {
@@ -114,9 +121,19 @@ export const protectedRoutes = [
     element: <AppLayout><WorkshopClientsPage /></AppLayout>,
   },
   {
+    path: '/workshop/clients/:clientId',
+    role: 'WORKSHOP',
+    element: <AppLayout><ClientDetailPage /></AppLayout>,
+  },
+  {
     path: '/workshop/clients/:clientId/orders',
     role: 'WORKSHOP',
     element: <AppLayout><ClientOrdersPage /></AppLayout>,
+  },
+  {
+    path: '/workshop/profile',
+    role: 'WORKSHOP',
+    element: <AppLayout><ProfilePage /></AppLayout>,
   },
   {
     path: '/workshop/:workshopId/clients',
