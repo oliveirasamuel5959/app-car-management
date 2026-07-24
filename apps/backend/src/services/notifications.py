@@ -24,6 +24,7 @@ class NotificationService:
         message: str,
         notification_type: str,
         service_id: int | None = None,
+        schedule_id: int | None = None,
     ) -> Notification:
         """Create a new notification."""
         notification_data = {
@@ -32,6 +33,7 @@ class NotificationService:
             "message": message,
             "notification_type": notification_type,
             "service_id": service_id,
+            "schedule_id": schedule_id,
         }
         return repo_create_notification(self.db, tenant_id, notification_data)
 
@@ -88,4 +90,37 @@ class NotificationService:
             message=message,
             notification_type="status_change",
             service_id=service_id,
+        )
+
+    def create_schedule_status_notification(
+        self,
+        tenant_id,
+        user_id: int,
+        schedule_id: int,
+        new_status: str,
+        workshop_name: str = "",
+    ) -> Notification:
+        """Create a notification for a schedule status change with Portuguese labels."""
+        status_labels = {
+            "pendente": "Pendente",
+            "visualizado": "Visualizado",
+            "aceito": "Aceito",
+            "recusado": "Recusado",
+        }
+        label = status_labels.get(new_status, new_status)
+
+        if new_status == "pendente":
+            title = "Novo Agendamento"
+            message = f"Nova solicitação de agendamento recebida da oficina {workshop_name}" if workshop_name else "Nova solicitação de agendamento recebida"
+        else:
+            title = "Atualização de Agendamento"
+            message = f"Seu agendamento foi atualizado para: {label}"
+
+        return self.create_notification(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            title=title,
+            message=message,
+            notification_type="schedule_update",
+            schedule_id=schedule_id,
         )

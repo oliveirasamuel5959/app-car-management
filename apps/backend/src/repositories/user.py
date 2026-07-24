@@ -76,3 +76,14 @@ def repo_update_user(
     db.commit()
     db.refresh(user)
     return user
+
+
+def repo_find_user_by_tenant_and_role(
+    db: Session, tenant_id: UUID | str, role: str
+) -> User | None:
+    """Find the first user matching a tenant and role (e.g. the workshop owner or client)."""
+    return (
+        db.query(User)
+        .filter(User.tenant_id == tenant_id, User.role == role)
+        .first()
+    )

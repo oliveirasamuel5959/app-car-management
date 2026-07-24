@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from src.core.auth import get_current_user
 from src.db.database import get_session
+from src.repositories.user import repo_find_user_by_tenant_and_role
 from src.schemas.schedules import ScheduleCreate, ScheduleRead
+from src.services.notifications import NotificationService
 from src.services.schedules import ScheduleService
 from src.services.workshop import WorkshopService
 
@@ -123,7 +125,21 @@ def create_schedule(
     try:
         data = schedule_in.model_dump()
         data["workshop_tenant_id"] = workshop.tenant_id
-        return service.create_schedule(data, current_user.get("tenant_id"))
+        schedule = service.create_schedule(data, current_user.get("tenant_id"))
+
+        # Notify the workshop owner about the new request
+        notif_service = NotificationService(db)
+        workshop_owner_id = workshop.user_id
+        if workshop_owner_id:
+            notif_service.create_schedule_status_notification(
+                tenant_id=workshop.tenant_id,
+                user_id=workshop_owner_id,
+                schedule_id=schedule.id,
+                new_status="pendente",
+                workshop_name=workshop.name,
+            )
+
+        return schedule
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -210,7 +226,12 @@ def accept_schedule(
     _require_role(current_user, "WORKSHOP")
     service = ScheduleService(db)
     try:
-        return service.accept_schedule(schedule_id, current_user.get("tenant_id"))
+        schedule = service.accept_schedule(schedule_id, current_user.get("tenant_id"))
+
+        # Notify the client about the acceptance
+        _notify_client(db, schedule, "aceito")
+
+        return schedule
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -229,6 +250,31 @@ def reject_schedule(
     _require_role(current_user, "WORKSHOP")
     service = ScheduleService(db)
     try:
-        return service.reject_schedule(schedule_id, current_user.get("tenant_id"))
+        schedule = service.reject_schedule(schedule_id, current_user.get("tenant_id"))
+
+        # Notify the client about the rejection
+        _notify_client(db, schedule, "recusado")
+
+        return schedule
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Notification helpers
+# ---------------------------------------------------------------------------
+
+
+def _notify_client(db: Session, schedule, new_status: str) -> None:
+    """Send a notification to the client who created this schedule."""
+    client_user = repo_find_user_by_tenant_and_role(
+        db, schedule.client_tenant_id, "CLIENT"
+    )
+    if client_user:
+        notif_service = NotificationService(db)
+        notif_service.create_schedule_status_notification(
+            tenant_id=schedule.client_tenant_id,
+            user_id=client_user.id,
+            schedule_id=schedule.id,
+            new_status=new_status,
+        )
