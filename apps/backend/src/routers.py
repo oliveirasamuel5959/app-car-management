@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from src.api.routes.auth import router as auth
 from src.api.routes.messages import router as messages
 from src.api.routes.notifications import router as notifications
+from src.api.routes.schedules import router as schedules
 from src.api.routes.service_orders import router as service_orders
 from src.api.routes.services import router as services
 from src.api.routes.services_history import router as services_history
@@ -30,4 +31,7 @@ api_router.include_router(
 )
 api_router.include_router(
     services_history, prefix="/services-history", tags=["services-history"]
+)
+api_router.include_router(
+    schedules, prefix="/schedules", tags=["schedules"]
 )

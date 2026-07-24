@@ -14,7 +14,7 @@ class Workshop(Base):
         Index("ix_workshops_tenant_id_id", "tenant_id", "id"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("tenants.id"), nullable=False, index=True
     )
