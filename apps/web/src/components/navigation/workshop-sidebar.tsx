@@ -21,6 +21,7 @@ import {
   Notifications as NotificationsIcon,
   Chat as ChatIcon,
   History as HistoryIcon,
+  EventNote as ScheduleIcon,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -46,6 +47,7 @@ export const WorkshopSidebar = ({
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/workshop/dashboard' },
     { text: 'Clientes Oficina', icon: <PeopleIcon />, path: '/workshop/clients' },
+    { text: 'Agendamentos', icon: <ScheduleIcon />, path: '/workshop/schedules' },
     { text: 'Ordens de Serviço', icon: <ServicesIcon />, path: '/workshop/services' },
     { text: 'Histórico de Manutenção', icon: <HistoryIcon />, path: '/workshop/service-history' },
     { text: 'Criar Orçamento', icon: <ServicesIcon />, path: '/workshop/orders/new' },
