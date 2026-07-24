@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, Integer, String, Text, Time, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
@@ -32,6 +32,14 @@ class Workshop(Base):
     state: Mapped[str | None] = mapped_column(String(100), nullable=True)
     opening_hours: Mapped[str | None] = mapped_column(String(255), nullable=True)
     logo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Structured operating-hours fields (Phase 0 — agendamento)
+    opening_time: Mapped[str | None] = mapped_column(Time, nullable=True)
+    closing_time: Mapped[str | None] = mapped_column(Time, nullable=True)
+    work_days: Mapped[str | None] = mapped_column(
+        String(20), nullable=True
+    )  # CSV of ISO weekday ints, e.g. "1,2,3,4,5"
+    employee_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), name="user_id", nullable=False

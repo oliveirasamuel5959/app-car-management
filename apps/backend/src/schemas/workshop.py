@@ -1,3 +1,4 @@
+import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -34,6 +35,10 @@ class WorkshopRead(BaseModel):
     state: str | None = None
     opening_hours: str | None = None
     logo_url: str | None = None
+    opening_time: datetime.time | None = None
+    closing_time: datetime.time | None = None
+    work_days: str | None = None
+    employee_count: int | None = None
     user_id: int
 
     class Config:
@@ -54,3 +59,7 @@ class WorkshopUpdate(BaseModel):
     state: str | None = None
     opening_hours: str | None = None
     logo_url: str | None = None
+    opening_time: datetime.time | None = None
+    closing_time: datetime.time | None = None
+    work_days: str | None = None
+    employee_count: int | None = None
