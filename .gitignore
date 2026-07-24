@@ -314,3 +314,8 @@ venv.bak/
 .mypy_cache/
 
 .idea/*
+
+# =========================
+# Claude Code
+# =========================
+.claude/settings.local.json
