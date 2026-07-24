@@ -1,7 +1,7 @@
 from math import cos, radians
 from uuid import UUID
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from src.models.services import Service
@@ -9,6 +9,47 @@ from src.models.user import User
 from src.models.vehicle import Vehicle
 from src.models.workshop import Workshop
 from src.models.workshop_client import WorkshopClient
+
+
+def repo_search_workshops(
+    db: Session,
+    tenant_id: UUID | str | None = None,
+    name: str | None = None,
+    lat: float | None = None,
+    lng: float | None = None,
+    radius_km: float = 10.0,
+    skip: int = 0,
+    limit: int = 50,
+) -> list[Workshop]:
+    """Search workshops with optional name and location filters, paginated."""
+    query = db.query(Workshop)
+
+    if tenant_id is not None:
+        query = query.filter(Workshop.tenant_id == tenant_id)
+
+    if name:
+        query = query.filter(Workshop.name.ilike(f"%{name}%"))
+
+    if lat is not None and lng is not None:
+        lat_delta = radius_km / 111.0
+        lng_delta = (
+            radius_km / (111.0 * cos(radians(lat)))
+            if lat != 0
+            else radius_km / 111.0
+        )
+        query = query.filter(
+            Workshop.latitude.between(lat - lat_delta, lat + lat_delta),
+            Workshop.longitude.between(lng - lng_delta, lng + lng_delta),
+        )
+
+    return query.offset(skip).limit(limit).all()
+
+
+def repo_get_workshop_by_id_any_tenant(
+    db: Session, workshop_id: int
+) -> Workshop | None:
+    """Get a workshop by ID without tenant scoping (for client discovery)."""
+    return db.query(Workshop).filter(Workshop.id == workshop_id).first()
 
 
 def repo_create_workshop(
