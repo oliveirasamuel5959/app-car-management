@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(ls -la /specs)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(uv run:*)",
+      "Bash(uv add:*)",
+      "Bash(uv remove:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv lock:*)",
+      "Bash(uv venv:*)",
+      "Bash(uv pip:*)",
+      "Bash(uv tree)",
+      "Bash(uvicorn:*)",
+      "Bash(pytest:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(alembic:*)",
+      "Bash(uv run alembic:*)",
+      "Bash(ruff:*)",
+      "Bash(ruff check:*)",
+      "Bash(ruff format:*)",
+      "Bash(mypy:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker ps)",
+      "Bash(docker logs:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(tree:*)",
+      "Bash(python3 -c \"import sqlalchemy, fastapi, alembic; print\\('deps present in system python'\\)\")",
+      "Bash(python3 -m py_compile src/services/services.py src/services/services_history.py src/api/routes/users.py src/api/routes/workshops.py src/main.py src/core/middleware.py src/schemas/workshop_client.py)"
+    ],
+    "deny": []
+  },
+  "enabledPlugins": {
+    "skill-creator@claude-plugins-official": true
+  }
+}
