@@ -24,3 +24,4 @@ class Vehicle(Base):
     )
     tenant = relationship("Tenant", back_populates="vehicles")
     user = relationship("User", back_populates="vehicles")
+    schedules = relationship("Schedule", back_populates="vehicle")

@@ -5,6 +5,9 @@ import Dashboard from '../pages/client/dashboard-page.tsx';
 import AppLayout from '../layouts/app-layout';
 import { AddCarPage } from '../pages/client/add-car-page.tsx';
 import { SearchWorkshopsPage } from '../pages/client/search-workshops-page.tsx';
+import SchedulingPage from '../pages/client/scheduling-page';
+import SchedulingWorkshopPage from '../pages/client/scheduling-workshop-page';
+import MySchedulesPage from '../pages/client/my-schedules-page';
 import WorkshopPage from '../pages/client/workshop-page.tsx';
 import CarPage from '../pages/client/car-page.tsx';
 import ServiceHistoryPage from '../pages/client/service-history-page.tsx';
@@ -22,6 +25,7 @@ import WorkshopClientsPage from '../pages/workshop/clients-page.tsx';
 import ClientDetailPage from '../pages/workshop/client-detail-page.tsx';
 import ClientOrdersPage from '../pages/workshop/client-orders-page.tsx';
 import WorkshopServiceHistoryPage from '../pages/workshop/service-history-page.tsx';
+import WorkshopSchedulesPage from '../pages/workshop/schedules-page';
 import ProfilePage from '../pages/shared/profile-page.tsx';
 
 // Messages Pages
@@ -74,6 +78,21 @@ export const protectedRoutes = [
     element: <AppLayout><SearchWorkshopsPage /></AppLayout>,
   },
   {
+    path: '/client/scheduling',
+    role: 'CLIENT',
+    element: <AppLayout><SchedulingPage /></AppLayout>,
+  },
+  {
+    path: '/client/scheduling/:workshopId',
+    role: 'CLIENT',
+    element: <AppLayout><SchedulingWorkshopPage /></AppLayout>,
+  },
+  {
+    path: '/client/my-schedules',
+    role: 'CLIENT',
+    element: <AppLayout><MySchedulesPage /></AppLayout>,
+  },
+  {
     path: '/client/my-workshops',
     role: 'CLIENT',
     element: <AppLayout><WorkshopPage /></AppLayout>,
@@ -119,6 +138,11 @@ export const protectedRoutes = [
     path: '/workshop/clients',
     role: 'WORKSHOP',
     element: <AppLayout><WorkshopClientsPage /></AppLayout>,
+  },
+  {
+    path: '/workshop/schedules',
+    role: 'WORKSHOP',
+    element: <AppLayout><WorkshopSchedulesPage /></AppLayout>,
   },
   {
     path: '/workshop/clients/:clientId',

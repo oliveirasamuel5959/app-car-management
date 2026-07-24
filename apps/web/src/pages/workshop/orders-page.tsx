@@ -203,6 +203,7 @@ export default function WorkshopOrdersPage() {
                     <Chip
                       label={service.status.replace('_', ' ').toUpperCase()}
                       color={getStatusColor(service.status) as any}
+                      variant="outlined"
                       size="small"
                     />
                   </TableCell>
@@ -266,7 +267,7 @@ export default function WorkshopOrdersPage() {
                 <Typography variant="subtitle2" color="textSecondary">
                   Status
                 </Typography>
-                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status) as any} size="small" />
+                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status) as any} variant="outlined" size="small" />
               </Grid>
 
               {/* Editable Workshop Notes */}

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -14,7 +14,7 @@ class Notification(Base):
         Index("ix_notifications_tenant_id_created_at", "tenant_id", "created_at"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("tenants.id"), nullable=False, index=True
     )
@@ -23,6 +23,9 @@ class Notification(Base):
     )
     service_id: Mapped[int | None] = mapped_column(
         ForeignKey("services.id"), nullable=True, index=True
+    )
+    schedule_id: Mapped[int | None] = mapped_column(
+        ForeignKey("schedules.id", ondelete="SET NULL"), nullable=True, index=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     message: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -42,3 +45,4 @@ class Notification(Base):
     tenant = relationship("Tenant", back_populates="notifications")
     user = relationship("User", back_populates="notifications")
     service = relationship("Service", back_populates="notifications")
+    schedule = relationship("Schedule", back_populates="notifications")

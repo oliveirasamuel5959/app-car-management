@@ -4,8 +4,12 @@ import {
   Avatar,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Divider,
+  FormControlLabel,
+  FormGroup,
+  FormHelperText,
   Grid,
   Paper,
   Stack,
@@ -84,6 +88,28 @@ export default function ProfilePage() {
     setWorkshop((prev) => (prev ? { ...prev, [field]: e.target.value } : prev));
   };
 
+  // work_days helpers
+  const weekdayNums = [1, 2, 3, 4, 5, 6, 7]; // Mon–Sun
+  const weekdayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+  const getWorkDaysSet = (): Set<number> => {
+    if (!workshop?.work_days) return new Set();
+    return new Set(
+      workshop.work_days
+        .split(',')
+        .map((d) => parseInt(d.trim(), 10))
+        .filter((n) => n >= 1 && n <= 7),
+    );
+  };
+
+  const handleWorkDayToggle = (day: number) => () => {
+    const current = getWorkDaysSet();
+    if (current.has(day)) current.delete(day);
+    else current.add(day);
+    const csv = Array.from(current).sort().join(',');
+    setWorkshop((prev) => (prev ? { ...prev, work_days: csv } : prev));
+  };
+
   const handleSave = async () => {
     if (!profile) return;
     try {
@@ -110,6 +136,10 @@ export default function ProfilePage() {
           city: workshop.city,
           state: workshop.state,
           opening_hours: workshop.opening_hours,
+          opening_time: workshop.opening_time,
+          closing_time: workshop.closing_time,
+          work_days: workshop.work_days,
+          employee_count: workshop.employee_count != null ? Number(workshop.employee_count) : undefined,
         });
       }
 
@@ -285,6 +315,68 @@ export default function ProfilePage() {
             </Grid>
             <Grid item xs={12}>
               <TextField label="Descrição" fullWidth multiline minRows={2} value={workshop.description ?? ''} onChange={handleWorkshopField('description')} />
+            </Grid>
+          </Grid>
+
+          {/* Operating hours (Phase 0 scheduling fields) */}
+          <Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>
+            Horários de Funcionamento para Agendamentos
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+
+          <Grid container spacing={2}>
+            <Grid item xs={6} sm={3}>
+              <TextField
+                label="Abertura"
+                type="time"
+                fullWidth
+                value={workshop.opening_time?.slice(0, 5) ?? ''}
+                onChange={handleWorkshopField('opening_time')}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <TextField
+                label="Fecho"
+                type="time"
+                fullWidth
+                value={workshop.closing_time?.slice(0, 5) ?? ''}
+                onChange={handleWorkshopField('closing_time')}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <TextField
+                label="Nº Funcionários"
+                type="number"
+                fullWidth
+                value={workshop.employee_count ?? ''}
+                onChange={handleWorkshopField('employee_count')}
+                slotProps={{ htmlInput: { min: 0 } }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                Dias de funcionamento
+              </Typography>
+              <FormGroup row>
+                {weekdayNums.map((day) => (
+                  <FormControlLabel
+                    key={day}
+                    control={
+                      <Checkbox
+                        checked={getWorkDaysSet().has(day)}
+                        onChange={handleWorkDayToggle(day)}
+                        size="small"
+                      />
+                    }
+                    label={weekdayLabels[day - 1]}
+                  />
+                ))}
+              </FormGroup>
+              <FormHelperText>
+                Selecione os dias em que a oficina aceita agendamentos
+              </FormHelperText>
             </Grid>
           </Grid>
         </Paper>

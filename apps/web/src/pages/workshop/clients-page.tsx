@@ -193,7 +193,7 @@ export default function WorkshopClientsPage() {
                     size="small"
                     label={client.status === 'inactive' ? 'Inativo' : 'Ativo'}
                     color={client.status === 'inactive' ? 'default' : 'success'}
-                    variant={client.status === 'inactive' ? 'outlined' : 'filled'}
+                    variant="outlined"
                   />
                 </TableCell>
                 <TableCell align="right">

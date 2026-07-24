@@ -3,6 +3,18 @@
 Chronological project changes grouped by commit date. Newest entries appear first.
 
 ## 2026-07-22
+- FEAT: Client↔Workshop service scheduling — clients browse workshops, view agenda calendars, book service appointments; workshops receive, view, accept, or reject requests with notifications
+- FEAT: Structured workshop operating-hours fields (`opening_time`, `closing_time`, `work_days` CSV, `employee_count`) replacing free-text `opening_hours`; editable via profile settings
+- FEAT: Agenda endpoint `GET /workshops/{id}/agenda` computes 30-min time slots with busy/free from accepted schedules
+- FEAT: Schedule persistence with dual-tenant isolation (`client_tenant_id` + `workshop_tenant_id`), status transition matrix (pendente→visualizado→aceito|recusado), and role-gated endpoints
+- FEAT: Schema-only `workshop_ratings` table (UniqueConstraint + CheckConstraint 0–5) for future rating feature
+- FEAT: `notifications.schedule_id` FK for clean typed link between notifications and schedules
+- FEAT: Workshop search extended with name filter (case-insensitive), optional lat/lng, and skip/limit pagination
+- FEAT: Frontend — client scheduling flow (workshop search → detail + calendar → time-slot picker → booking modal), my-schedules list, workshop schedules management with accept/reject
+- FEAT: Status chips standardized to outlined variant across all pages for cleaner visual consistency
+- FIX: Schedule datetime sends local timezone offset to avoid UTC shift on display
+- DB: Alembic migrations `b6d608d083d6` (workshop hours fields) and `db89f1a0944a` (schedules + workshop_ratings + notifications FK), both reversible
+- TEST: 12 backend lifecycle tests covering schedule CRUD, dual-tenant isolation, transition matrix, agenda computation, and TypeError guards
 - FEAT: Workshop client rows are now clickable and open a client detail page (contact, vehicle, "cliente desde", last-service summary)
 - FEAT: Services history page can filter by client (with a deep link from the client detail page)
 - FEAT: Add profile fields — User (phone, address, city, state, avatar, updated_at), Workshop (phone, address, city, state, opening hours, logo), WorkshopClient (notes, status)

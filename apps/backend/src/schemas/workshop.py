@@ -1,3 +1,4 @@
+import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -34,6 +35,10 @@ class WorkshopRead(BaseModel):
     state: str | None = None
     opening_hours: str | None = None
     logo_url: str | None = None
+    opening_time: datetime.time | None = None
+    closing_time: datetime.time | None = None
+    work_days: str | None = None
+    employee_count: int | None = None
     user_id: int
 
     class Config:
@@ -54,3 +59,28 @@ class WorkshopUpdate(BaseModel):
     state: str | None = None
     opening_hours: str | None = None
     logo_url: str | None = None
+    opening_time: datetime.time | None = None
+    closing_time: datetime.time | None = None
+    work_days: str | None = None
+    employee_count: int | None = None
+
+
+# ---------------------------------------------------------------------------
+# Agenda schemas (Phase 3)
+# ---------------------------------------------------------------------------
+
+
+class AgendaSlot(BaseModel):
+    time: str  # "HH:MM"
+    busy: bool
+
+
+class AgendaDay(BaseModel):
+    date: str  # "YYYY-MM-DD"
+    day_of_week: int  # 1=Monday … 7=Sunday
+    is_open: bool
+    slots: list[AgendaSlot] = []
+
+
+class WorkshopAgenda(BaseModel):
+    days: list[AgendaDay]

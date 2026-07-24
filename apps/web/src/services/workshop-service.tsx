@@ -15,6 +15,10 @@ export interface Workshop {
   state?: string | null;
   opening_hours?: string | null;
   logo_url?: string | null;
+  opening_time?: string | null;
+  closing_time?: string | null;
+  work_days?: string | null;
+  employee_count?: number | null;
   user_id: number;
 }
 
@@ -30,6 +34,10 @@ export interface WorkshopUpdate {
   state?: string | null;
   opening_hours?: string | null;
   logo_url?: string | null;
+  opening_time?: string | null;
+  closing_time?: string | null;
+  work_days?: string | null;
+  employee_count?: number | null;
 }
 
 export const workshopService = {

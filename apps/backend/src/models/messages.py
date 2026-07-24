@@ -20,7 +20,7 @@ class Message(Base):
         Index("ix_messages_tenant_id_created_at", "tenant_id", "created_at"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("tenants.id"), nullable=False, index=True
     )

@@ -139,6 +139,7 @@ export default function MessagesPage() {
                     <Chip
                       label={status.label}
                       color={status.color}
+                      variant="outlined"
                       size="small"
                     />
                   </CardContent>

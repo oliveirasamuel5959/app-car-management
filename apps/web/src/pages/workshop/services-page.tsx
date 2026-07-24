@@ -250,6 +250,7 @@ export default function WorkshopServicesPage() {
                   <Chip
                     label={statusLabelMap[summary.latestService.status] || summary.latestService.status}
                     color={statusColorMap[summary.latestService.status] || 'default'}
+                    variant="outlined"
                     size="small"
                   />
                 </Box>

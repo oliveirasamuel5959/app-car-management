@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, Integer, String, Text, Time, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
@@ -14,7 +14,7 @@ class Workshop(Base):
         Index("ix_workshops_tenant_id_id", "tenant_id", "id"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("tenants.id"), nullable=False, index=True
     )
@@ -33,6 +33,14 @@ class Workshop(Base):
     opening_hours: Mapped[str | None] = mapped_column(String(255), nullable=True)
     logo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
+    # Structured operating-hours fields (Phase 0 — agendamento)
+    opening_time: Mapped[str | None] = mapped_column(Time, nullable=True)
+    closing_time: Mapped[str | None] = mapped_column(Time, nullable=True)
+    work_days: Mapped[str | None] = mapped_column(
+        String(20), nullable=True
+    )  # CSV of ISO weekday ints, e.g. "1,2,3,4,5"
+    employee_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), name="user_id", nullable=False
     )
@@ -41,3 +49,4 @@ class Workshop(Base):
     workshop_clients = relationship("WorkshopClient", back_populates="workshop")
     services = relationship("Service", back_populates="workshop")
     services_history = relationship("ServiceHistory", back_populates="workshop")
+    schedules = relationship("Schedule", back_populates="workshop")

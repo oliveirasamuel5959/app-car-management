@@ -7,9 +7,11 @@ from src.repositories.workshop import (
     repo_create_workshop,
     repo_get_workshop_all_clients,
     repo_get_workshop_by_id,
+    repo_get_workshop_by_id_any_tenant,
     repo_get_workshop_by_id_for_client,
     repo_get_workshop_for_user,
     repo_get_workshops_nearby,
+    repo_search_workshops,
     repo_update_workshop,
 )
 from src.schemas.workshop import WorkshopCreate, WorkshopUpdate
@@ -79,3 +81,118 @@ class WorkshopService:
             return []
 
         return clients
+
+    def search_workshops(
+        self,
+        name: str | None = None,
+        lat: float | None = None,
+        lng: float | None = None,
+        radius_km: float = 10.0,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> list[Workshop]:
+        """Search workshops with optional name and location filters (client discovery)."""
+        return repo_search_workshops(
+            self.db,
+            name=name,
+            lat=lat,
+            lng=lng,
+            radius_km=radius_km,
+            skip=skip,
+            limit=limit,
+        )
+
+    def get_workshop_by_id_any_tenant(self, workshop_id: int) -> Workshop:
+        """Get workshop by ID without tenant scoping (for client discovery)."""
+        workshop = repo_get_workshop_by_id_any_tenant(self.db, workshop_id)
+        if not workshop:
+            raise ValueError(f"Workshop {workshop_id} not found")
+        return workshop
+
+    def get_workshop_agenda(
+        self,
+        workshop_id: int,
+        date_from: "datetime.date",
+        date_to: "datetime.date",
+    ) -> list[dict]:
+        """Compute daily availability for a workshop.
+
+        Returns one entry per day in [date_from, date_to]. Each entry has:
+          - date, is_open, day_of_week
+          - slots: list of {time, busy}
+        """
+        import datetime as _dt
+        from src.models.schedule import Schedule
+
+        workshop = repo_get_workshop_by_id_any_tenant(self.db, workshop_id)
+        if not workshop:
+            raise ValueError(f"Workshop {workshop_id} not found")
+
+        # Parse operating-hours configuration
+        work_days: set[int] = set()
+        if workshop.work_days:
+            try:
+                work_days = {int(d.strip()) for d in workshop.work_days.split(",") if d.strip()}
+            except (ValueError, AttributeError):
+                work_days = set()
+
+        opening = workshop.opening_time  # datetime.time or None
+        closing = workshop.closing_time  # datetime.time or None
+
+        # Load accepted schedules in range for busy computation
+        accepted_schedules: list[tuple[_dt.date, _dt.time]] = []
+        if opening and closing:
+            accepted = (
+                self.db.query(Schedule)
+                .filter(
+                    Schedule.workshop_id == workshop_id,
+                    Schedule.status == "aceito",
+                    Schedule.scheduled_at >= _dt.datetime.combine(date_from, _dt.time.min),
+                    Schedule.scheduled_at <= _dt.datetime.combine(date_to, _dt.time.max),
+                )
+                .all()
+            )
+            for s in accepted:
+                if s.scheduled_at:
+                    accepted_schedules.append(
+                        (s.scheduled_at.date(), s.scheduled_at.time())
+                    )
+
+        SLOT_MINUTES = 30
+        result: list[dict] = []
+
+        current = date_from
+        while current <= date_to:
+            iso_weekday = current.isoweekday()  # 1=Monday … 7=Sunday
+            is_open = iso_weekday in work_days and opening is not None and closing is not None
+
+            slots: list[dict] = []
+            if is_open:
+                # Build time slots
+                slot_start = _dt.datetime.combine(current, opening)
+                slot_end = _dt.datetime.combine(current, closing)
+
+                while slot_start + _dt.timedelta(minutes=SLOT_MINUTES) <= slot_end:
+                    slot_time = slot_start.time()
+                    # A slot is busy if any accepted schedule falls within this 30-min window
+                    busy = any(
+                        s_date == current and slot_time <= s_time < (
+                            _dt.datetime.combine(current, slot_time)
+                            + _dt.timedelta(minutes=SLOT_MINUTES)
+                        ).time()
+                        for s_date, s_time in accepted_schedules
+                    )
+                    slots.append({"time": slot_time.strftime("%H:%M"), "busy": busy})
+                    slot_start += _dt.timedelta(minutes=SLOT_MINUTES)
+
+            result.append(
+                {
+                    "date": current.isoformat(),
+                    "day_of_week": iso_weekday,
+                    "is_open": is_open,
+                    "slots": slots,
+                }
+            )
+            current += _dt.timedelta(days=1)
+
+        return result

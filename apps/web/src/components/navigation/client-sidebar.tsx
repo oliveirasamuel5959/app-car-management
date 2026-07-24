@@ -18,6 +18,8 @@ import {
   Menu as MenuIcon,
   Chat as ChatIcon,
   Build as BuildIcon,
+  CalendarMonth as CalendarIcon,
+  EventNote as EventNoteIcon,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -41,6 +43,8 @@ export const ClientSidebar = ({
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/client/dashboard' },
     { text: 'Meu Carro', icon: <CarIcon />, path: '/client/my-car' },
+    { text: 'Novo Agendamento', icon: <CalendarIcon />, path: '/client/scheduling' },
+    { text: 'Meus Agendamentos', icon: <EventNoteIcon />, path: '/client/my-schedules' },
     { text: 'Histórico de Manutenção', icon: <BuildIcon />, path: '/client/service-history' },
     { text: 'Encontrar Oficinas', icon: <WorkshopIcon />, path: '/client/search-workshops' },
     { text: 'Mensagens', icon: <ChatIcon />, path: '/client/messages' },

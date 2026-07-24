@@ -1,12 +1,12 @@
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from src.core.auth import get_current_user
 from src.core.file_uploader import handle_file_upload
 from src.db.database import get_session
 from src.schemas.user import UserRead
-from src.schemas.workshop import WorkshopCreate, WorkshopRead, WorkshopUpdate
+from src.schemas.workshop import WorkshopAgenda, WorkshopCreate, WorkshopRead, WorkshopUpdate
 from src.services.workshop import WorkshopService
 
 router = APIRouter()
@@ -16,20 +16,30 @@ router = APIRouter()
     "/",
     response_model=list[WorkshopRead],
     status_code=status.HTTP_200_OK,
-    summary="Get nearby workshops",
-    description="Provide latitude and longitude query parameters to find nearby workshops.",
+    summary="Search workshops",
+    description="Search workshops by name, location, or both. Paginated with skip/limit.",
 )
-def get_nearby_workshops(
-    lat: float,
-    lng: float,
+def search_workshops(
+    name: str | None = Query(None, description="Case-insensitive name filter"),
+    lat: float | None = Query(None, description="Latitude for location search"),
+    lng: float | None = Query(None, description="Longitude for location search"),
+    radius_km: float = Query(10.0, description="Search radius in km"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_session),
 ):
-    """Returns a list of workshops roughly within a 10km radius of the coordinates."""
+    """Returns a paginated list of workshops, optionally filtered by name and/or location."""
     service = WorkshopService(db)
-    # simply forward to service, no further validation for now
     try:
-        results = service.get_nearby_workshops(current_user.get("tenant_id"), lat, lng)
+        results = service.search_workshops(
+            name=name,
+            lat=lat,
+            lng=lng,
+            radius_km=radius_km,
+            skip=skip,
+            limit=limit,
+        )
         return results
     except Exception:
         raise HTTPException(
@@ -169,6 +179,45 @@ def get_workshop_by_id(
                 user_email=current_user.get("sub"),
             )
         return service.get_workshop_by_id(workshop_id, current_user.get("tenant_id"))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get(
+    "/{workshop_id}/agenda",
+    response_model=WorkshopAgenda,
+    status_code=status.HTTP_200_OK,
+    summary="Get workshop availability agenda",
+    description="Returns daily time slots with busy/free status for a date range.",
+)
+def get_workshop_agenda(
+    workshop_id: int,
+    date_from: str = Query(..., description="Start date YYYY-MM-DD"),
+    date_to: str = Query(..., description="End date YYYY-MM-DD"),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_session),
+):
+    import datetime as _dt
+
+    try:
+        d_from = _dt.date.fromisoformat(date_from)
+        d_to = _dt.date.fromisoformat(date_to)
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="date_from and date_to must be YYYY-MM-DD",
+        )
+
+    if d_from > d_to:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="date_from must be <= date_to",
+        )
+
+    service = WorkshopService(db)
+    try:
+        days = service.get_workshop_agenda(workshop_id, d_from, d_to)
+        return WorkshopAgenda(days=days)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
