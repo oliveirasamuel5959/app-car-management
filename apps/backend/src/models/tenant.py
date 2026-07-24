@@ -29,3 +29,15 @@ class Tenant(Base):
     messages = relationship("Message", back_populates="tenant")
     notifications = relationship("Notification", back_populates="tenant")
     services_history = relationship("ServiceHistory", back_populates="tenant")
+    client_schedules = relationship(
+        "Schedule", foreign_keys="Schedule.client_tenant_id", back_populates="client_tenant"
+    )
+    workshop_schedules = relationship(
+        "Schedule", foreign_keys="Schedule.workshop_tenant_id", back_populates="workshop_tenant"
+    )
+    workshop_ratings = relationship(
+        "WorkshopRating", foreign_keys="WorkshopRating.workshop_tenant_id", back_populates="workshop_tenant"
+    )
+    client_ratings = relationship(
+        "WorkshopRating", foreign_keys="WorkshopRating.client_tenant_id", back_populates="client_tenant"
+    )

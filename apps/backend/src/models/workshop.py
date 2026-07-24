@@ -49,3 +49,4 @@ class Workshop(Base):
     workshop_clients = relationship("WorkshopClient", back_populates="workshop")
     services = relationship("Service", back_populates="workshop")
     services_history = relationship("ServiceHistory", back_populates="workshop")
+    schedules = relationship("Schedule", back_populates="workshop")
