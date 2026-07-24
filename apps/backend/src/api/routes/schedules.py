@@ -55,7 +55,33 @@ def list_schedules(
             if workshop_tenant_id == "me"
             else workshop_tenant_id
         )
-        return service.get_schedules_for_workshop(tenant_id, skip=skip, limit=limit)
+        schedules = service.get_schedules_for_workshop(tenant_id, skip=skip, limit=limit)
+        # Attach client name to each schedule
+        result: list[dict] = []
+        for s in schedules:
+            s_dict = {
+                "id": s.id,
+                "client_tenant_id": s.client_tenant_id,
+                "workshop_tenant_id": s.workshop_tenant_id,
+                "workshop_id": s.workshop_id,
+                "vehicle_id": s.vehicle_id,
+                "service_request_type": s.service_request_type,
+                "problem_description": s.problem_description,
+                "contact_phone": s.contact_phone,
+                "contact_email": s.contact_email,
+                "scheduled_at": s.scheduled_at,
+                "status": s.status,
+                "viewed_at": s.viewed_at,
+                "responded_at": s.responded_at,
+                "created_at": s.created_at,
+                "updated_at": s.updated_at,
+            }
+            client_user = repo_find_user_by_tenant_and_role(
+                db, s.client_tenant_id, "CLIENT"
+            )
+            s_dict["client_name"] = client_user.name if client_user else None
+            result.append(s_dict)
+        return result
 
     if role == "CLIENT":
         tenant_id = (

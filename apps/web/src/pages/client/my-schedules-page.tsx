@@ -38,8 +38,9 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
 }
 
 export default function MySchedulesPage() {
@@ -124,6 +125,7 @@ export default function MySchedulesPage() {
                       icon={cfg.icon}
                       label={cfg.label}
                       color={cfg.color}
+                      variant="outlined"
                       size="small"
                       sx={{ alignSelf: { xs: 'flex-start', sm: 'center' }, fontWeight: 600 }}
                     />

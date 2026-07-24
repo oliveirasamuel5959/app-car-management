@@ -17,6 +17,7 @@ export interface Schedule {
   problem_description: string;
   contact_phone: string;
   contact_email: string;
+  client_name: string | null;
   scheduled_at: string;
   status: ScheduleStatus;
   viewed_at: string | null;

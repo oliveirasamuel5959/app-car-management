@@ -39,6 +39,7 @@ class ScheduleRead(BaseModel):
     problem_description: str
     contact_phone: str
     contact_email: str
+    client_name: str | None = None
     scheduled_at: datetime.datetime
     status: ScheduleStatus
     viewed_at: datetime.datetime | None = None

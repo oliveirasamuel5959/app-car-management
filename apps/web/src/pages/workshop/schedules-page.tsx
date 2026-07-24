@@ -41,7 +41,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function fmt(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', {
+  return new Date(iso).toLocaleString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }
@@ -176,7 +176,7 @@ export default function WorkshopSchedulesPage() {
                         {fmt(s.scheduled_at)} • {s.contact_phone}
                       </Typography>
                     </Stack>
-                    <Chip label={cfg.label} color={cfg.color} size="small" sx={{ fontWeight: 600, alignSelf: { xs: 'flex-start', sm: 'center' } }} />
+                    <Chip label={cfg.label} color={cfg.color} variant="outlined" size="small" sx={{ fontWeight: 600, alignSelf: { xs: 'flex-start', sm: 'center' } }} />
                   </Stack>
                 </CardContent>
               </Card>
@@ -195,6 +195,13 @@ export default function WorkshopSchedulesPage() {
             <Divider />
             <DialogContent sx={{ mt: 1 }}>
               <Stack spacing={2}>
+                {selected.client_name && (
+                  <Box>
+                    <Typography variant="caption" color="text.disabled">Cliente</Typography>
+                    <Typography variant="body1" fontWeight={600}>{selected.client_name}</Typography>
+                  </Box>
+                )}
+
                 <Box>
                   <Typography variant="caption" color="text.disabled">Descrição do problema</Typography>
                   <Typography variant="body1">{selected.problem_description}</Typography>
@@ -217,6 +224,7 @@ export default function WorkshopSchedulesPage() {
                   <Chip
                     label={(STATUS_CONFIG[selected.status] ?? STATUS_CONFIG.pendente).label}
                     color={(STATUS_CONFIG[selected.status] ?? STATUS_CONFIG.pendente).color}
+                    variant="outlined"
                     size="small"
                     sx={{ mt: 0.5, fontWeight: 600 }}
                   />

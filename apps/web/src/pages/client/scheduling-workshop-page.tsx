@@ -56,6 +56,22 @@ function timeLabel(t: string | null): string {
   return t.slice(0, 5);
 }
 
+/** Return the local IANA timezone offset string, e.g. "-03:00". */
+function getLocalTzOffset(): string {
+  const offset = -new Date().getTimezoneOffset(); // minutes ahead of UTC
+  const sign = offset >= 0 ? '+' : '-';
+  const h = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0');
+  const m = String(Math.abs(offset) % 60).padStart(2, '0');
+  return `${sign}${h}:${m}`;
+}
+
+/** Parse an ISO datetime string and format in local time. */
+function fmtLocal(iso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
 /** True if the workshop has all the fields needed to compute an agenda. */
 function hasOperatingHours(w: Workshop): boolean {
   return !!(w.opening_time && w.closing_time && w.work_days);
@@ -184,7 +200,7 @@ export default function SchedulingWorkshopPage() {
     if (!validateForm() || !selectedDate || !selectedSlot) return;
     setBookingSubmitting(true);
     try {
-      const scheduledAt = `${selectedDate}T${selectedSlot}:00`;
+      const scheduledAt = `${selectedDate}T${selectedSlot}:00${getLocalTzOffset()}`;
       await scheduleService.create({
         workshop_id: wId,
         service_request_type: form.service_request_type,
