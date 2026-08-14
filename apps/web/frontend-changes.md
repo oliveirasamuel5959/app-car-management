@@ -10,10 +10,14 @@ Spec: `specs/2026-08-14-reviews-ratings/`
   `create`, `update`, `remove`. Interfaces `WorkshopRating`,
   `WorkshopRatingCreate`, `WorkshopRatingUpdate` (no `any`).
 - `src/pages/client/rating-modal.tsx` — create/edit rating modal (0–5 star
-  picker, optional comment, delete when editing). Exports pure
-  `validateRating(rating)` used by the Vitest slice.
+  picker, optional comment, delete when editing).
+- `src/pages/client/rating-validation.ts` — pure `validateRating(rating)` rule
+  used by the modal and the Vitest slice.
 - `src/pages/workshop/ratings-page.tsx` — workshop-side "Avaliações" page
   (received ratings: stars, comment, date, schedule link) at `/workshop/ratings`.
+- `vitest.config.ts` + test files — greenfield Vitest setup (`npm run test`):
+  `src/services/workshop-rating-service.test.ts` (mocked `api`, query building)
+  and `src/pages/client/rating-validation.test.ts`.
 
 ## Modified files
 

@@ -1,6 +1,6 @@
 # 🗺 Implementation Roadmap
 
-**Current Status:** Pre-Alpha (Phase 2 Complete)  
+**Current Status:** Pre-Alpha (Phase 3 Complete)  
 **Target:** MVP Ready in ~8 weeks  
 **Scale:** Hundreds of tenants with tenant-scoped isolation
 
@@ -95,7 +95,7 @@
 
 ### ⚠️ Partial / In-Progress
 
-- ⚠️ **Reviews & ratings** (model exists, UI not complete)
+- ✅ **Reviews & ratings** (schedule-anchored ratings shipped on 2026-08-14; order-anchored reviews deferred to the payment phase)
 - ⚠️ **Real-time chat over WebSocket** (notifications now persisted + delivered to the bell; live chat transport integration still incomplete)
 - ⚠️ **Database migrations** (tenant foundation + `services_history` feature migrations implemented; future feature migrations still pending)
 - ⚠️ **Backend/frontend contract consistency** (many pages and routes already exist, but some service modules still need response/path normalization)
@@ -370,6 +370,11 @@ A companion maintenance-log feature was delivered alongside the lifecycle work. 
 ### Phase 3: Reviews & Ratings (Weeks 3-3.5)
 
 **Objective:** Enable client feedback on completed service orders.
+
+**Status:** Complete on 2026-08-14 — reconciled with the scheduling feature: ratings
+anchor to **accepted schedules** (reusing the existing `workshop_ratings` table,
+0–5 scale, author CRUD, `rating_avg` recompute). Order-anchored, PAID-gated reviews
+remain deferred to the payment phase. Spec: `specs/2026-08-14-reviews-ratings/`.
 
 #### 3.1 Review Model & Schema
 - Create Review model:
@@ -835,7 +840,7 @@ A companion maintenance-log feature was delivered alongside the lifecycle work. 
 | 1 | 1 | Tenant context, multi-tenancy schema | 🚧 |
 | 1.5 | 2 | Service order model and workflow foundation | ✅ |
 | 2.5 | 2 | Service order lifecycle complete | ✅ |
-| 3 | 3 | Reviews & ratings | 🚧 |
+| 3 | 3 | Reviews & ratings | ✅ |
 | 3.5 | 4 | Search and filtering | 🚧 |
 | 4.5 | 5 | WebSocket real-time | 🚧 |
 | 5.5 | 6 | Stripe integration and payment flow | 🚧 |

@@ -15,6 +15,9 @@ import {
 import { Star as StarIcon, StarBorder as StarBorderIcon } from '@mui/icons-material';
 import type { WorkshopRating } from '../../services/workshop-rating-service';
 import { workshopRatingService } from '../../services/workshop-rating-service';
+import { validateRating } from './rating-validation';
+
+export { validateRating };
 
 interface RatingModalProps {
   open: boolean;
@@ -27,13 +30,6 @@ interface RatingModalProps {
   onClose: () => void;
   /** Called after a successful create/update/delete so the parent can refresh. */
   onSaved: () => void;
-}
-
-/** Pure validation rule for the 0–5 rating — exported for tests. */
-export function validateRating(rating: number | null): string | null {
-  if (rating === null) return 'Selecione uma nota de 1 a 5 estrelas';
-  if (rating < 0 || rating > 5) return 'A nota deve estar entre 0 e 5';
-  return null;
 }
 
 export default function RatingModal({
