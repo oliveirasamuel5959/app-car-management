@@ -15,7 +15,8 @@ export function WorkshopCard({
   longitude,
   rating_avg,
 }: WorkshopCardProps) {
-  const starCount = Math.floor(rating_avg / 1.36);
+  // rating_avg is on a 0–5 scale; map it to the 5-star display
+  const starCount = Math.min(5, Math.max(0, Math.round(rating_avg)));
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">

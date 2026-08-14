@@ -93,4 +93,11 @@ export const workshopService = {
       throw new Error(error.message || 'Failed to fetch workshop');
     }
   },
+
+  listWorkshops: async (skip = 0, limit = 50): Promise<Workshop[]> => {
+    const search = new URLSearchParams();
+    search.set('skip', String(skip));
+    search.set('limit', String(limit));
+    return api.get(`/workshops/?${search.toString()}`);
+  },
 };
