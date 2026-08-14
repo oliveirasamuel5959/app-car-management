@@ -95,7 +95,7 @@ export default function WorkshopRatingsPage() {
                   </Stack>
                   {r.client_name && (
                     <Typography variant="subtitle2" fontWeight={600}>
-                      Cliente: {r.client_name}
+                      {r.client_name}
                     </Typography>
                   )}
                   {r.comment ? (
