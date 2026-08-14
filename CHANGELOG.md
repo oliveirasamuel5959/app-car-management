@@ -9,6 +9,7 @@ Chronological project changes grouped by commit date. Newest entries appear firs
 - FEAT: Workshop notification on new rating ("Nova Avaliação", `schedule_id` linked)
 - FEAT: Frontend — rating modal on My Schedules (create/edit/delete), reviews list on workshop detail page, workshop-side "Avaliações" page + sidebar entry
 - FEAT: Client workshop list page (`/client/my-workshops`) now fetches real workshops (removed hardcoded mock); workshop-card star display fixed for the 0–5 scale
+- FEAT: Rating responses include the authoring client's full name (`client_name`), shown on the workshop "Avaliações" page and the workshop-detail reviews list
 - TEST: 11 backend rating lifecycle tests (aceito gate, duplicates, author CRUD, avg recompute, dual-tenant isolation, TypeError guards); frontend Vitest setup (7 tests: service query building + modal validation)
 
 ## 2026-07-22

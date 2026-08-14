@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.models.workshop_rating import WorkshopRating
 from src.repositories.schedules import repo_get_schedule_by_id_for_client
+from src.repositories.user import repo_find_user_by_tenant_and_role
 from src.repositories.workshop import (repo_get_workshop_by_id_any_tenant,
                                        repo_get_workshop_by_tenant_id,
                                        repo_update_workshop)
@@ -136,6 +137,22 @@ class WorkshopRatingService:
         tenant_id: UUID | str,
     ) -> WorkshopRating | None:
         return repo_get_rating_by_id(self.db, rating_id, tenant_id)
+
+    def to_read_dict(self, rating: WorkshopRating) -> dict:
+        """Serialize a rating for the API, attaching the author's full name."""
+        client_user = repo_find_user_by_tenant_and_role(
+            self.db, rating.client_tenant_id, "CLIENT"
+        )
+        return {
+            "id": rating.id,
+            "schedule_id": rating.schedule_id,
+            "workshop_tenant_id": rating.workshop_tenant_id,
+            "client_tenant_id": rating.client_tenant_id,
+            "client_name": client_user.name if client_user else None,
+            "rating": rating.rating,
+            "comment": rating.comment,
+            "created_at": rating.created_at,
+        }
 
     # ------------------------------------------------------------------
     # Internal

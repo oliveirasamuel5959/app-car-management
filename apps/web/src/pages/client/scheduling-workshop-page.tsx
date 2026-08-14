@@ -358,6 +358,11 @@ export default function SchedulingWorkshopPage() {
                       {fmtLocal(r.created_at)}
                     </Typography>
                   </Stack>
+                  {r.client_name && (
+                    <Typography variant="subtitle2" fontWeight={600} sx={{ mt: 0.5 }}>
+                      {r.client_name}
+                    </Typography>
+                  )}
                   {r.comment && (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                       {r.comment}

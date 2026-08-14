@@ -22,6 +22,7 @@ class WorkshopRatingRead(BaseModel):
     schedule_id: int | None = None
     workshop_tenant_id: UUID
     client_tenant_id: UUID
+    client_name: str | None = None
     rating: int
     comment: str | None = None
     created_at: datetime.datetime

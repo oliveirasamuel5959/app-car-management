@@ -14,7 +14,8 @@ Spec: `specs/2026-08-14-reviews-ratings/`
 - `src/pages/client/rating-validation.ts` — pure `validateRating(rating)` rule
   used by the modal and the Vitest slice.
 - `src/pages/workshop/ratings-page.tsx` — workshop-side "Avaliações" page
-  (received ratings: stars, comment, date, schedule link) at `/workshop/ratings`.
+  (received ratings: stars, comment, date, schedule link, client name) at
+  `/workshop/ratings`.
 - `vitest.config.ts` + test files — greenfield Vitest setup (`npm run test`):
   `src/services/workshop-rating-service.test.ts` (mocked `api`, query building)
   and `src/pages/client/rating-validation.test.ts`.
@@ -25,8 +26,8 @@ Spec: `specs/2026-08-14-reviews-ratings/`
   "Avaliar" action (opens `RatingModal`); after rating, shows "Editar Avaliação"
   + read-only stars. Refreshes schedules and ratings after save/delete.
 - `src/pages/client/scheduling-workshop-page.tsx` — added an "Avaliações"
-  section (reviews list + date) below the workshop info card; the `rating_avg`
-  chip now reflects the recomputed live average.
+  section (reviews list + date + client name) below the workshop info card;
+  the `rating_avg` chip now reflects the recomputed live average.
 - `src/pages/client/workshop-page.tsx` — replaced the hardcoded mock workshop
   (fake `rating_avg: 6.8`) with a real list fetched from `GET /workshops`
   (`workshopService.listWorkshops`); empty/loading/error states added.

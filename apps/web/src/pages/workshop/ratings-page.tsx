@@ -93,6 +93,11 @@ export default function WorkshopRatingsPage() {
                       {fmt(r.created_at)}
                     </Typography>
                   </Stack>
+                  {r.client_name && (
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Cliente: {r.client_name}
+                    </Typography>
+                  )}
                   {r.comment ? (
                     <Typography variant="body2" color="text.secondary">
                       {r.comment}

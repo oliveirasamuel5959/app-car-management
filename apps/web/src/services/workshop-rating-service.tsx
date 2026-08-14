@@ -9,6 +9,7 @@ export interface WorkshopRating {
   schedule_id: number | null;
   workshop_tenant_id: string;
   client_tenant_id: string;
+  client_name: string | null;
   rating: number; // 0–5
   comment: string | null;
   created_at: string;

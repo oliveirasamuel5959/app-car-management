@@ -473,3 +473,27 @@ def test_new_rating_notifies_workshop():
     assert notifs[0].user_id == w_user.id
     assert notifs[0].notification_type == "rating_new"
     assert notifs[0].title == "Nova Avaliação"
+
+
+# ---------------------------------------------------------------------------
+# Case 12 — API serialization attaches the author's full name
+# ---------------------------------------------------------------------------
+
+
+def test_rating_read_dict_includes_client_name():
+    session, tenant_a, tenant_b, w_user, c_user, workshop, vehicle = seed_rating_graph()
+    schedule = make_accepted_schedule(
+        session, tenant_a, tenant_b, workshop, vehicle, day=1
+    )
+
+    service = WorkshopRatingService(session)
+    rating = service.create_rating(
+        {"schedule_id": schedule.id, "rating": 4, "comment": "Bom serviço"},
+        client_tenant_id=tenant_b.id,
+    )
+
+    data = service.to_read_dict(rating)
+    assert data["client_name"] == "Client User"
+    assert data["rating"] == 4
+    assert data["schedule_id"] == schedule.id
+    assert data["comment"] == "Bom serviço"

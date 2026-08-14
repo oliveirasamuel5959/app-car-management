@@ -61,9 +61,10 @@ def list_workshop_ratings(
 ):
     service = WorkshopRatingService(db)
     try:
-        return service.get_ratings_for_workshop_public(
+        ratings = service.get_ratings_for_workshop_public(
             workshop_id, skip=skip, limit=limit
         )
+        return [service.to_read_dict(r) for r in ratings]
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -87,9 +88,10 @@ def list_my_ratings(
 ):
     _require_role(current_user, "CLIENT")
     service = WorkshopRatingService(db)
-    return service.get_ratings_for_client(
+    ratings = service.get_ratings_for_client(
         current_user.get("tenant_id"), skip=skip, limit=limit
     )
+    return [service.to_read_dict(r) for r in ratings]
 
 
 # ---------------------------------------------------------------------------
@@ -111,9 +113,10 @@ def list_received_ratings(
 ):
     _require_role(current_user, "WORKSHOP")
     service = WorkshopRatingService(db)
-    return service.get_ratings_for_workshop(
+    ratings = service.get_ratings_for_workshop(
         current_user.get("tenant_id"), skip=skip, limit=limit
     )
+    return [service.to_read_dict(r) for r in ratings]
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +142,7 @@ def create_rating(
             rating_in.model_dump(), current_user.get("tenant_id")
         )
         _notify_workshop_new_rating(db, rating)
-        return rating
+        return service.to_read_dict(rating)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -166,14 +169,13 @@ def get_rating(
             status_code=status.HTTP_403_FORBIDDEN, detail="Unknown role"
         )
 
-    rating = WorkshopRatingService(db).get_rating_by_id(
-        rating_id, current_user.get("tenant_id")
-    )
+    service = WorkshopRatingService(db)
+    rating = service.get_rating_by_id(rating_id, current_user.get("tenant_id"))
     if not rating:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Rating not found"
         )
-    return rating
+    return service.to_read_dict(rating)
 
 
 # ---------------------------------------------------------------------------
@@ -196,9 +198,10 @@ def update_rating(
     _require_role(current_user, "CLIENT")
     service = WorkshopRatingService(db)
     try:
-        return service.update_rating(
+        rating = service.update_rating(
             rating_id, rating_in.model_dump(), current_user.get("tenant_id")
         )
+        return service.to_read_dict(rating)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
