@@ -8,9 +8,10 @@ import {
   Card,
   CardContent,
   Stack,
-  Divider,
   IconButton,
   Tooltip,
+  Button,
+  Rating,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -19,9 +20,13 @@ import {
   Cancel as RejectedIcon,
   Visibility as ViewedIcon,
   Pending as PendingIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import type { Schedule, ScheduleStatus } from '../../services/schedule-service';
 import { scheduleService } from '../../services/schedule-service';
+import type { WorkshopRating } from '../../services/workshop-rating-service';
+import { workshopRatingService } from '../../services/workshop-rating-service';
+import RatingModal from './rating-modal';
 
 const STATUS_CONFIG: Record<ScheduleStatus, { label: string; color: 'warning' | 'info' | 'success' | 'error'; icon: React.ReactNode }> = {
   pendente: { label: 'Pendente', color: 'warning', icon: <PendingIcon fontSize="small" /> },
@@ -47,6 +52,8 @@ export default function MySchedulesPage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [myRatings, setMyRatings] = useState<Map<number, WorkshopRating>>(new Map());
+  const [modalSchedule, setModalSchedule] = useState<Schedule | null>(null);
 
   const fetchSchedules = async () => {
     try {
@@ -61,8 +68,24 @@ export default function MySchedulesPage() {
     }
   };
 
+  const fetchMyRatings = async () => {
+    try {
+      const data = await workshopRatingService.listMine();
+      const ratings = Array.isArray(data) ? data : [];
+      const map = new Map<number, WorkshopRating>();
+      for (const r of ratings) {
+        if (r.schedule_id !== null) map.set(r.schedule_id, r);
+      }
+      setMyRatings(map);
+    } catch {
+      // Non-fatal — rating actions simply won't show
+      setMyRatings(new Map());
+    }
+  };
+
   useEffect(() => {
     fetchSchedules();
+    fetchMyRatings();
   }, []);
 
   if (loading) {
@@ -72,6 +95,8 @@ export default function MySchedulesPage() {
       </Box>
     );
   }
+
+  const modalRating = modalSchedule ? myRatings.get(modalSchedule.id) : undefined;
 
   return (
     <Box sx={{ width: '100%', maxWidth: 960, mx: 'auto', px: { xs: 2, md: 0 } }}>
@@ -104,6 +129,7 @@ export default function MySchedulesPage() {
         <Stack spacing={2}>
           {schedules.map((s) => {
             const cfg = STATUS_CONFIG[s.status] ?? STATUS_CONFIG.pendente;
+            const myRating = s.status === 'aceito' ? myRatings.get(s.id) : undefined;
             return (
               <Card key={s.id} variant="outlined" sx={{ transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 2 } }}>
                 <CardContent>
@@ -130,11 +156,42 @@ export default function MySchedulesPage() {
                       sx={{ alignSelf: { xs: 'flex-start', sm: 'center' }, fontWeight: 600 }}
                     />
                   </Stack>
+
+                  {s.status === 'aceito' && (
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1.5 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<StarIcon />}
+                        onClick={() => setModalSchedule(s)}
+                      >
+                        {myRating ? 'Editar Avaliação' : 'Avaliar'}
+                      </Button>
+                      {myRating && (
+                        <Rating value={myRating.rating} readOnly size="small" />
+                      )}
+                    </Stack>
+                  )}
                 </CardContent>
               </Card>
             );
           })}
         </Stack>
+      )}
+
+      {modalSchedule && (
+        <RatingModal
+          open
+          scheduleId={modalRating ? null : modalSchedule.id}
+          scheduleLabel={`${TYPE_LABELS[modalSchedule.service_request_type] ?? modalSchedule.service_request_type} • ${formatDateTime(modalSchedule.scheduled_at)}`}
+          existing={modalRating ?? null}
+          onClose={() => setModalSchedule(null)}
+          onSaved={() => {
+            setModalSchedule(null);
+            fetchSchedules();
+            fetchMyRatings();
+          }}
+        />
       )}
     </Box>
   );

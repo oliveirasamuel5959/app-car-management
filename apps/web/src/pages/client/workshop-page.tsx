@@ -1,82 +1,89 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  Card,
+  CardContent,
+  Grid,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import { Refresh as RefreshIcon, Storefront as StorefrontIcon } from "@mui/icons-material";
 import { WorkshopCard } from "../../components/workshops/workshop-card";
-
-interface Workshop {
-  id: number;
-  name: string;
-  description: string;
-  latitude: number;
-  longitude: number;
-  rating_avg: number;
-}
+import type { Workshop } from "../../services/workshop-service";
+import { workshopService } from "../../services/workshop-service";
 
 export default function WorkshopPage() {
-  const [workshop, setWorkshop] = useState<Workshop | null>(null);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchWorkshops = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await workshopService.listWorkshops();
+      setWorkshops(Array.isArray(data) ? data : []);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar oficinas");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const sampleWorkshop: Workshop = {
-      id: 3,
-      name: "Mike's Auto Repair",
-      description: "Professional automotive repair and maintenance services",
-      latitude: 40.7128,
-      longitude: -74.006,
-      rating_avg: 6.8,
-    };
-
-    const timer = setTimeout(() => {
-      setWorkshop(sampleWorkshop);
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
+    fetchWorkshops();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Loading workshop...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Workshop Details
-          </h1>
-          <p className="text-gray-600">
-            View detailed information about the workshop
-          </p>
-        </div>
+    <Box sx={{ width: "100%", maxWidth: 960, mx: "auto", px: { xs: 2, md: 0 } }}>
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="h4" fontWeight={700}>
+          Oficinas
+        </Typography>
+        <Tooltip title="Atualizar">
+          <IconButton onClick={fetchWorkshops} disabled={loading}>
+            <RefreshIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
-        {workshop && (
-          <WorkshopCard
-            id={workshop.id}
-            name={workshop.name}
-            description={workshop.description}
-            latitude={workshop.latitude}
-            longitude={workshop.longitude}
-            rating_avg={workshop.rating_avg}
-          />
-        )}
+      {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
 
-        {/* {workshop && (
-          <div className="mt-12 bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              Workshop Data (JSON)
-            </h2>
-            <pre className="bg-gray-900 text-gray-100 p-4 rounded text-xs overflow-x-auto">
-              {JSON.stringify(workshop, null, 2)}
-            </pre>
-          </div>
-        )} */}
-      </div>
-    </div>
+      {loading ? (
+        <Box display="flex" justifyContent="center" mt={10}>
+          <CircularProgress />
+        </Box>
+      ) : workshops.length === 0 ? (
+        <Card sx={{ textAlign: "center", py: 8 }}>
+          <CardContent>
+            <StorefrontIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Nenhuma oficina encontrada
+            </Typography>
+            <Typography variant="body2" color="text.disabled">
+              As oficinas cadastradas aparecerão aqui.
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        <Grid container spacing={3}>
+          {workshops.map((workshop) => (
+            <Grid item xs={12} sm={6} md={4} key={workshop.id}>
+              <WorkshopCard
+                id={workshop.id}
+                name={workshop.name}
+                description={workshop.description ?? ""}
+                latitude={workshop.latitude}
+                longitude={workshop.longitude}
+                rating_avg={workshop.rating_avg}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+    </Box>
   );
 }

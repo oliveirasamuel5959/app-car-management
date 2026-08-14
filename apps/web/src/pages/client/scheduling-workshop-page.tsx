@@ -19,6 +19,7 @@ import {
   Divider,
   MenuItem,
   IconButton,
+  Rating,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -33,6 +34,8 @@ import type { Workshop } from '../../services/workshop-service';
 import { workshopService } from '../../services/workshop-service';
 import type { AgendaDay, ServiceRequestType } from '../../services/schedule-service';
 import { scheduleService } from '../../services/schedule-service';
+import type { WorkshopRating } from '../../services/workshop-rating-service';
+import { workshopRatingService } from '../../services/workshop-rating-service';
 
 const REQUEST_TYPES: { value: ServiceRequestType; label: string }[] = [
   { value: 'manutencao', label: 'Manutenção' },
@@ -93,6 +96,10 @@ export default function SchedulingWorkshopPage() {
   });
   const [agenda, setAgenda] = useState<AgendaDay[]>([]);
   const [agendaLoading, setAgendaLoading] = useState(false);
+
+  // Ratings
+  const [ratings, setRatings] = useState<WorkshopRating[]>([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
@@ -160,6 +167,22 @@ export default function SchedulingWorkshopPage() {
       }
     })();
   }, [wId, calMonth, workshop]);
+
+  // Fetch the workshop's ratings for the reviews section
+  useEffect(() => {
+    if (!wId) return;
+    (async () => {
+      try {
+        setRatingsLoading(true);
+        const data = await workshopRatingService.listForWorkshop(wId);
+        setRatings(Array.isArray(data) ? data : []);
+      } catch {
+        setRatings([]);
+      } finally {
+        setRatingsLoading(false);
+      }
+    })();
+  }, [wId]);
 
   const agendaMap = useMemo(() => {
     const map = new Map<string, AgendaDay>();
@@ -308,6 +331,47 @@ export default function SchedulingWorkshopPage() {
               </Stack>
             )}
           </Stack>
+        </CardContent>
+      </Card>
+
+      {/* Reviews */}
+      <Card variant="outlined" sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6" fontWeight={700} gutterBottom>
+            Avaliações
+          </Typography>
+          {ratingsLoading ? (
+            <Box display="flex" justifyContent="center" py={3}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : ratings.length === 0 ? (
+            <Typography variant="body2" color="text.disabled">
+              Esta oficina ainda não recebeu avaliações.
+            </Typography>
+          ) : (
+            <Stack spacing={2}>
+              {ratings.map((r) => (
+                <Box key={r.id}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Rating value={r.rating} readOnly size="small" />
+                    <Typography variant="caption" color="text.disabled">
+                      {fmtLocal(r.created_at)}
+                    </Typography>
+                  </Stack>
+                  {r.client_name && (
+                    <Typography variant="subtitle2" fontWeight={600} sx={{ mt: 0.5 }}>
+                      {r.client_name}
+                    </Typography>
+                  )}
+                  {r.comment && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {r.comment}
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+            </Stack>
+          )}
         </CardContent>
       </Card>
 

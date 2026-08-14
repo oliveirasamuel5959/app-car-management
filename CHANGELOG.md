@@ -2,6 +2,16 @@
 
 Chronological project changes grouped by commit date. Newest entries appear first.
 
+## 2026-08-14
+- FEAT: Reviews & ratings (Phase 3) — clients rate accepted schedules (0–5 stars + optional comment) via the existing `workshop_ratings` table (no migration); one rating per schedule, author can edit/delete
+- FEAT: `Workshop.rating_avg` recomputed on every rating write; workshop detail page, workshop cards, and the client workshop list show the live average
+- FEAT: `/workshop-ratings` API — POST (CLIENT), GET `?workshop_id=` (public), GET `/mine` (CLIENT), GET `/me` (WORKSHOP), GET/PUT/DELETE `/{id}` (author-only), all dual-tenant scoped
+- FEAT: Workshop notification on new rating ("Nova Avaliação", `schedule_id` linked)
+- FEAT: Frontend — rating modal on My Schedules (create/edit/delete), reviews list on workshop detail page, workshop-side "Avaliações" page + sidebar entry
+- FEAT: Client workshop list page (`/client/my-workshops`) now fetches real workshops (removed hardcoded mock); workshop-card star display fixed for the 0–5 scale
+- FEAT: Rating responses include the authoring client's full name (`client_name`), shown on the workshop "Avaliações" page and the workshop-detail reviews list
+- TEST: 11 backend rating lifecycle tests (aceito gate, duplicates, author CRUD, avg recompute, dual-tenant isolation, TypeError guards); frontend Vitest setup (7 tests: service query building + modal validation)
+
 ## 2026-07-22
 - FEAT: Client↔Workshop service scheduling — clients browse workshops, view agenda calendars, book service appointments; workshops receive, view, accept, or reject requests with notifications
 - FEAT: Structured workshop operating-hours fields (`opening_time`, `closing_time`, `work_days` CSV, `employee_count`) replacing free-text `opening_hours`; editable via profile settings

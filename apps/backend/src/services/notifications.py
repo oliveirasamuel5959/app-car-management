@@ -1,15 +1,10 @@
-
 from sqlalchemy.orm import Session
 
 from src.models.notification import Notification
 from src.repositories.notifications import (
-    repo_create_notification,
-    repo_get_notification_by_id,
-    repo_get_notifications_by_user_id,
-    repo_get_unread_notifications_count,
-    repo_mark_all_notifications_as_read,
-    repo_mark_notification_as_read,
-)
+    repo_create_notification, repo_get_notification_by_id,
+    repo_get_notifications_by_user_id, repo_get_unread_notifications_count,
+    repo_mark_all_notifications_as_read, repo_mark_notification_as_read)
 
 
 class NotificationService:
@@ -111,7 +106,11 @@ class NotificationService:
 
         if new_status == "pendente":
             title = "Novo Agendamento"
-            message = f"Nova solicitação de agendamento recebida da oficina {workshop_name}" if workshop_name else "Nova solicitação de agendamento recebida"
+            message = (
+                f"Nova solicitação de agendamento recebida da oficina {workshop_name}"
+                if workshop_name
+                else "Nova solicitação de agendamento recebida"
+            )
         else:
             title = "Atualização de Agendamento"
             message = f"Seu agendamento foi atualizado para: {label}"
@@ -122,5 +121,25 @@ class NotificationService:
             title=title,
             message=message,
             notification_type="schedule_update",
+            schedule_id=schedule_id,
+        )
+
+    def create_rating_notification(
+        self,
+        tenant_id,
+        user_id: int,
+        schedule_id: int | None,
+        rating_value: int,
+    ) -> Notification:
+        """Create a notification for a new workshop rating with a Portuguese label."""
+        title = "Nova Avaliação"
+        message = f"Você recebeu uma avaliação de {rating_value} estrelas"
+
+        return self.create_notification(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            title=title,
+            message=message,
+            notification_type="rating_new",
             schedule_id=schedule_id,
         )
