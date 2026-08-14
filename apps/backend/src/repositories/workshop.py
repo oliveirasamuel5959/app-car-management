@@ -33,9 +33,7 @@ def repo_search_workshops(
     if lat is not None and lng is not None:
         lat_delta = radius_km / 111.0
         lng_delta = (
-            radius_km / (111.0 * cos(radians(lat)))
-            if lat != 0
-            else radius_km / 111.0
+            radius_km / (111.0 * cos(radians(lat))) if lat != 0 else radius_km / 111.0
         )
         query = query.filter(
             Workshop.latitude.between(lat - lat_delta, lat + lat_delta),
@@ -77,9 +75,7 @@ def repo_create_workshop(
     return workshop
 
 
-def repo_update_workshop(
-    db: Session, workshop: Workshop, updates: dict
-) -> Workshop:
+def repo_update_workshop(db: Session, workshop: Workshop, updates: dict) -> Workshop:
     """Apply a partial update to an already-resolved workshop row."""
     for field, value in updates.items():
         setattr(workshop, field, value)
@@ -97,6 +93,13 @@ def repo_get_workshop_by_id(
         .filter(Workshop.id == workshop_id, Workshop.tenant_id == tenant_id)
         .first()
     )
+
+
+def repo_get_workshop_by_tenant_id(
+    db: Session, tenant_id: UUID | str
+) -> Workshop | None:
+    """Get the single workshop row owned by a tenant (uq_workshops_tenant_id)."""
+    return db.query(Workshop).filter(Workshop.tenant_id == tenant_id).first()
 
 
 def repo_get_workshop_for_user(
