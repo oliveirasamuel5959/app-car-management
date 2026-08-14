@@ -7,7 +7,7 @@ Create:
   - `validation.md` for how to know the implementation succeeded and can be merged
   
 - Refer to @specs/mission.md and @specs/tech-stack.md for guidance
-- Refer to the model in @specs/spec-model
+- Refer to the specs template in @specs/spec-model for guidance
 - Commit and push the changes at the end of each task group.
 
 **Important**: You *must* use your AskUserQuestion tool to clarify everything, before writing to disk.
