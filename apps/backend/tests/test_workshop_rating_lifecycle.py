@@ -7,13 +7,14 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from src.db.base import Base
-from src.models import Tenant, User, Vehicle, Workshop
+from src.models import Notification, Tenant, User, Vehicle, Workshop
 from src.models.workshop_rating import WorkshopRating
 from src.repositories.workshop_rating import (
     repo_average_for_workshop_tenant, repo_get_rating_by_id,
     repo_get_rating_by_schedule, repo_list_ratings_for_client_tenant,
     repo_list_ratings_for_workshop_tenant)
 from src.schemas.workshop_rating import WorkshopRatingCreate
+from src.services.notifications import NotificationService
 from src.services.schedules import ScheduleService
 from src.services.workshop_rating import WorkshopRatingService
 
@@ -434,3 +435,41 @@ def test_average_recompute_math():
     service.delete_rating(remaining.id, client_tenant_id=tenant_b.id)
     session.refresh(workshop)
     assert workshop.rating_avg == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Case 11 — New rating notifies the workshop user (schedule_id linked)
+# ---------------------------------------------------------------------------
+
+
+def test_new_rating_notifies_workshop():
+    session, tenant_a, tenant_b, w_user, c_user, workshop, vehicle = seed_rating_graph()
+    schedule = make_accepted_schedule(
+        session, tenant_a, tenant_b, workshop, vehicle, day=1
+    )
+
+    service = WorkshopRatingService(session)
+    rating = service.create_rating(
+        {"schedule_id": schedule.id, "rating": 5},
+        client_tenant_id=tenant_b.id,
+    )
+
+    # Route-level wiring: the route calls this after create_rating succeeds
+    notif_service = NotificationService(session)
+    notif_service.create_rating_notification(
+        tenant_id=tenant_a.id,
+        user_id=w_user.id,
+        schedule_id=rating.schedule_id,
+        rating_value=rating.rating,
+    )
+    session.commit()
+
+    notifs = (
+        session.query(Notification)
+        .filter(Notification.schedule_id == schedule.id)
+        .all()
+    )
+    assert len(notifs) == 1
+    assert notifs[0].user_id == w_user.id
+    assert notifs[0].notification_type == "rating_new"
+    assert notifs[0].title == "Nova Avaliação"
