@@ -1,7 +1,23 @@
 import { useEffect, useState } from 'react';
-import { serviceService } from '../../services/service-service';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
+
 import { useRealtime } from '../../context/realtime-context';
-import { useParams } from 'react-router-dom';
+import { serviceService } from '../../services/service-service';
+import {
+  STATUS_META,
+  formatBRL,
+  formatDateTime,
+  formatDateShort,
+} from './service-status';
 
 interface Service {
   id: number;
@@ -21,8 +37,33 @@ interface Service {
   workshop_notes: string;
 }
 
+function Fact({ label, value, emphasize = false }: { label: string; value: string; emphasize?: boolean }) {
+  return (
+    <Box>
+      <Typography
+        variant="overline"
+        sx={{ color: 'text.secondary', letterSpacing: '0.08em', lineHeight: 1.2, display: 'block' }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        variant="body1"
+        sx={{
+          fontWeight: 600,
+          mt: 0.25,
+          fontVariantNumeric: 'tabular-nums',
+          color: emphasize ? 'success.dark' : 'text.primary',
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
 export default function ServicesPage() {
   const { serviceId } = useParams();
+  const navigate = useNavigate();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
@@ -56,14 +97,31 @@ export default function ServicesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 12 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (services.length === 0) {
-    return <div className="p-10 text-gray-500">Nenhum serviço encontrado</div>;
+    return (
+      <Box sx={{ py: 10, px: 3, textAlign: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          Nenhum serviço por aqui
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Quando você agendar uma visita, o andamento do serviço aparece nesta página.
+        </Typography>
+        <Button
+          variant="contained"
+          size="small"
+          sx={{ mt: 3 }}
+          onClick={() => navigate('/client/scheduling')}
+        >
+          Fazer um agendamento
+        </Button>
+      </Box>
+    );
   }
 
   const sortedServices = [...services].sort((left, right) => {
@@ -71,22 +129,6 @@ export default function ServicesPage() {
     if (String(right.id) === serviceId) return 1;
     return new Date(right.checkin_date).getTime() - new Date(left.checkin_date).getTime();
   });
-
-  const statusColor: Record<Service['status'], string> = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    confirmed: 'bg-indigo-100 text-indigo-700',
-    in_progress: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-    cancelled: 'bg-red-100 text-red-700',
-  };
-
-  const statusLabel: Record<string, string> = {
-    pending: 'Pendente',
-    confirmed: 'Confirmado',
-    in_progress: 'Em andamento',
-    completed: 'Concluído',
-    cancelled: 'Cancelado',
-  };
 
   const handleAccept = async (id: number) => {
     try {
@@ -113,163 +155,140 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', p: { xs: 2, md: 4 } }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
           Meus Serviços
-        </h1>
-        <p className="text-gray-500 mt-2">
-          Acompanhe o andamento do reparo do seu veículo
-        </p>
-      </div>
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Acompanhe o andamento do serviço do seu veículo.
+        </Typography>
+      </Box>
 
-      <div className="space-y-8">
-        {sortedServices.map((service) => (
-          <div
-            key={service.id}
-            className="bg-white rounded-2xl shadow-lg p-8"
-          >
-            {/* Header */}
-            <div className="flex justify-between items-start flex-wrap gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-800">
-                  {service.name}
-                </h2>
-                <p className="text-gray-500 mt-2">
-                  {service.description}
-                </p>
-              </div>
-
-              <span
-                className={`px-4 py-2 rounded-full text-sm font-medium ${statusColor[service.status]}`}
+      <Stack spacing={2}>
+        {sortedServices.map((service) => {
+          const meta = STATUS_META[service.status] ?? STATUS_META.pending;
+          return (
+            <Paper
+              key={service.id}
+              elevation={0}
+              sx={{
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderLeft: '4px solid',
+                borderLeftColor: meta.color,
+                p: 3,
+              }}
+            >
+              {/* Header */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                }}
               >
-                {statusLabel[service.status]}
-              </span>
-            </div>
-
-            {service.status === 'pending' && (
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={() => handleAccept(service.id)}
-                  disabled={submittingId === service.id}
-                  className="px-4 py-2 rounded-xl bg-blue-600 text-white font-medium disabled:opacity-60"
-                >
-                  {submittingId === service.id ? 'Atualizando...' : 'Aceitar orçamento'}
-                </button>
-                <button
-                  onClick={() => handleCancel(service.id)}
-                  disabled={submittingId === service.id}
-                  className="px-4 py-2 rounded-xl bg-red-100 text-red-700 font-medium disabled:opacity-60"
-                >
-                  Cancelar pedido
-                </button>
-              </div>
-            )}
-
-            {/* Progress */}
-            <div className="mt-8">
-              <div className="flex justify-between mb-2 text-sm text-gray-600">
-                <span>Progresso</span>
-                <span>{service.progress_percentage}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className="bg-blue-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${service.progress_percentage}%` }}
+                <Box>
+                  <Typography
+                    variant="overline"
+                    sx={{ color: 'text.secondary', letterSpacing: '0.08em', lineHeight: 1 }}
+                  >
+                    OS #{service.id}
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
+                    {service.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                    {service.description}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={meta.label}
+                  size="small"
+                  sx={{ bgcolor: meta.bg, color: meta.color, fontWeight: 600 }}
                 />
-              </div>
-            </div>
+              </Box>
 
-            {/* Timeline */}
-            <div className="mt-12 relative border-l-2 border-gray-200 pl-8 space-y-10">
-              <div className="relative">
-                <div className="absolute -left-10 w-8 h-8 bg-blue-600 rounded-full"></div>
-                <h3 className="font-semibold text-gray-800">
-                  Entrada do Veículo
-                </h3>
-                <p className="text-gray-500 text-sm">
-                  {new Date(service.checkin_date).toLocaleString('pt-BR')}
-                </p>
-              </div>
-
-              {service.status !== 'pending' && service.status !== 'cancelled' && (
-                <div className="relative">
-                  <div className="absolute -left-10 w-8 h-8 bg-blue-400 rounded-full"></div>
-                  <h3 className="font-semibold text-gray-800">
-                    {service.status === 'confirmed' ? 'Serviço confirmado' : 'Reparo em Andamento'}
-                  </h3>
-                  <p className="text-gray-500 text-sm">
-                    Horas Estimadas: {service.estimated_hours}h
-                  </p>
-                </div>
+              {/* Pending actions */}
+              {service.status === 'pending' && (
+                <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    disabled={submittingId === service.id}
+                    onClick={() => handleAccept(service.id)}
+                  >
+                    {submittingId === service.id ? 'Aceitando...' : 'Aceitar orçamento'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    disabled={submittingId === service.id}
+                    onClick={() => handleCancel(service.id)}
+                  >
+                    Cancelar pedido
+                  </Button>
+                </Stack>
               )}
 
-              {service.status === 'cancelled' && (
-                <div className="relative">
-                  <div className="absolute -left-10 w-8 h-8 bg-red-500 rounded-full"></div>
-                  <h3 className="font-semibold text-gray-800">
-                    Pedido cancelado
-                  </h3>
-                </div>
-              )}
+              {/* Facts */}
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
+                  gap: 2,
+                  mt: 3,
+                  pt: 3,
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Fact label="Entrada" value={formatDateTime(service.checkin_date)} />
+                <Fact label="Previsão de conclusão" value={formatDateShort(service.estimated_finish_date)} />
+                <Fact label="Custo estimado" value={formatBRL(service.estimated_cost)} />
+                <Fact
+                  label="Custo final"
+                  value={service.final_cost != null ? formatBRL(service.final_cost) : '—'}
+                  emphasize={service.status === 'completed'}
+                />
+              </Box>
 
-              {service.status === 'completed' && (
-                <div className="relative">
-                  <div className="absolute -left-10 w-8 h-8 bg-green-600 rounded-full"></div>
-                  <h3 className="font-semibold text-gray-800">
-                    Reparo Concluído
-                  </h3>
-                  <p className="text-gray-500 text-sm">
-                    {service.finished_at
-                      ? new Date(service.finished_at).toLocaleString('pt-BR')
-                      : 'Concluído'}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Details */}
-            <div className="grid md:grid-cols-3 gap-6 mt-12">
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h4 className="text-sm text-gray-500 mb-2">
-                  Previsão de Conclusão
-                </h4>
-                <p className="font-semibold text-gray-800">
-                  {new Date(service.estimated_finish_date).toLocaleString('pt-BR')}
-                </p>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h4 className="text-sm text-gray-500 mb-2">
-                  Custo Estimado
-                </h4>
-                <p className="font-semibold text-gray-800">
-                  R$ {service.estimated_cost}
-                </p>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h4 className="text-sm text-gray-500 mb-2">
-                  Custo Final
-                </h4>
-                <p className="font-semibold text-gray-800">
-                  {service.final_cost ? `R$ ${service.final_cost}` : '—'}
-                </p>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="mt-10">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                Observações da Oficina
-              </h3>
-              <div className="bg-gray-50 p-6 rounded-xl text-gray-600">
-                {service.workshop_notes}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+              {/* Workshop notes */}
+              <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Typography
+                  variant="overline"
+                  sx={{ color: 'text.secondary', letterSpacing: '0.08em', lineHeight: 1, display: 'block' }}
+                >
+                  Observações da oficina
+                </Typography>
+                {service.workshop_notes ? (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mt: 1,
+                      color: 'text.primary',
+                      borderLeft: '2px solid',
+                      borderColor: 'secondary.main',
+                      pl: 1.5,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    {service.workshop_notes}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Sem observações até o momento.
+                  </Typography>
+                )}
+              </Box>
+            </Paper>
+          );
+        })}
+      </Stack>
+    </Box>
   );
 }

@@ -23,7 +23,10 @@ class MockWebSocket {
 
   onmessage: ((ev: { data: string }) => void) | null = null;
 
-  constructor(public url: string) {
+  url: string;
+
+  constructor(url: string) {
+    this.url = url;
     MockWebSocket.instances.push(this);
   }
 

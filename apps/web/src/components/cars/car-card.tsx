@@ -1,106 +1,92 @@
-import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
+import { Box, Button, Chip, Paper, Typography } from '@mui/material';
 
-import CarChevrolet from '../../assets/cars/car-chevrolet-tracker.png';
-import { carService } from "../../services/car-service";
+export interface CarData {
+  id: number;
+  brand: string;
+  model: string;
+  year: number;
+  plate: string;
+}
 
-const CarCard = ({ carData, loading }) => {
+interface CarCardProps {
+  carData: CarData;
+}
+
+const CarCard = ({ carData }: CarCardProps) => {
   const navigate = useNavigate();
-  const [error, setError] = useState(null);
-
-  if (loading) {
-    return (
-      <div className="w-full max-w-6xl mx-auto bg-white rounded-3xl shadow-lg overflow-hidden animate-pulse">
-        <div className="flex flex-col lg:flex-row">
-          <div className="lg:w-1/2 h-72 lg:h-auto bg-gray-200"></div>
-          <div className="lg:w-1/2 p-10 space-y-4">
-            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/5"></div>
-            <div className="h-20 bg-gray-200 rounded w-full mt-6"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="w-full max-w-6xl mx-auto bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-      <div className="flex flex-col lg:flex-row">
+    <Paper
+      elevation={0}
+      sx={{
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderLeft: '4px solid',
+        borderLeftColor: 'primary.main',
+        p: 3,
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        alignItems: { xs: 'flex-start', md: 'center' },
+        gap: 3,
+      }}
+    >
+      {/* Plate badge — the vehicle's identity, styled like a Mercosul plate */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'primary.main',
+          color: 'primary.contrastText',
+          borderRadius: 2,
+          px: 3,
+          py: 1.5,
+          minWidth: 180,
+          boxShadow: 'inset 0 0 0 3px rgba(255,255,255,0.28)',
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 700,
+            letterSpacing: '0.14em',
+            fontVariantNumeric: 'tabular-nums',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {carData.plate}
+        </Typography>
+      </Box>
 
-        {/* LEFT — Car Image */}
-        <div className="lg:w-1/2 relative bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6 lg:p-10">
-          <div className="absolute top-4 left-4 bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-md">
-            Active
-          </div>
-          <img
-            src={CarChevrolet}
-            alt={`${carData.brand} ${carData.model}`}
-            className="w-full max-h-80 object-contain drop-shadow-xl hover:scale-105 transition-transform duration-500"
-          />
-        </div>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          variant="overline"
+          sx={{ color: 'text.secondary', letterSpacing: '0.08em', lineHeight: 1, display: 'block' }}
+        >
+          Seu veículo
+        </Typography>
+        <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5 }} noWrap>
+          {carData.brand} {carData.model}
+        </Typography>
+        <Chip
+          label={`Ano ${carData.year}`}
+          size="small"
+          sx={{ mt: 1, fontWeight: 600, bgcolor: 'action.hover', color: 'text.secondary' }}
+        />
+      </Box>
 
-        {/* RIGHT — Car Info */}
-        <div className="lg:w-1/2 p-8 lg:p-10 flex flex-col justify-between">
-
-          {/* Top section */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                {carData.brand}
-              </span>
-              <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                {carData.year}
-              </span>
-            </div>
-
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-              {carData.model}
-            </h2>
-
-            <p className="text-gray-500 mb-8">
-              Premium vehicle • Excellent condition
-            </p>
-
-            {/* INFO GRID */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Year</p>
-                <p className="text-xl font-bold text-gray-900">{carData.year}</p>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Plate</p>
-                <p className="text-xl font-bold text-gray-900">{carData.plate}</p>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Brand</p>
-                <p className="text-xl font-bold text-gray-900">{carData.brand}</p>
-              </div>
-              <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">ID</p>
-                <p className="text-xl font-bold text-gray-900">#{carData.id}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom — Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => navigate(`/cars/${carData.id}`)}
-              className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl text-base font-semibold hover:bg-blue-700 transition duration-200 shadow-md shadow-blue-500/20"
-            >
-              View Details
-            </button>
-            <button
-              onClick={() => navigate(`/client/services`)}
-              className="flex-1 bg-slate-100 text-gray-700 py-3.5 rounded-xl text-base font-semibold hover:bg-slate-200 transition duration-200 border border-slate-200"
-            >
-              Service History
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <Button
+          variant="contained"
+          size="small"
+          onClick={() => navigate('/client/service-history')}
+        >
+          Histórico de manutenção
+        </Button>
+      </Box>
+    </Paper>
   );
 };
 

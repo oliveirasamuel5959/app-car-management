@@ -20,6 +20,7 @@ import {
   Build as BuildIcon,
   CalendarMonth as CalendarIcon,
   EventNote as EventNoteIcon,
+  MiscellaneousServices as ServicesIcon,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -42,6 +43,7 @@ export const ClientSidebar = ({
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/client/dashboard' },
+    { text: 'Meus Serviços', icon: <ServicesIcon />, path: '/client/services' },
     { text: 'Meu Carro', icon: <CarIcon />, path: '/client/my-car' },
     { text: 'Novo Agendamento', icon: <CalendarIcon />, path: '/client/scheduling' },
     { text: 'Meus Agendamentos', icon: <EventNoteIcon />, path: '/client/my-schedules' },

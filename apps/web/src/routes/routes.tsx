@@ -100,6 +100,11 @@ export const protectedRoutes = [
     element: <AppLayout><WorkshopPage /></AppLayout>,
   },
   {
+    path: '/client/services',
+    role: 'CLIENT',
+    element: <AppLayout><ServicesPage /></AppLayout>,
+  },
+  {
     path: '/client/services/:serviceId',
     role: 'CLIENT',
     element: <AppLayout><ServicesPage /></AppLayout>,

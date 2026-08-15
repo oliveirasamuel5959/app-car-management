@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import { Form } from '../ui/form';
 import { carService } from '../../services/car-service';
-import { useNavigate } from 'react-router-dom';
 
 interface AddCarModalProps {
   open: boolean;
@@ -32,7 +31,6 @@ interface FormErrors {
 }
 
 export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalProps) {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState<CarFormData>({
     brand: '',
     model: '',
@@ -49,21 +47,21 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
     const newErrors: FormErrors = {};
 
     if (!formData.plate.trim()) {
-      newErrors.plate = 'Plate number is required';
+      newErrors.plate = 'Informe a placa';
     } else if (formData.plate.trim().length < 3) {
-      newErrors.plate = 'Plate must be at least 3 characters';
+      newErrors.plate = 'A placa deve ter pelo menos 3 caracteres';
     }
 
     if (!formData.model.trim()) {
-      newErrors.model = 'Model is required';
+      newErrors.model = 'Informe o modelo';
     }
 
     if (!formData.year) {
-      newErrors.year = 'Year is required';
+      newErrors.year = 'Informe o ano';
     } else if (isNaN(Number(formData.year))) {
-      newErrors.year = 'Year must be a number';
+      newErrors.year = 'O ano deve ser um número';
     } else if (Number(formData.year) < 1900 || Number(formData.year) > new Date().getFullYear()) {
-      newErrors.year = `Year must be between 1900 and ${new Date().getFullYear()}`;
+      newErrors.year = `O ano deve estar entre 1900 e ${new Date().getFullYear()}`;
     }
 
     setErrors(newErrors);
@@ -104,8 +102,6 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
         plate: formData.plate.trim(),
       };
 
-      console.log('Submitting car data:', carData); // Debug log
-
       await carService.createCar(carData);
 
       // Reset form
@@ -119,10 +115,8 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
       onSuccess?.();
       onClose();
 
-      navigate('/client/dashboard'); // Redirect to dashboard after adding a car
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add car';
+      const errorMessage = error instanceof Error ? error.message : 'Não foi possível adicionar o veículo';
       setApiError(errorMessage);
     } finally {
       setLoading(false);
@@ -147,7 +141,7 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ fontWeight: 600, fontSize: '1.25rem' }}>
-        Add New Car
+        Adicionar veículo
       </DialogTitle>
 
       <DialogContent sx={{ pt: 2 }}>
@@ -162,10 +156,10 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
             {/* Brand Field */}
             <TextField
               name="brand"
-              label="Brand"
+              label="Marca"
               value={formData.brand}
               onChange={handleInputChange}
-              placeholder="e.g., Chevrolet"
+              placeholder="Ex.: Chevrolet"
               error={!!errors.brand}
               helperText={errors.brand}
               fullWidth
@@ -177,10 +171,10 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
             {/* Model Field */}
             <TextField
               name="model"
-              label="Car Model"
+              label="Modelo"
               value={formData.model}
               onChange={handleInputChange}
-              placeholder="e.g., Tracker"
+              placeholder="Ex.: Tracker"
               error={!!errors.model}
               helperText={errors.model}
               fullWidth
@@ -192,11 +186,11 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
             {/* Year Field */}
             <TextField
               name="year"
-              label="Year"
+              label="Ano"
               type="number"
               value={formData.year}
               onChange={handleInputChange}
-              placeholder="e.g., 2022"
+              placeholder="Ex.: 2022"
               error={!!errors.year}
               helperText={errors.year}
               fullWidth
@@ -208,17 +202,16 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
 
             <TextField
               name="plate"
-              label="Plate Number"
+              label="Placa"
               value={formData.plate}
               onChange={handleInputChange}
-              placeholder="e.g., ABC-1234"
+              placeholder="Ex.: ABC-1234"
               error={!!errors.plate}
               helperText={errors.plate}
               fullWidth
               disabled={loading}
               variant="outlined"
               size="small"
-              inputProps={{ min: 1900, max: new Date().getFullYear() }}
             />
 
           </Box>
@@ -227,18 +220,10 @@ export default function AddCarModal({ open, onClose, onSuccess }: AddCarModalPro
 
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={handleClose} disabled={loading}>
-          Cancel
+          Cancelar
         </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading}
-          sx={{
-            backgroundColor: '#2563EB',
-            '&:hover': { backgroundColor: '#1D4ED8' },
-          }}
-        >
-          {loading ? <CircularProgress size={24} /> : 'Add Car'}
+        <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+          {loading ? <CircularProgress size={24} /> : 'Adicionar'}
         </Button>
       </DialogActions>
     </Dialog>
