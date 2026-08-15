@@ -469,3 +469,31 @@ def test_cross_tenant_payment_denied():
         )
         is None
     )
+
+
+# ----------------------------------------------------------------------
+# Provider selection (TG4)
+# ----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("provider_name", "secret_key", "expected_type"),
+    [
+        ("stripe", None, MockProvider),
+        ("mock", "sk_test_secret", MockProvider),
+        ("stripe", "sk_test_secret", "StripeProvider"),
+    ],
+)
+def test_get_payment_provider_selection(provider_name, secret_key, expected_type):
+    from types import SimpleNamespace
+
+    from src.utils.payments import StripeProvider, get_payment_provider
+
+    settings_stub = SimpleNamespace(
+        PAYMENT_PROVIDER=provider_name, STRIPE_SECRET_KEY=secret_key
+    )
+    selected = get_payment_provider(settings_stub)
+    if expected_type == "StripeProvider":
+        assert isinstance(selected, StripeProvider)
+    else:
+        assert isinstance(selected, expected_type)

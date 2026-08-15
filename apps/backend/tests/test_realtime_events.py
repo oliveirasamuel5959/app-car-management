@@ -388,6 +388,99 @@ def test_order_status_event_not_delivered_to_other_tenant_socket():
     assert received(ws_foreign) == []
 
 
+# ─── Payments ─────────────────────────────────────────────────────────────────
+
+
+def _complete_order_via_lifecycle(service_service, session, workshop_user, client_user, tenant, service):
+    service_service.accept_service_order_for_client(
+        service_id=service.id,
+        user_id=client_user.id,
+    )
+    service_service.transition_service_order_for_workshop(
+        service_id=service.id,
+        user_id=workshop_user.id,
+        tenant_id=tenant.id,
+        next_status="in_progress",
+    )
+    service_service.transition_service_order_for_workshop(
+        service_id=service.id,
+        user_id=workshop_user.id,
+        tenant_id=tenant.id,
+        next_status="completed",
+    )
+
+
+def test_payment_confirm_pushes_order_status_change_to_workshop():
+    from src.services.payments import PaymentService
+    from src.utils.payments import MockProvider
+
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+    service_service = ServiceService(session)
+    _complete_order_via_lifecycle(
+        service_service, session, workshop_user, client_user, tenant, service
+    )
+    ws_workshop = connect_fake(tenant.id, workshop_user.id)
+
+    payment_service = PaymentService(session, MockProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=client_user.id,
+        user_email=client_user.email,
+    )
+    payment_service.confirm_payment(
+        payment_id=intent.payment_id,
+        user_id=client_user.id,
+        user_email=client_user.email,
+    )
+
+    events = received(ws_workshop)
+    types = {event_["type"] for event_ in events}
+    assert types == {"notification_new", "order_status_change"}
+    event_ = next(e for e in events if e["type"] == "order_status_change")
+    assert event_["service_order_id"] == service.id
+    assert event_["old_status"] == "completed"
+    assert event_["new_status"] == "paid"
+    assert event_["actor_role"] == "CLIENT"
+    assert event_["timestamp"]
+
+
+def test_payment_refund_pushes_order_status_change_to_client():
+    from src.services.payments import PaymentService
+    from src.utils.payments import MockProvider
+
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+    service_service = ServiceService(session)
+    _complete_order_via_lifecycle(
+        service_service, session, workshop_user, client_user, tenant, service
+    )
+    payment_service = PaymentService(session, MockProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=client_user.id,
+        user_email=client_user.email,
+    )
+    payment_service.confirm_payment(
+        payment_id=intent.payment_id,
+        user_id=client_user.id,
+        user_email=client_user.email,
+    )
+
+    ws_client = connect_fake(tenant.id, client_user.id)
+    payment_service.refund_payment(
+        payment_id=intent.payment_id,
+        user_id=workshop_user.id,
+        tenant_id=tenant.id,
+    )
+
+    events = received(ws_client)
+    types = {event_["type"] for event_ in events}
+    assert types == {"notification_new", "order_status_change"}
+    event_ = next(e for e in events if e["type"] == "order_status_change")
+    assert event_["old_status"] == "paid"
+    assert event_["new_status"] == "refunded"
+    assert event_["actor_role"] == "WORKSHOP"
+
+
 # ─── Schedules ────────────────────────────────────────────────────────────────
 
 
