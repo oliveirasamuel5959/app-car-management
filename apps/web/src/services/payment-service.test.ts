@@ -15,9 +15,9 @@ describe('payment-service', () => {
     vi.clearAllMocks();
   });
 
-  it('creates the payment intent for a service order', async () => {
-    await paymentService.createPaymentIntent(42);
-    expect(api.post).toHaveBeenCalledWith('/payments/service-orders/42/intent', {});
+  it('creates the checkout session for a service order', async () => {
+    await paymentService.createCheckout(42);
+    expect(api.post).toHaveBeenCalledWith('/payments/service-orders/42/checkout', {});
   });
 
   it('confirms a payment by id', async () => {

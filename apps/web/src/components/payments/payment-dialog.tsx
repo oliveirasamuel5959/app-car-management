@@ -11,18 +11,10 @@ import {
   Divider,
   Typography,
 } from '@mui/material';
-import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 
 import { formatBRL } from '../../pages/client/service-status';
 import type { ServiceOrder } from '../../services/service-service';
-import { paymentService, type PaymentIntent } from '../../services/payment-service';
-import { resolvePaymentMode } from './payment-mode';
-
-const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as
-  | string
-  | undefined;
-const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
+import { paymentService, type PaymentCheckout } from '../../services/payment-service';
 
 interface PaymentDialogProps {
   open: boolean;
@@ -33,101 +25,24 @@ interface PaymentDialogProps {
   onPaid: () => void;
 }
 
-interface PayFormProps {
-  intent: PaymentIntent;
-  onPaid: () => void;
-  onError: (message: string) => void;
-}
-
-/** Stripe Elements card form — confirms the intent then verifies on the backend. */
-function StripeCardForm({ intent, onPaid, onError }: PayFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [processing, setProcessing] = useState(false);
-
-  const handlePay = async () => {
-    if (!stripe || !elements) return;
-    setProcessing(true);
-    try {
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        onError('Formulário de cartão indisponível. Recarregue a página.');
-        return;
-      }
-      const result = await stripe.confirmCardPayment(intent.client_secret, {
-        payment_method: { card: cardElement },
-      });
-      if (result.error) {
-        onError(result.error.message ?? 'Falha ao processar o pagamento');
-        return;
-      }
-      await paymentService.confirmPayment(intent.payment_id);
-      onPaid();
-    } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : 'Falha ao confirmar o pagamento');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  return (
-    <Box>
-      <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 2 }}>
-        <CardElement options={{ style: { base: { fontSize: '16px' } } }} />
-      </Box>
-      <Button
-        variant="contained"
-        fullWidth
-        disabled={processing}
-        onClick={handlePay}
-      >
-        {processing ? 'Processando…' : `Pagar ${formatBRL(intent.amount_cents / 100)}`}
-      </Button>
-    </Box>
-  );
-}
-
-/** Local mock flow — no Stripe key configured, confirms directly on the backend. */
-function MockPayButton({ intent, onPaid, onError }: PayFormProps) {
-  const [processing, setProcessing] = useState(false);
-
-  const handleMockPay = async () => {
-    setProcessing(true);
-    try {
-      await paymentService.confirmPayment(intent.payment_id);
-      onPaid();
-    } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : 'Falha ao confirmar o pagamento');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  return (
-    <Button variant="contained" fullWidth disabled={processing} onClick={handleMockPay}>
-      {processing ? 'Confirmando…' : `Simular pagamento de ${formatBRL(intent.amount_cents / 100)}`}
-    </Button>
-  );
-}
-
 export default function PaymentDialog({
   open,
   serviceOrder,
   onClose,
   onPaid,
 }: PaymentDialogProps) {
-  const [intent, setIntent] = useState<PaymentIntent | null>(null);
+  const [checkout, setCheckout] = useState<PaymentCheckout | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && serviceOrder) {
-      setIntent(null);
+      setCheckout(null);
       setError(null);
       setLoading(true);
       paymentService
-        .createPaymentIntent(serviceOrder.id)
-        .then(setIntent)
+        .createCheckout(serviceOrder.id)
+        .then(setCheckout)
         .catch((err: unknown) =>
           setError(err instanceof Error ? err.message : 'Erro ao iniciar o pagamento'),
         )
@@ -135,7 +50,12 @@ export default function PaymentDialog({
     }
   }, [open, serviceOrder]);
 
-  const mode = resolvePaymentMode(publishableKey);
+  // Redirects the browser to the Stripe-hosted payment page; Stripe returns
+  // to /payments/return, which confirms the payment and calls onPaid.
+  const handlePay = () => {
+    if (!checkout) return;
+    window.location.href = checkout.checkout_url;
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -157,21 +77,24 @@ export default function PaymentDialog({
             {error}
           </Alert>
         )}
-        {!loading && intent && mode === 'stripe' && stripePromise && (
-          <Elements
-            stripe={stripePromise}
-            options={{ clientSecret: intent.client_secret, locale: 'pt-BR' }}
-          >
-            <StripeCardForm intent={intent} onPaid={onPaid} onError={setError} />
-          </Elements>
-        )}
-        {!loading && intent && mode === 'mock' && (
-          <MockPayButton intent={intent} onPaid={onPaid} onError={setError} />
+        {!loading && checkout && (
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Você será redirecionado para a página de pagamento segura da Stripe
+            para pagar{' '}
+            <strong>{formatBRL(checkout.amount_cents / 100)}</strong>.
+          </Typography>
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} color="inherit" disabled={loading}>
           Cancelar
+        </Button>
+        <Button
+          variant="contained"
+          disabled={loading || !checkout}
+          onClick={handlePay}
+        >
+          {loading ? 'Preparando…' : 'Pagar com Stripe'}
         </Button>
       </DialogActions>
     </Dialog>

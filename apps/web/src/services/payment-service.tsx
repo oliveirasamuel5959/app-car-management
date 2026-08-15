@@ -2,9 +2,9 @@ import { api } from './api';
 
 export type PaymentStatus = 'pending' | 'succeeded' | 'refunded' | 'failed';
 
-export interface PaymentIntent {
+export interface PaymentCheckout {
   payment_id: number;
-  client_secret: string;
+  checkout_url: string;
   amount_cents: number;
 }
 
@@ -27,9 +27,9 @@ export interface PaymentRefund {
 }
 
 export const paymentService = {
-  /** Create (or reuse) the payment intent for a completed service order. */
-  createPaymentIntent: async (serviceOrderId: number): Promise<PaymentIntent> => {
-    return api.post(`/payments/service-orders/${serviceOrderId}/intent`, {});
+  /** Create (or reuse) the Stripe Checkout session for a completed service order. */
+  createCheckout: async (serviceOrderId: number): Promise<PaymentCheckout> => {
+    return api.post(`/payments/service-orders/${serviceOrderId}/checkout`, {});
   },
 
   /** Confirm a payment after the client paid the intent (idempotent). */
