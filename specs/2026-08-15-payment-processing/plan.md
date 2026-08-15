@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-15
 Branch: feature/2026-08-15-payment-processing
-Status: Planned
+Status: Implemented (Phase 6 complete on 2026-08-15)
 
 Feature Context: Phase 6 of the roadmap. The client pays the `final_cost` of a
 completed service order through Stripe (platform account, test mode, mock

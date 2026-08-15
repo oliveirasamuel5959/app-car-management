@@ -50,3 +50,51 @@ Spec: `specs/2026-08-14-reviews-ratings/`
 | `create(data)` | `POST /workshop-ratings` | CLIENT |
 | `update(id, data)` | `PUT /workshop-ratings/{id}` | CLIENT (author) |
 | `remove(id)` | `DELETE /workshop-ratings/{id}` | CLIENT (author) |
+
+---
+
+# Frontend Changes — Payment Processing (Phase 6)
+
+Feature branch: `feature/2026-08-15-payment-processing`
+Spec: `specs/2026-08-15-payment-processing/`
+
+## New files
+
+- `src/services/payment-service.tsx` — typed API module for `/payments`:
+  `createPaymentIntent`, `confirmPayment`, `getPaymentForOrder`,
+  `refundPayment`. Interfaces `PaymentIntent`, `Payment`, `PaymentRefund`,
+  `PaymentStatus` (no `any`).
+- `src/components/payments/payment-dialog.tsx` — payment dialog for completed
+  orders: creates the intent on open, renders a Stripe Elements CardElement
+  when `VITE_STRIPE_PUBLISHABLE_KEY` is set, or a "Simular pagamento" mock
+  button otherwise; always confirms server-side via `confirmPayment`; PT-BR
+  error surface and `formatBRL` amounts.
+- `src/components/payments/payment-mode.ts` — pure `resolvePaymentMode(key)`
+  helper (`'stripe' | 'mock'`), unit-tested.
+- `src/components/payments/refund-payment-button.tsx` — workshop-side full
+  refund: fetches the order payment, renders only for `succeeded` payments,
+  `ConfirmDialog` flow calling `refundPayment`, PT-BR copy.
+- `src/services/payment-service.test.ts`, `src/components/payments/payment-mode.test.ts`
+  — Vitest slices (mocked `api` endpoint building; mode resolution).
+
+## Modified files
+
+- `src/pages/client/services-page.tsx` — "Pagar" button on completed orders
+  (with `final_cost`) opens `PaymentDialog`; paid orders show "Avaliar
+  oficina" reusing `RatingModal` with `serviceOrderId`; both refresh the list
+  after success.
+- `src/pages/client/rating-modal.tsx` — accepts optional `serviceOrderId` and
+  sends `service_order_id` on create (order-anchored review).
+- `src/pages/client/service-status.ts` — `STATUS_META` gains `paid` ("Pago")
+  and `refunded` ("Reembolsado") entries (+ test coverage).
+- `src/services/service-service.tsx` — `ServiceOrder.status` union gains
+  `paid`/`refunded`.
+- `src/services/workshop-rating-service.tsx` — `WorkshopRatingCreate` accepts
+  optional `service_order_id` (+ test coverage for the order payload).
+- `src/pages/workshop/orders-page.tsx` / `client-orders-page.tsx` — payment
+  state captions in the order dialog, `RefundPaymentButton` on paid orders,
+  `paid`/`refunded` in `getStatusColor`.
+- `src/pages/workshop/dashboard-page.tsx` — activity badges render Pago /
+  Reembolsado with matching colors; `src/pages/client/dashboard-page.tsx`
+  status union gains `paid`/`refunded` (STATUS_META-driven).
+- `package.json` — `@stripe/stripe-js` + `@stripe/react-stripe-js` dependencies.

@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-15
 Branch: feature/2026-08-15-payment-processing
-Status: Planned
+Status: Implemented (Phase 6 complete on 2026-08-15)
 
 Context: Phase 6 of `specs/ROADMAP.md` — the last functional MVP gap. Today a
 service order ends at `completed` and no money changes hands: the
