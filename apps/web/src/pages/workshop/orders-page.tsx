@@ -31,6 +31,11 @@ import { Edit as EditIcon, Visibility as ViewIcon, Add as AddIcon } from '@mui/i
 
 import { useAuth } from '../../context/auth-context';
 import { serviceService } from '../../services/service-service';
+import PartsForm, {
+  createEmptyPartsValue,
+  normalizePartsValue,
+  type PartsFormValue,
+} from '../../components/service-orders/parts-form';
 
 interface Service {
   id: number;
@@ -46,7 +51,9 @@ interface Service {
   final_cost?: number;
 }
 
-function getStatusColor(status: string) {
+type StatusChipColor = 'success' | 'info' | 'warning' | 'primary' | 'error' | 'default';
+
+function getStatusColor(status: string): StatusChipColor {
   switch (status) {
     case 'completed':
       return 'success';
@@ -57,6 +64,7 @@ function getStatusColor(status: string) {
     case 'confirmed':
       return 'primary';
     case 'cancelled':
+    case 'rejected':
       return 'error';
     default:
       return 'default';
@@ -72,6 +80,7 @@ export default function WorkshopOrdersPage() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [partsForm, setPartsForm] = useState<PartsFormValue>(createEmptyPartsValue());
 
   useEffect(() => {
     fetchServices();
@@ -106,6 +115,7 @@ export default function WorkshopOrdersPage() {
   const handleViewOrder = (service: Service) => {
     setSelectedService(service);
     setEditNotes(service.workshop_notes || '');
+    setPartsForm(createEmptyPartsValue());
     setOpenDialog(true);
   };
 
@@ -124,7 +134,21 @@ export default function WorkshopOrdersPage() {
 
     try {
       setUpdating(true);
-      const payload = { workshop_notes: editNotes };
+      const payload: Record<string, unknown> = { workshop_notes: editNotes };
+
+      if (action === 'complete') {
+        const normalized = normalizePartsValue(partsForm);
+        if (normalized.parts.length > 0) {
+          payload.parts = normalized.parts;
+        }
+        if (normalized.laborDescription) {
+          payload.labor_description = normalized.laborDescription;
+        }
+        if (normalized.laborCost !== null) {
+          payload.labor_cost = normalized.laborCost;
+        }
+      }
+
       const updatedService = action === 'start'
         ? await serviceService.startServiceOrder(selectedService.id, payload)
         : action === 'complete'
@@ -132,7 +156,7 @@ export default function WorkshopOrdersPage() {
           : await serviceService.cancelServiceOrder(selectedService.id, payload);
 
       refreshSelectedService(updatedService);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating service:', err);
     } finally {
       setUpdating(false);
@@ -211,7 +235,7 @@ export default function WorkshopOrdersPage() {
                   <TableCell>
                     <Chip
                       label={service.status.replace('_', ' ').toUpperCase()}
-                      color={getStatusColor(service.status) as any}
+                      color={getStatusColor(service.status)}
                       variant="outlined"
                       size="small"
                     />
@@ -246,7 +270,7 @@ export default function WorkshopOrdersPage() {
       )}
 
       {/* View/Edit Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>Order Details</DialogTitle>
         <Divider />
 
@@ -276,7 +300,7 @@ export default function WorkshopOrdersPage() {
                 <Typography variant="subtitle2" color="textSecondary">
                   Status
                 </Typography>
-                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status) as any} variant="outlined" size="small" />
+                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status)} variant="outlined" size="small" />
               </Grid>
 
               {/* Editable Workshop Notes */}
@@ -299,6 +323,13 @@ export default function WorkshopOrdersPage() {
                   {selectedService.progress_percentage}%
                 </Typography>
               </Grid>
+
+              {selectedService.status === 'in_progress' && (
+                <Grid item xs={12}>
+                  <Divider sx={{ mb: 2 }} />
+                  <PartsForm value={partsForm} onChange={setPartsForm} />
+                </Grid>
+              )}
 
             </Grid>
           )}

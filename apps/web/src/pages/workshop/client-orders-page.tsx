@@ -33,6 +33,11 @@ import { serviceService } from '../../services/service-service';
 import { workshopClientService } from '../../services/workshop-client-service';
 import type { WorkshopClient } from '../../services/workshop-client-service';
 import { SERVICE_TYPE_OPTIONS, type ServiceHistoryType } from '../../services/service-history-service';
+import PartsForm, {
+  createEmptyPartsValue,
+  normalizePartsValue,
+  type PartsFormValue,
+} from '../../components/service-orders/parts-form';
 
 interface Service {
   id: number;
@@ -53,8 +58,6 @@ interface Service {
 interface CompletionFormState {
   service_type: ServiceHistoryType | '';
   current_mileage: string;
-  labor_cost: string;
-  parts_cost: string;
   invoice_number: string;
   warranty_until_date: string;
   warranty_mileage: string;
@@ -63,14 +66,14 @@ interface CompletionFormState {
 const initialCompletionForm: CompletionFormState = {
   service_type: '',
   current_mileage: '',
-  labor_cost: '',
-  parts_cost: '',
   invoice_number: '',
   warranty_until_date: '',
   warranty_mileage: '',
 };
 
-function getStatusColor(status: string) {
+type StatusChipColor = 'success' | 'info' | 'warning' | 'primary' | 'error' | 'default';
+
+function getStatusColor(status: string): StatusChipColor {
   switch (status) {
     case 'completed':
       return 'success';
@@ -81,6 +84,7 @@ function getStatusColor(status: string) {
     case 'confirmed':
       return 'primary';
     case 'cancelled':
+    case 'rejected':
       return 'error';
     default:
       return 'default';
@@ -99,6 +103,7 @@ export default function ClientOrdersPage() {
   const [editNotes, setEditNotes] = useState('');
   const [updating, setUpdating] = useState(false);
   const [completionForm, setCompletionForm] = useState<CompletionFormState>(initialCompletionForm);
+  const [partsForm, setPartsForm] = useState<PartsFormValue>(createEmptyPartsValue());
 
   useEffect(() => {
     if (!clientId) return;
@@ -132,6 +137,7 @@ export default function ClientOrdersPage() {
     setSelectedService(service);
     setEditNotes(service.workshop_notes || '');
     setCompletionForm(initialCompletionForm);
+    setPartsForm(createEmptyPartsValue());
     setOpenDialog(true);
   };
 
@@ -156,13 +162,22 @@ export default function ClientOrdersPage() {
       if (action === 'complete') {
         if (completionForm.service_type) payload.service_type = completionForm.service_type;
         if (completionForm.current_mileage) payload.current_mileage = Number(completionForm.current_mileage);
-        if (completionForm.labor_cost) payload.labor_cost = Number(completionForm.labor_cost);
-        if (completionForm.parts_cost) payload.parts_cost = Number(completionForm.parts_cost);
         if (completionForm.invoice_number) payload.invoice_number = completionForm.invoice_number;
         if (completionForm.warranty_until_date) {
           payload.warranty_until_date = new Date(completionForm.warranty_until_date).toISOString();
         }
         if (completionForm.warranty_mileage) payload.warranty_mileage = Number(completionForm.warranty_mileage);
+
+        const normalized = normalizePartsValue(partsForm);
+        if (normalized.parts.length > 0) {
+          payload.parts = normalized.parts;
+        }
+        if (normalized.laborDescription) {
+          payload.labor_description = normalized.laborDescription;
+        }
+        if (normalized.laborCost !== null) {
+          payload.labor_cost = normalized.laborCost;
+        }
       }
 
       const updatedService = action === 'start'
@@ -260,7 +275,7 @@ export default function ClientOrdersPage() {
                   <TableCell>
                     <Chip
                       label={service.status.replace('_', ' ').toUpperCase()}
-                      color={getStatusColor(service.status) as any}
+                      color={getStatusColor(service.status)}
                       variant="outlined"
                       size="small"
                     />
@@ -295,7 +310,7 @@ export default function ClientOrdersPage() {
       )}
 
       {/* View/Edit Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>Order Details</DialogTitle>
         <Divider />
         <DialogContent sx={{ mt: 2 }}>
@@ -313,7 +328,7 @@ export default function ClientOrdersPage() {
 
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="textSecondary">Status</Typography>
-                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status) as any} variant="outlined" size="small" />
+                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status)} variant="outlined" size="small" />
               </Grid>
 
               <Grid item xs={12}>
@@ -369,25 +384,8 @@ export default function ClientOrdersPage() {
                       InputProps={{ inputProps: { min: 0 } }}
                     />
                   </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      label="Mão de Obra (R$)"
-                      value={completionForm.labor_cost}
-                      onChange={handleCompletionFormChange('labor_cost')}
-                      InputProps={{ inputProps: { min: 0, step: '0.01' } }}
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      label="Peças (R$)"
-                      value={completionForm.parts_cost}
-                      onChange={handleCompletionFormChange('parts_cost')}
-                      InputProps={{ inputProps: { min: 0, step: '0.01' } }}
-                    />
+                  <Grid item xs={12}>
+                    <PartsForm value={partsForm} onChange={setPartsForm} />
                   </Grid>
                   <Grid item xs={6}>
                     <TextField
