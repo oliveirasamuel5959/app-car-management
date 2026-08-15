@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/main-layout';
 import ProtectedRoute from './components/routing/protected-route';
+import RealtimeToasts from './components/realtime/realtime-toasts';
 import { AuthProvider } from './context/auth-context';
 import { NotificationProvider } from './context/notifications-context';
 import { RealtimeProvider } from './context/realtime-context';
@@ -13,8 +14,9 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <RealtimeProvider>
+      <RealtimeProvider>
+        <RealtimeToasts />
+        <NotificationProvider>
           <Router>
             <Routes>
               {/* Auth routes without MainLayout */}
@@ -50,8 +52,8 @@ function App() {
               } />
             </Routes>
           </Router>
-        </RealtimeProvider>
-      </NotificationProvider>
+        </NotificationProvider>
+      </RealtimeProvider>
     </AuthProvider>
   );
 }

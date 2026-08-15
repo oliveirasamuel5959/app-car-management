@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/auth-context";
 import { useEffect, useState } from "react";
+import { useRealtimeRefresh } from "../../realtime/use-realtime-refresh";
 import { serviceService } from "../../services/service-service";
 
 interface Service {
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [activeService, setActiveService] = useState<Service | null>(null);
   const [summary, setSummary] = useState<ServiceSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshKey = useRealtimeRefresh('order_status_change');
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -50,7 +52,7 @@ export default function DashboardPage() {
     };
 
     fetchServices();
-  }, []);
+  }, [refreshKey]);
 
   const handleGoToService = () => {
     if (!activeService) return;

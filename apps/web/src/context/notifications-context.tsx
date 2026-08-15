@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import { useAuth } from './auth-context';
+import { useRealtime } from './realtime-context';
 
 interface Notification {
   id: number;
@@ -28,6 +29,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, token } = useAuth();
+  const { subscribe } = useRealtime();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -84,7 +86,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Poll for new notifications every 30 seconds
+  // Poll for new notifications every 30 seconds (fallback when the socket
+  // is down; the WS event below usually arrives first)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchNotifications();
@@ -92,6 +95,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  // Live update: the REST list stays the source of truth, the WS event just
+  // triggers the refetch.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    return subscribe('notification_new', () => {
+      fetchNotifications();
+    });
+  }, [isAuthenticated, subscribe, fetchNotifications]);
 
   return (
     <NotificationContext.Provider

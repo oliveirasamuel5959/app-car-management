@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { serviceService } from '../../services/service-service';
+import { useRealtime } from '../../context/realtime-context';
 import { useParams } from 'react-router-dom';
 
 interface Service {
@@ -44,6 +45,14 @@ export default function ServicesPage() {
 
     fetchServices();
   }, []);
+
+  // Live reload when the workshop changes an order status
+  const { subscribe } = useRealtime();
+  useEffect(() => {
+    return subscribe('order_status_change', () => {
+      reloadServices().catch(console.error);
+    });
+  }, [subscribe]);
 
   if (loading) {
     return (
