@@ -1,6 +1,6 @@
 # 🗺 Implementation Roadmap
 
-**Current Status:** Pre-Alpha (Phases 1–5 Complete)  
+**Current Status:** Pre-Alpha (Phases 1–6 Complete)  
 **Target:** MVP Ready in ~8 weeks  
 **Scale:** Hundreds of tenants with tenant-scoped isolation
 
@@ -102,7 +102,6 @@
 
 ### ❌ Not Yet Implemented
 
-- ❌ **Payment processing** (Stripe integration, split payments)
 - ❌ **Search with filters** (service types, rating, availability)
 - ❌ **Broader unit & integration coverage beyond tenant foundation**
 - ❌ **Deployment pipeline** (Docker, CI/CD)
@@ -581,6 +580,16 @@ matching flow — acceptance is an order lifecycle transition). Spec:
 
 **Objective:** Integrate Stripe split payment API only after the core marketplace workflow is operational end to end.
 
+**Status:** Complete on 2026-08-15 — reconciled with the codebase: payments run
+on the platform account with 10% fee bookkeeping in DB (no connected
+accounts); the client pays `final_cost` after completion via **Stripe Checkout
+redirect** (`POST /payments/service-orders/{id}/checkout` → Stripe-hosted
+payment page → `/payments/return` → server-side session verification);
+lifecycle gains terminal `paid`/`refunded`; workshops issue full refunds;
+order-anchored paid-gated reviews (Phase 3 leftover) land on
+`workshop_ratings.service_order_id`; the mock provider shares the same
+redirect flow for local dev. Spec: `specs/2026-08-15-payment-processing/`.
+
 #### 6.1 Stripe Account Setup
 - Create Stripe marketplace account
 - Configure split payment rules (10% platform fee)
@@ -833,9 +842,8 @@ matching flow — acceptance is an order lifecycle transition). Spec:
 ### 🔴 Critical
 1. **No tenant_id on models** — All data currently mixed in single user space
 2. **No multi-tenancy enforcement** — Users can theoretically access all data
-3. **No payment integration** — Cannot charge for service orders
-4. **WebSocket not fully integrated** — Real-time messages not working
-5. **Existing frontend/backend contract drift** — some pages already exist but still assume outdated endpoint paths or response shapes
+3. **WebSocket not fully integrated** — Real-time messages not working
+4. **Existing frontend/backend contract drift** — some pages already exist but still assume outdated endpoint paths or response shapes
 
 ### 🟡 Important
 1. **No database migrations written** — Cannot initialize empty database
@@ -862,7 +870,7 @@ matching flow — acceptance is an order lifecycle transition). Spec:
 | 3 | 3 | Reviews & ratings | ✅ |
 | 3.5 | 4 | Search and filtering | 🚧 |
 | 4.5 | 5 | WebSocket real-time | ✅ |
-| 5.5 | 6 | Stripe integration and payment flow | 🚧 |
+| 5.5 | 6 | Stripe integration and payment flow | ✅ |
 | 6.5 | 7 | Test suite complete and polish pass | 🚧 |
 | 7.5 | 8 | Deployment and documentation | 🚧 |
 | **8** | **MVP Ready** | **All systems tested in staging** | 🎯 |
