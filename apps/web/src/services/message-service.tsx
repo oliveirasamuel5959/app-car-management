@@ -1,6 +1,6 @@
 import { api } from './api';
 
-const WS_BASE_URL = 'ws://localhost:5500';
+const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL ?? 'ws://localhost:5500';
 
 export interface Message {
   id: number;
