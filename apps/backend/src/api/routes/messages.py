@@ -17,15 +17,12 @@ logger = logging.getLogger(__name__)
 
 from src.core.auth import authenticate_websocket, get_current_user
 from src.core.file_uploader import handle_file_upload
-from src.core.websocket_manager import ConnectionManager
+from src.core.websocket_manager import manager
 from src.db.database import get_session
 from src.schemas.messages import FileUploadResponse, MessageRead, WSIncomingMessage
 from src.services.messages import MessageService
 
 router = APIRouter()
-
-# Module-level singleton so all connections share state
-manager = ConnectionManager()
 
 
 # ─── WebSocket ────────────────────────────────────────────────────────────────
@@ -47,12 +44,25 @@ async def websocket_endpoint(
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    await manager.connect(websocket, user.id)
+    await manager.connect(websocket, user.tenant_id, user.id)
     svc = MessageService(db)
 
     try:
         while True:
             raw = await websocket.receive_text()
+            try:
+                raw_data = json.loads(raw)
+            except json.JSONDecodeError:
+                await websocket.send_text(
+                    json.dumps({"type": "error", "message": "Invalid message format"})
+                )
+                continue
+
+            # Application-level keepalive: reply pong to client pings
+            if isinstance(raw_data, dict) and raw_data.get("type") == "ping":
+                await websocket.send_text(json.dumps({"type": "pong"}))
+                continue
+
             try:
                 payload = WSIncomingMessage.model_validate_json(raw)
             except Exception:
@@ -81,12 +91,13 @@ async def websocket_endpoint(
                         "message_type": db_message.message_type,
                     }
                     logger.info(
-                        f"[WS] Routing message: sender={user.id} -> receiver={payload.receiver_id} | "
-                        f"online={list(manager.active_connections.keys())}"
+                        f"[WS] Routing message: sender={user.id} -> receiver={payload.receiver_id}"
                     )
                     # Deliver to recipient (if online) and echo back to sender
-                    await manager.send_to_user(payload.receiver_id, envelope)
-                    await manager.send_to_user(user.id, envelope)
+                    await manager.send_to_user(
+                        user.tenant_id, payload.receiver_id, envelope
+                    )
+                    await manager.send_to_user(user.tenant_id, user.id, envelope)
                 except ValueError as exc:
                     await websocket.send_text(
                         json.dumps({"type": "error", "message": str(exc)})
@@ -94,6 +105,7 @@ async def websocket_endpoint(
 
             elif payload.type == "typing_start":
                 await manager.send_to_user(
+                    user.tenant_id,
                     payload.receiver_id,
                     {
                         "type": "user_typing",
@@ -105,6 +117,7 @@ async def websocket_endpoint(
 
             elif payload.type == "typing_stop":
                 await manager.send_to_user(
+                    user.tenant_id,
                     payload.receiver_id,
                     {
                         "type": "user_typing",
@@ -115,7 +128,7 @@ async def websocket_endpoint(
                 )
 
     except WebSocketDisconnect:
-        manager.disconnect(user.id)
+        manager.disconnect(user.tenant_id, user.id, websocket)
 
 
 # ─── Conversation History ─────────────────────────────────────────────────────
@@ -176,8 +189,10 @@ async def upload_file_to_user(
             "file_size": file_info["file_size"],
             "mime_type": file_info["mime_type"],
         }
-        await manager.send_to_user(receiver_id, envelope)
-        await manager.send_to_user(current_user["user_id"], envelope)
+        await manager.send_to_user(current_user["tenant_id"], receiver_id, envelope)
+        await manager.send_to_user(
+            current_user["tenant_id"], current_user["user_id"], envelope
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
