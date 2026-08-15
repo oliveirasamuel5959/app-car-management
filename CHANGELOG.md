@@ -3,6 +3,7 @@
 Chronological project changes grouped by commit date. Newest entries appear first.
 
 ## 2026-08-15
+- FEAT: Client UX redesign — "Meus Serviços" page rebuilt as a service-order sheet (status accent rail, "OS #" eyebrow, fact grid with Entrada/Previsão/Custos in tabular numbers, styled workshop notes; progress bar and redundant timeline removed); client dashboard rebuilt with a current-service snapshot, compact stat tiles, and clickable recent-order rows ("open my order" button removed); all copy moved to PT-BR; new sidebar entry "Meus Serviços" + base route `/client/services`
 - FEAT: WebSocket real-time (Phase 5) — `ConnectionManager` rekeyed to `(tenant_id, user_id) → set[WebSocket]` (multi-tab, tenant-scoped broadcast, dead-socket pruning, str/UUID key normalization); application-level `ping`/`pong` keepalive on `/messages/ws?token=`
 - FEAT: All WS pushes moved to the service layer via `src/core/ws_push.py` (running loop → task; threadpool route → `run_coroutine_threadsafe` on the lifespan-captured loop; else inline): `new_message` (chat + uploads, per-user tenant keys for cross-tenant conversations), `notification_new`, `order_status_change`, `schedule_status_change`, `rating_received`
 - FEAT: Schedule/rating notification helpers moved out of the routes into `ScheduleService` / `WorkshopRatingService`; `authenticate_websocket` and schedule creation normalize JWT `tenant_id` strings to UUID at the boundary
