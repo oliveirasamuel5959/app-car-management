@@ -51,7 +51,7 @@ Backend (`cd apps/backend`, uses uv — run via `uv run` ):
 - `pytest` — run tests; single test: `pytest tests/test_service_order_lifecycle.py::test_name`.
 - Format with `black` + `isort` (both are project deps).
 
-Web (`cd apps/web`): `npm run dev` (Vite on **port 5173**), `npm run build` (`tsx script/build.ts`), `npm run check` (`tsc`).
+Web (`cd apps/web`): `npm run dev` (Vite on **port 5173**), `npm run build` (`vite build`), `npm run check` (`tsc`).
 
 Local DB: `docker compose -f apps/docker/docker-compose.yml up -d db` → Postgres 16, db `car_db`, user/pass `saas`/`saas`, port 5432. `alembic.ini` hardcodes this URL; the app reads `DATABASE_URL` from `.env`.
 
