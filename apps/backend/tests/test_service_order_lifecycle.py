@@ -257,6 +257,25 @@ def test_create_requires_estimated_cost_and_finish_date():
         )
 
 
+def test_create_without_client_vehicle_raises_pt_br_error():
+    session, tenant, workshop_user, client_user, _ = seed_service_graph()
+    session.query(Vehicle).delete()
+    session.commit()
+
+    with pytest.raises(ValueError, match="não possui veículo"):
+        ServiceService(session).create_service(
+            ServiceCreate(
+                workshop_client_id=1,
+                name="Brake Replacement",
+                checkin_date=datetime(2026, 6, 3, 9, 0, 0),
+                estimated_finish_date=datetime(2026, 6, 4, 17, 0, 0),
+                estimated_cost=200.0,
+            ),
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+        )
+
+
 def test_workshop_must_follow_transition_matrix():
     session, tenant, workshop_user, client_user, service = seed_service_graph()
     service_service = ServiceService(session)

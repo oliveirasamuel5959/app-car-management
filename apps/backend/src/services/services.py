@@ -103,7 +103,11 @@ class ServiceService:
 
         vehicles = repo_get_vehicles_by_user_id(self.db, client.user_id, tenant_id)
         if not vehicles:
-            raise ValueError(f"No vehicle found for user id {client.user_id}")
+            raise ValueError(
+                f"O cliente {client.name} não possui veículo cadastrado na sua "
+                "oficina. Peça para o cliente cadastrar o veículo antes de "
+                "criar o orçamento."
+            )
         vehicle = vehicles[0]
 
         logger.info(f"Vehicle info: {vehicle.id}")
