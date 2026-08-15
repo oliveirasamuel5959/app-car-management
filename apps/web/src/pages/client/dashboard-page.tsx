@@ -54,7 +54,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const nextSummary = await serviceService.getClientSummary();
+        const nextSummary: ServiceSummary = await serviceService.getClientSummary();
         setSummary(nextSummary);
 
         const recentOrders = Array.isArray(nextSummary.recent_orders) ? nextSummary.recent_orders : [];
