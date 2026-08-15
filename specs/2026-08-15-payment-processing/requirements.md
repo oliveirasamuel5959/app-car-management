@@ -39,19 +39,22 @@ after paying. Follows the service-order lifecycle
   `apps/backend/src/utils/payments.py` with two implementations — `StripeProvider`
   (used when `STRIPE_SECRET_KEY` is set) and `MockProvider` (used otherwise or
   when `PAYMENT_PROVIDER=mock`), so local dev and tests run without Stripe keys.
-- **Payment flow (post-completion)**: client pays the `final_cost` of a
-  `completed` order → order becomes `paid`. Endpoints:
-  - `POST /payments/service-orders/{service_order_id}/intent` — **CLIENT**,
-    own completed order. Creates (or reuses) the pending payment row and the
-    provider intent; returns `{payment_id, client_secret, amount_cents}`.
-    The amount is derived server-side from `final_cost` — the client never
-    sends it.
+- **Payment flow (post-completion, Stripe Checkout redirect)**: client pays
+  the `final_cost` of a `completed` order → order becomes `paid`. Endpoints:
+  - `POST /payments/service-orders/{service_order_id}/checkout` — **CLIENT**,
+    own completed order. Creates (or reuses) the pending payment row and a
+    provider Checkout Session (Stripe-hosted payment page); returns
+    `{payment_id, checkout_url, amount_cents}`. The amount is derived
+    server-side from `final_cost` — the client never sends it. The frontend
+    redirects the browser to `checkout_url`; Stripe redirects back to
+    `FRONTEND_URL/payments/return?payment_id=N&session_id={CHECKOUT_SESSION_ID}`.
   - `POST /payments/{payment_id}/confirm` — **CLIENT**, own payment. Backend
-    verifies the intent with the provider (synchronous verification), marks the
-    payment `succeeded`, transitions the order `completed → paid`, notifies the
-    workshop (Notification + `order_status_change` WS push). Idempotent: a
-    confirm on an already-succeeded payment returns the current state instead
-    of double-processing.
+    retrieves the Checkout Session with the provider (synchronous
+    verification: session must be `complete`), marks the payment `succeeded`,
+    transitions the order `completed → paid`, notifies the workshop
+    (Notification + `order_status_change` WS push). Idempotent: a confirm on
+    an already-succeeded payment returns the current state instead of
+    double-processing.
   - `GET /payments/service-orders/{service_order_id}` — role-aware payment
     status (client owner or workshop tenant).
   - `POST /payments/{payment_id}/refund` — **WORKSHOP**, own tenant, full
@@ -109,35 +112,38 @@ the MVP and impossible to exercise locally. The columns preserve the
 commission model and make a later Connect migration a data + provider change,
 not a schema change.
 
-### D2 — Provider abstraction with mock fallback
+### D2 — Provider abstraction with mock fallback, Checkout-based
 
-`PaymentProvider` protocol with `create_intent(amount_cents, order_id)`,
-`retrieve_intent(intent_id)`, and `refund(intent_id)`. Selection:
-`PAYMENT_PROVIDER=mock` or missing `STRIPE_SECRET_KEY` → `MockProvider`
-(deterministic fake intents that always succeed on confirm); otherwise
-`StripeProvider` (test-mode PaymentIntent with `metadata={order_id}`). The
-service layer only talks to the protocol — never to the Stripe SDK directly —
-so tests exercise the real payment flow without network access. The frontend
-mirrors this: no `VITE_STRIPE_PUBLISHABLE_KEY` → "Simular pagamento" button
-that calls confirm directly; with the key → Stripe Elements.
+`PaymentProvider` protocol with `create_checkout_session(amount_cents,
+order_id, success_url, cancel_url)`, `retrieve_checkout_session(session_id)`,
+and `refund(reference)`. Selection: `PAYMENT_PROVIDER=mock` or missing
+`STRIPE_SECRET_KEY` → `MockProvider` (a synthetic session id + a success URL
+pointing at the local return page, always `complete` on retrieve); otherwise
+`StripeProvider` (test-mode Stripe Checkout Session, `metadata={order_id}`).
+The service layer only talks to the protocol — never to the Stripe SDK
+directly — so tests exercise the real payment flow without network access.
+Both providers share the same redirect flow; the frontend needs no Stripe SDK
+at all.
 
 ### D3 — Amounts in cents, derived server-side
 
 Payment amounts are stored as integer cents (Stripe-native, no float drift).
 `amount_cents = round(final_cost * 100)` computed from the order's `final_cost`
-at intent creation; the client never submits an amount. Missing/zero
+at checkout creation; the client never submits an amount. Missing/zero
 `final_cost` → 400 ("no final cost for this order"). Fee math:
 `platform_fee_cents = round(amount_cents * 0.10)`,
 `workshop_amount_cents = amount_cents - platform_fee_cents`.
 
-### D4 — Synchronous verification, webhook deferred
+### D4 — Stripe Checkout redirect, synchronous verification, webhook deferred
 
-The frontend confirms the PaymentIntent client-side (Stripe.js Elements or
-mock button), then the backend `confirm` endpoint re-verifies the intent
-status with the provider before marking anything paid — the frontend claim is
-never trusted. Webhook reconciliation (`/payments/webhook` + signature
-verification) is a documented follow-up; it requires a public URL/tunnel that
-local dev does not have.
+The client is redirected to Stripe's hosted payment page (Checkout Session —
+no card fields inside the app, PCI handled by Stripe). Stripe redirects back
+to the app's return page with the session id; the backend `confirm` endpoint
+retrieves the session and only marks the order paid when the session is
+`complete` — the frontend claim is never trusted. Webhook reconciliation
+(`/payments/webhook` + signature verification) is a documented follow-up; it
+requires a public URL/tunnel that local dev does not have. (Revised from the
+inline Stripe Elements design after user review on 2026-08-15.)
 
 ### D5 — `paid` and `refunded` terminal states; no re-payment after refund
 
@@ -148,13 +154,14 @@ order is the recovery path, matching how `rejected` works. `cancelled` and
 `rejected` remain reachable exactly as today (a paid order cannot be
 cancelled).
 
-### D6 — One payment row per order, reused intent
+### D6 — One payment row per order, reused session
 
-`payments.service_order_id` is unique. A second intent request for an order
-with a `pending` payment returns the same row + intent instead of creating a
-new one; a `succeeded` payment returns the stored state; `failed` allows one
-retry (new intent on the same row). `stripe_payment_intent_id` is recorded on
-the row for the deferred webhook work.
+`payments.service_order_id` is unique. A second checkout request for an order
+with a `pending` payment returns the same row + a new session instead of
+creating a new row; a `succeeded` payment returns the stored state; `failed`
+allows one retry (new session on the same row). The provider session id is
+recorded on `stripe_payment_intent_id` (kept as the generic provider-reference
+column) for the deferred webhook work.
 
 ### D7 — Order-anchored reviews reuse `workshop_ratings`
 
@@ -197,12 +204,12 @@ refetches dashboards/orders on this event.
 
 - **Float → cents rounding**: `final_cost` is a Float BRL value; `round(x *
   100)` can round-to-even on `.5` cents. Accepted — display never changes, and
-  the cent value is written once at intent creation.
+  the cent value is written once at checkout creation.
 - **Missing Stripe keys locally**: the mock provider makes the whole flow
   testable without keys, but the Stripe path itself needs a manual test-mode
   run with real test keys before merge (see validation V4).
 - **Idempotency**: double-clicks on "Pagar"/confirm must not create duplicate
-  intents or double-notify. Covered by D6 + confirm idempotency; explicit
+  sessions or double-notify. Covered by D6 + confirm idempotency; explicit
   tests.
 - **Status-map sprawl**: `paid`/`refunded` must land in every status map
   (client `STATUS_META`, workshop label/color maps, dashboards, order tables)
@@ -214,5 +221,5 @@ refetches dashboards/orders on this event.
   survives a later refund (the service did happen); the gate is checked at
   review-creation time only.
 - **`stripe` SDK + mock symmetry**: provider methods must return identical
-  shapes (`(intent_id, client_secret)`, status strings) or the service layer
+  shapes (`(session_id, checkout_url)`, status strings) or the service layer
   drifts; one protocol, both implementations tested against it.

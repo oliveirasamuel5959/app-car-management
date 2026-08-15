@@ -59,6 +59,11 @@ issue full refunds; and clients can review the workshop after a paid order
    webhooks deferred (documented follow-up).
 4. Extras in scope: **order-anchored reviews** (PAID-gated, Phase 3 leftover)
    and a **refund flow** (workshop-initiated, full amount).
+5. **Revision (2026-08-15, user review):** payment UX switched from inline
+   Stripe Elements to **Stripe Checkout redirect** (Stripe-hosted payment
+   page). The intent endpoint is replaced by a checkout-session endpoint;
+   the frontend drops the Stripe SDK entirely and redirects to the session
+   URL; TGs 8-9 below implement the revision.
 
 ## Reference implementation to mirror
 
@@ -236,3 +241,62 @@ issue full refunds; and clients can review the workshop after a paid order
   tick the checkboxes; manual Stripe test-mode pass with real test keys (V4).
 - **Verificação:** `cd apps/web && npm run check && npm run build && npm run test`
 - **Commit:** `test(web): payment adapter + dialog mock-mode + status meta`
+
+## TG8 — Backend: Checkout Session flow (replaces intent, D4 revision)
+
+- **8.1** `apps/backend/src/utils/payments.py`: protocol becomes
+  `create_checkout_session(amount_cents, order_id, success_url, cancel_url)
+  -> tuple[str, str]`, `retrieve_checkout_session(session_id) -> str`
+  (`complete`/`open`), `refund(reference) -> None`. `MockProvider`: synthetic
+  session id + success URL (replaces the `{CHECKOUT_SESSION_ID}` template in
+  `success_url`), retrieve always `complete`, refund no-op. `StripeProvider`:
+  `stripe.checkout.Session.create(mode="payment", line_items=[price_data
+  brl, unit_amount], metadata={service_order_id}, success_url, cancel_url)`
+  → (session.id, session.url); retrieve → session.status; refund → refund the
+  session's `payment_intent`.
+- **8.2** `apps/backend/src/core/config.py`: add `FRONTEND_URL: str =
+  "http://localhost:5173"`.
+- **8.3** `apps/backend/src/schemas/payments.py`: `PaymentCheckoutRead`
+  (payment_id, checkout_url, amount_cents) replaces `PaymentIntentRead`.
+- **8.4** `apps/backend/src/services/payments.py`: `create_payment_intent` →
+  `create_checkout` (same completed/final-cost gates and row reuse; builds
+  `success_url = {FRONTEND_URL}/payments/return?payment_id={id}&session_id={CHECKOUT_SESSION_ID}`
+  and `cancel_url = {FRONTEND_URL}/payments/return?canceled=1`; stores the
+  session id on the row). `confirm_payment` verifies via
+  `retrieve_checkout_session` (`complete` → succeeded, else failed);
+  `refund_payment` passes the stored session id.
+- **8.5** `apps/backend/src/api/routes/payments.py`: `POST
+  /service-orders/{service_order_id}/checkout` replaces the intent route
+  (same CLIENT gate, ValueError→400, None→404).
+- **8.6** Tests: rewrite the intent slice as checkout tests
+  (`test_checkout_requires_completed_order`, `test_checkout_requires_final_cost`,
+  `test_fee_math_ten_percent`, `test_checkout_reuses_pending_payment_row`,
+  `test_checkout_raises_when_order_already_paid`,
+  `test_checkout_blocks_when_succeeded_payment_row_exists`,
+  `test_confirm_pays_order_and_notifies_workshop`,
+  `test_confirm_is_idempotent`,
+  `test_confirm_marks_failed_when_session_not_complete` — stub provider
+  returning `open`, `test_refund_requires_succeeded_payment`,
+  `test_refund_workshop_flow_notifies_client`,
+  `test_cross_tenant_payment_denied`); realtime tests call `create_checkout`.
+- **Verificação:** `cd apps/backend && uv run pytest tests/test_payments.py tests/test_realtime_events.py tests/test_service_order_lifecycle.py -q`
+- **Commit:** `feat(api): Stripe Checkout Session flow replaces payment intent (payment processing)`
+
+## TG9 — Frontend: Checkout redirect + return page (D4 revision)
+
+- **9.1** `apps/web/src/services/payment-service.tsx`: `createCheckout(serviceOrderId)
+  -> {payment_id, checkout_url, amount_cents}` replaces `createPaymentIntent`;
+  `confirmPayment`/`getPaymentForOrder`/`refundPayment` unchanged; test
+  updated (RED first).
+- **9.2** `apps/web/src/components/payments/payment-dialog.tsx`: on open call
+  `createCheckout`, render the amount + a "Pagar com Stripe" button that sets
+  `window.location.href = checkout_url`; loading/error states stay. Remove the
+  Stripe Elements card form, the mock button, `payment-mode.ts` + its test,
+  and the `@stripe/stripe-js`/`@stripe/react-stripe-js` dependencies.
+- **9.3** New `apps/web/src/pages/payment-return-page.tsx` at
+  `/payments/return?payment_id=&session_id=&canceled=`: canceled →
+  redirect `/client/services`; otherwise calls `confirmPayment(payment_id)`
+  then navigates to `/client/services` (PT-BR loading/error states). Register
+  in `src/routes/routes.tsx` as a protected CLIENT route.
+- **Verificação:** `cd apps/web && npm run check && npm run build && npm run test`
+- **Commit:** `feat(web): Stripe Checkout redirect + payment return page (payment processing)`

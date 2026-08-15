@@ -35,7 +35,7 @@ workshop after paying. Checked during implementation on 2026-08-15.
 ## V4 — Backend: behavior tests (TG4)
 
 - [x] `uv run pytest tests/test_payments.py -q` — 18 passed
-- [x] `uv run pytest tests/test_payments.py::test_intent_requires_completed_order -q` passes (was RED before TG2)
+- [x] `uv run pytest tests/test_payments.py::test_checkout_requires_completed_order -q` passes (rewritten for the Checkout revision, TG8)
 - [x] `uv run pytest tests/test_payments.py::test_fee_math_ten_percent -q` passes (100.50 → 10050/1005/9045 cents)
 - [x] `uv run pytest tests/test_payments.py::test_confirm_pays_order_and_notifies_workshop -q` passes
 - [x] `uv run pytest tests/test_payments.py::test_confirm_is_idempotent -q` passes (no double notification)
@@ -49,7 +49,7 @@ workshop after paying. Checked during implementation on 2026-08-15.
 
 ## V5 — Frontend: adapter + dialog + review after payment (TG5)
 
-- [x] `grep -n "createPaymentIntent\|confirmPayment\|refundPayment" apps/web/src/services/payment-service.tsx` shows the four calls
+- [x] `grep -n "createCheckout\|confirmPayment\|refundPayment" apps/web/src/services/payment-service.tsx` shows the four calls (createCheckout after the TG9 revision)
 - [x] `cd apps/web && npm run test` — Vitest green (8 files, 32 tests), including `payment-service.test.ts` and `STATUS_META.paid/refunded`
 - [x] `grep -rn "any" apps/web/src/components/payments/ apps/web/src/services/payment-service.tsx` returns nothing
 - [x] `grep -n "serviceOrderId" apps/web/src/pages/client/rating-modal.tsx` shows the optional order link
@@ -80,6 +80,27 @@ npm run check && npm run build && npm run test
 # 3. Manual flows (V7) against the running stack (mock provider, then Stripe test mode)
 ```
 
+---
+
+## V8 — Backend: Checkout Session flow (TG8, D4 revision)
+
+- [ ] `grep -n "create_checkout_session\|retrieve_checkout_session" apps/backend/src/utils/payments.py` shows the session-based protocol
+- [ ] `grep -n "checkout" apps/backend/src/services/payments.py` shows `create_checkout` (same gates, row reuse, session id stored) and session-verified `confirm_payment`
+- [ ] `grep -n "checkout" apps/backend/src/api/routes/payments.py` shows `POST /service-orders/{service_order_id}/checkout`
+- [ ] `grep -n "FRONTEND_URL" apps/backend/src/core/config.py` shows the return-URL base
+- [ ] `cd apps/backend && uv run pytest tests/test_payments.py tests/test_realtime_events.py -q` — checkout slice green
+- [ ] `cd apps/backend && uv run pytest -q` — full suite green (no regression)
+
+## V9 — Frontend: Checkout redirect + return page (TG9)
+
+- [ ] `grep -n "createCheckout" apps/web/src/services/payment-service.tsx` shows the checkout call
+- [ ] `cd apps/web && npm run test` — Vitest green including the updated payment-service slice
+- [ ] `cd apps/web && npm run check` (tsc) passes
+- [ ] `npm run build` passes
+- [ ] `grep -n "checkout_url" apps/web/src/components/payments/payment-dialog.tsx` shows the redirect
+- [ ] `grep -n "payments/return" apps/web/src/routes/routes.tsx` shows the return page registered (protected CLIENT)
+- [ ] Manual (TG10): with real Stripe test keys, Pay → redirects to Stripe Checkout → 4242 card completes → app shows Pago; transaction visible in the Stripe test dashboard
+
 ## Summary
 
 | Verification | Description | Result |
@@ -91,6 +112,8 @@ npm run check && npm run build && npm run test
 | V5 | Frontend adapter, PaymentDialog, review after payment | ✅ |
 | V6 | Workshop payment state, refund, status maps, tsc/build | ✅ |
 | V7 | Manual flows (mock provider + Stripe test mode) | ⬜ |
+| V8 | Backend Checkout Session flow (revision) | ⬜ |
+| V9 | Frontend Checkout redirect + return page | ⬜ |
 
 > **Phase 6 closed when:** V1–V6 all ✅ (done) and V7 manual flows complete.
 > Prior phases (1–5) show no regression: backend 138 passed, frontend 32 Vitest
