@@ -10,7 +10,8 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
-import { SERVICE_TYPE_LABELS, WorkshopSort } from "../../services/workshop-service";
+import { SERVICE_TYPE_LABELS } from "../../services/workshop-service";
+import type { WorkshopSort } from "../../services/workshop-service";
 
 export interface SearchFilters {
   radiusKm: number;

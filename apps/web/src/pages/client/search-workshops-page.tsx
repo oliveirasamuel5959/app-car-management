@@ -17,16 +17,11 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import {
-  DEFAULT_FILTERS,
-  SearchFilterPanel,
-  SearchFilters,
-} from "./search-filter-panel";
+import { DEFAULT_FILTERS, SearchFilterPanel } from "./search-filter-panel";
+import type { SearchFilters } from "./search-filter-panel";
 import { WorkshopCard } from "../../components/workshops/workshop-card";
-import {
-  workshopService,
-  WorkshopSearchItem,
-} from "../../services/workshop-service";
+import { workshopService } from "../../services/workshop-service";
+import type { WorkshopSearchItem } from "../../services/workshop-service";
 
 // Fix marker icons
 delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
