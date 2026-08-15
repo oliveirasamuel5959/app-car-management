@@ -15,6 +15,7 @@ export const STATUS_META: Record<string, ServiceStatusMeta> = {
   in_progress: { label: 'Em andamento', color: '#0E7490', bg: '#CFFAFE' },
   completed: { label: 'Concluído', color: '#15803D', bg: '#DCFCE7' },
   cancelled: { label: 'Cancelado', color: '#B91C1C', bg: '#FEE2E2' },
+  rejected: { label: 'Recusado', color: '#B91C1C', bg: '#FEE2E2' },
 };
 
 export function formatBRL(value: number): string {
