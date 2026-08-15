@@ -36,6 +36,7 @@ import PartsForm, {
   normalizePartsValue,
   type PartsFormValue,
 } from '../../components/service-orders/parts-form';
+import RefundPaymentButton from '../../components/payments/refund-payment-button';
 
 interface Service {
   id: number;
@@ -56,10 +57,12 @@ type StatusChipColor = 'success' | 'info' | 'warning' | 'primary' | 'error' | 'd
 function getStatusColor(status: string): StatusChipColor {
   switch (status) {
     case 'completed':
+    case 'paid':
       return 'success';
     case 'in_progress':
       return 'info';
     case 'pending':
+    case 'refunded':
       return 'warning';
     case 'confirmed':
       return 'primary';
@@ -302,6 +305,29 @@ export default function WorkshopOrdersPage() {
                 </Typography>
                 <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status)} variant="outlined" size="small" />
               </Grid>
+
+              {(selectedService.status === 'paid' ||
+                selectedService.status === 'refunded') && (
+                <Grid item xs={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    {selectedService.status === 'paid'
+                      ? 'Pagamento recebido'
+                      : 'Pagamento reembolsado'}
+                  </Typography>
+                  {selectedService.status === 'paid' && (
+                    <Box sx={{ mt: 1 }}>
+                      <RefundPaymentButton
+                        serviceOrderId={selectedService.id}
+                        disabled={updating}
+                        onRefunded={() => {
+                          handleCloseDialog();
+                          fetchServices();
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Grid>
+              )}
 
               {/* Editable Workshop Notes */}
               <Grid item xs={12}>

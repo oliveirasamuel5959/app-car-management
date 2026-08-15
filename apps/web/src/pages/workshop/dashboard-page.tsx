@@ -207,9 +207,11 @@ export default function WorkshopDashboardPage() {
                                   ? theme.palette.mode === 'dark' ? '#2f314d' : '#dbeafe'
                                 : activity.status === 'in_progress'
                                   ? theme.palette.mode === 'dark' ? '#2c3e50' : '#a8dadc'
-                                  : activity.status === 'completed'
+                                  : activity.status === 'completed' || activity.status === 'paid'
                                     ? theme.palette.mode === 'dark' ? '#2d5016' : '#c7e9c0'
-                                    : theme.palette.mode === 'dark' ? '#3d2d2d' : '#f8d7da',
+                                    : activity.status === 'refunded'
+                                      ? theme.palette.mode === 'dark' ? '#4a3b00' : '#ffe0b2'
+                                      : theme.palette.mode === 'dark' ? '#3d2d2d' : '#f8d7da',
                             color:
                               activity.status === 'pending'
                                 ? theme.palette.mode === 'dark' ? '#ffd700' : '#856404'
@@ -217,9 +219,11 @@ export default function WorkshopDashboardPage() {
                                   ? theme.palette.mode === 'dark' ? '#93c5fd' : '#1d4ed8'
                                 : activity.status === 'in_progress'
                                   ? theme.palette.mode === 'dark' ? '#5dade2' : '#084298'
-                                  : activity.status === 'completed'
+                                  : activity.status === 'completed' || activity.status === 'paid'
                                     ? theme.palette.mode === 'dark' ? '#82e0aa' : '#0f5132'
-                                    : theme.palette.mode === 'dark' ? '#f8b4b4' : '#842029',
+                                    : activity.status === 'refunded'
+                                      ? theme.palette.mode === 'dark' ? '#ffd54f' : '#92400e'
+                                      : theme.palette.mode === 'dark' ? '#f8b4b4' : '#842029',
                           })}
                         >
                           {activity.status === 'pending'
@@ -230,9 +234,13 @@ export default function WorkshopDashboardPage() {
                               ? 'Em Progresso'
                               : activity.status === 'completed'
                                 ? 'Concluído'
-                                : activity.status === 'rejected'
-                                  ? 'Recusado'
-                                  : activity.status}
+                                : activity.status === 'paid'
+                                  ? 'Pago'
+                                  : activity.status === 'refunded'
+                                    ? 'Reembolsado'
+                                    : activity.status === 'rejected'
+                                      ? 'Recusado'
+                                      : activity.status}
                         </Typography>
                       </TableCell>
                       <TableCell>{formatDate(activity.created_at || activity.checkin_date)}</TableCell>
