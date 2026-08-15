@@ -23,6 +23,7 @@ import {
   History as HistoryIcon,
   EventNote as ScheduleIcon,
   Star as StarIcon,
+  Handyman as HandymanIcon,
 } from '@mui/icons-material';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -50,6 +51,7 @@ export const WorkshopSidebar = ({
     { text: 'Clientes Oficina', icon: <PeopleIcon />, path: '/workshop/clients' },
     { text: 'Agendamentos', icon: <ScheduleIcon />, path: '/workshop/schedules' },
     { text: 'Avaliações', icon: <StarIcon />, path: '/workshop/ratings' },
+    { text: 'Serviços Oferecidos', icon: <HandymanIcon />, path: '/workshop/services-offered' },
     { text: 'Ordens de Serviço', icon: <ServicesIcon />, path: '/workshop/services' },
     { text: 'Histórico de Manutenção', icon: <HistoryIcon />, path: '/workshop/service-history' },
     { text: 'Criar Orçamento', icon: <ServicesIcon />, path: '/workshop/orders/new' },

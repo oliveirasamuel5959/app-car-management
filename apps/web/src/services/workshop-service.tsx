@@ -79,6 +79,12 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   outro: 'Outro',
 };
 
+export interface WorkshopServiceItem {
+  id: number;
+  workshop_id: number;
+  service_type: string;
+}
+
 export const workshopService = {
   getCurrentWorkshop: async (): Promise<Workshop> => {
     try {
@@ -149,5 +155,15 @@ export const workshopService = {
     search.set('skip', String(skip));
     search.set('limit', String(limit));
     return api.get(`/workshops/?${search.toString()}`);
+  },
+
+  getMyWorkshopServices: async (): Promise<WorkshopServiceItem[]> => {
+    return api.get('/workshop-services/me');
+  },
+
+  updateMyWorkshopServices: async (
+    serviceTypes: string[],
+  ): Promise<WorkshopServiceItem[]> => {
+    return api.put('/workshop-services/me', { service_types: serviceTypes });
   },
 };
