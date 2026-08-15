@@ -81,8 +81,10 @@ Requirements and decisions: [requirements.md](requirements.md).
   cascade="all, delete-orphan")` and `rejected` in the status docstring;
   `services_history.py` adds the two columns; export `ServicePart` in
   `models/__init__.py`.
-- **1.3** Schemas `apps/backend/src/schemas/services.py`: `ServiceCreate`
-  requires `estimated_cost`/`estimated_finish_date`; new `ServicePartCreate`
+- **1.3** Schemas `apps/backend/src/schemas/services.py`:
+  `estimated_cost`/`estimated_finish_date` stay optional on `ServiceCreate`
+  (enforcement lives in the service layer, `ValueError` → 400, so the legacy
+  `/services` route inherits the same behavior); new `ServicePartCreate`
   (description min_length 1, quantity gt 0, unit_price ge 0), `ServicePartRead`,
   `ServiceBreakdownRead`; `ServiceActionUpdate` gains
   `parts: list[ServicePartCreate] | None` and `labor_description`. Schemas

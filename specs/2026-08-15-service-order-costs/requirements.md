@@ -111,9 +111,9 @@ traceable flow; matches the schedules precedent
 ### D2 — Estimated cost and finish date are required at creation
 
 The client decides on cost + date, so both must exist on every order from the
-workshop. `ServiceCreate` fields become required; `create_service` validates
-(`ValueError` → 400). The legacy `POST /services` route shares the schema and
-inherits the requirement (the web app never calls it — documented).
+workshop. `ServiceService.create_service` rejects missing values (`ValueError` →
+400); `ServiceCreate` fields stay optional so the legacy `POST /services` route
+(which shares the schema and service) keeps parsing and maps to the same 400.
 
 ### D3 — Parts are line items on a dedicated table, totals computed server-side
 
