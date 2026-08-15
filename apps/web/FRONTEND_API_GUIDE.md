@@ -1,5 +1,9 @@
 # Frontend API Integration Guide
 
+> **WebSocket events:** the realtime event contract (envelopes, recipients,
+> frontend reactions, reconnect/keepalive rules) is documented in
+> [WEBSOCKET_EVENTS.md](./WEBSOCKET_EVENTS.md).
+
 ## Updated API Client (api.tsx)
 
 The frontend API client is now fully configured to work with your FastAPI backend with complete JWT token authentication support.
