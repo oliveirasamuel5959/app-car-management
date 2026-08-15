@@ -15,7 +15,10 @@ import {
   MenuItem,
   Alert,
   Chip,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
+import { Info as InfoIcon } from '@mui/icons-material';
 import {
   workshopServiceHistoryService,
   SERVICE_TYPE_OPTIONS,
@@ -27,6 +30,7 @@ import {
 } from '../../services/service-history-service';
 import { workshopClientService } from '../../services/workshop-client-service';
 import type { WorkshopClient } from '../../services/workshop-client-service';
+import PartsBreakdownDialog from '../../components/service-orders/parts-breakdown-dialog';
 
 export default function WorkshopServiceHistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,6 +40,7 @@ export default function WorkshopServiceHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('');
   const [filterClient, setFilterClient] = useState<string>(searchParams.get('client') ?? '');
+  const [breakdownOrderId, setBreakdownOrderId] = useState<number | null>(null);
 
   const fetchRecords = async (serviceType?: string, clientId?: string) => {
     try {
@@ -157,34 +162,65 @@ export default function WorkshopServiceHistoryPage() {
                 <TableCell>Nota Fiscal</TableCell>
                 <TableCell>Data do Serviço</TableCell>
                 <TableCell>Próxima Revisão</TableCell>
+                <TableCell align="right">Detalhes</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {records.map((record) => (
-                <TableRow key={record.id} hover>
-                  <TableCell>{`Veículo #${record.vehicle_id}`}</TableCell>
-                  <TableCell>
-                    <Chip label={SERVICE_TYPE_LABELS[record.service_type] ?? record.service_type} size="small" />
-                  </TableCell>
-                  <TableCell>{record.description || '-'}</TableCell>
-                  <TableCell>{formatMileage(record.current_mileage)}</TableCell>
-                  <TableCell>{formatCurrency(record.labor_cost)}</TableCell>
-                  <TableCell>{formatCurrency(record.parts_cost)}</TableCell>
-                  <TableCell>{record.invoice_number || '-'}</TableCell>
-                  <TableCell>{formatDate(record.serviced_at)}</TableCell>
-                  <TableCell>
-                    {formatDate(record.next_service_date)}
-                    {record.next_service_mileage != null && (
-                      <Typography variant="caption" display="block" color="text.secondary">
-                        {formatMileage(record.next_service_mileage)}
-                      </Typography>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {records.map((record) => {
+                const hasOrderLink = record.service_order_id != null;
+                return (
+                  <TableRow
+                    key={record.id}
+                    hover
+                    onClick={
+                      hasOrderLink
+                        ? () => setBreakdownOrderId(record.service_order_id ?? null)
+                        : undefined
+                    }
+                    sx={hasOrderLink ? { cursor: 'pointer' } : undefined}
+                  >
+                    <TableCell>{`Veículo #${record.vehicle_id}`}</TableCell>
+                    <TableCell>
+                      <Chip label={SERVICE_TYPE_LABELS[record.service_type] ?? record.service_type} size="small" />
+                    </TableCell>
+                    <TableCell>{record.description || '-'}</TableCell>
+                    <TableCell>{formatMileage(record.current_mileage)}</TableCell>
+                    <TableCell>{formatCurrency(record.labor_cost)}</TableCell>
+                    <TableCell>{formatCurrency(record.parts_cost)}</TableCell>
+                    <TableCell>{record.invoice_number || '-'}</TableCell>
+                    <TableCell>{formatDate(record.serviced_at)}</TableCell>
+                    <TableCell>
+                      {formatDate(record.next_service_date)}
+                      {record.next_service_mileage != null && (
+                        <Typography variant="caption" display="block" color="text.secondary">
+                          {formatMileage(record.next_service_mileage)}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell align="right">
+                      {hasOrderLink ? (
+                        <Tooltip title="Ver peças, mão de obra e total da OS">
+                          <IconButton
+                            size="small"
+                            color="info"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setBreakdownOrderId(record.service_order_id ?? null);
+                            }}
+                          >
+                            <InfoIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
               {records.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} align="center">
+                  <TableCell colSpan={10} align="center">
                     Nenhuma manutenção registrada ainda. Registros aparecem aqui quando você conclui uma ordem de serviço informando os dados de manutenção.
                   </TableCell>
                 </TableRow>
@@ -193,6 +229,12 @@ export default function WorkshopServiceHistoryPage() {
           </Table>
         </TableContainer>
       )}
+
+      <PartsBreakdownDialog
+        open={breakdownOrderId !== null}
+        serviceOrderId={breakdownOrderId}
+        onClose={() => setBreakdownOrderId(null)}
+      />
     </Box>
   );
 }

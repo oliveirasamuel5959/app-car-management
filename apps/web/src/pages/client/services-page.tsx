@@ -12,6 +12,7 @@ import {
 
 import { useRealtime } from '../../context/realtime-context';
 import { serviceService } from '../../services/service-service';
+import ConfirmDialog from '../../components/ui/confirm-dialog';
 import {
   STATUS_META,
   formatBRL,
@@ -25,7 +26,7 @@ interface Service {
   vehicle_id: number;
   name: string;
   description: string;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
   progress_percentage: number;
   checkin_date: string;
   estimated_finish_date: string;
@@ -67,6 +68,8 @@ export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
+  const [rejectingId, setRejectingId] = useState<number | null>(null);
+  const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
 
   const reloadServices = async () => {
     const response = await serviceService.getMyServices();
@@ -154,6 +157,19 @@ export default function ServicesPage() {
     }
   };
 
+  const handleReject = async (id: number) => {
+    try {
+      setSubmittingId(id);
+      await serviceService.rejectServiceOrder(id);
+      await reloadServices();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmittingId(null);
+      setConfirmRejectOpen(false);
+    }
+  };
+
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', p: { xs: 2, md: 4 } }}>
       <Box sx={{ mb: 4 }}>
@@ -214,24 +230,40 @@ export default function ServicesPage() {
 
               {/* Pending actions */}
               {service.status === 'pending' && (
-                <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    disabled={submittingId === service.id}
-                    onClick={() => handleAccept(service.id)}
-                  >
-                    {submittingId === service.id ? 'Aceitando...' : 'Aceitar orçamento'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    disabled={submittingId === service.id}
-                    onClick={() => handleCancel(service.id)}
-                  >
-                    Cancelar pedido
-                  </Button>
+                <Stack spacing={1} sx={{ mt: 2 }}>
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={submittingId === service.id}
+                      onClick={() => handleAccept(service.id)}
+                    >
+                      {submittingId === service.id ? 'Aceitando...' : 'Aceitar orçamento'}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      disabled={submittingId === service.id}
+                      onClick={() => {
+                        setRejectingId(service.id);
+                        setConfirmRejectOpen(true);
+                      }}
+                    >
+                      Recusar orçamento
+                    </Button>
+                    <Button
+                      variant="text"
+                      size="small"
+                      disabled={submittingId === service.id}
+                      onClick={() => handleCancel(service.id)}
+                    >
+                      Cancelar pedido
+                    </Button>
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    Decida com base no custo estimado e na data de conclusão abaixo.
+                  </Typography>
                 </Stack>
               )}
 
@@ -248,8 +280,16 @@ export default function ServicesPage() {
                 }}
               >
                 <Fact label="Entrada" value={formatDateTime(service.checkin_date)} />
-                <Fact label="Previsão de conclusão" value={formatDateShort(service.estimated_finish_date)} />
-                <Fact label="Custo estimado" value={formatBRL(service.estimated_cost)} />
+                <Fact
+                  label="Previsão de conclusão"
+                  value={formatDateShort(service.estimated_finish_date)}
+                  emphasize={service.status === 'pending'}
+                />
+                <Fact
+                  label="Custo estimado"
+                  value={formatBRL(service.estimated_cost)}
+                  emphasize={service.status === 'pending'}
+                />
                 <Fact
                   label="Custo final"
                   value={service.final_cost != null ? formatBRL(service.final_cost) : '—'}
@@ -289,6 +329,26 @@ export default function ServicesPage() {
           );
         })}
       </Stack>
+
+      <ConfirmDialog
+        open={confirmRejectOpen}
+        title="Recusar orçamento"
+        message={
+          rejectingId !== null
+            ? `Tem certeza que deseja recusar o orçamento da OS #${rejectingId}? O pedido será encerrado.`
+            : ''
+        }
+        confirmLabel="Recusar"
+        cancelLabel="Voltar"
+        destructive
+        loading={submittingId === rejectingId}
+        onConfirm={() => {
+          if (rejectingId !== null) {
+            handleReject(rejectingId);
+          }
+        }}
+        onClose={() => setConfirmRejectOpen(false)}
+      />
     </Box>
   );
 }

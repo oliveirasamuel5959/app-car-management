@@ -24,7 +24,7 @@ import {
   Chip,
   Tooltip,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Info as InfoIcon } from '@mui/icons-material';
 import {
   serviceHistoryService,
   SERVICE_TYPE_OPTIONS,
@@ -36,6 +36,7 @@ import {
   type ServiceHistoryType,
 } from '../../services/service-history-service';
 import { carService } from '../../services/car-service';
+import PartsBreakdownDialog from '../../components/service-orders/parts-breakdown-dialog';
 
 interface VehicleOption {
   id: number;
@@ -80,6 +81,7 @@ export default function ServiceHistoryPage() {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [breakdownOrderId, setBreakdownOrderId] = useState<number | null>(null);
 
   const fetchRecords = async (serviceType?: string) => {
     try {
@@ -294,8 +296,18 @@ export default function ServiceHistoryPage() {
             <TableBody>
               {records.map((record) => {
                 const isWorkshopAuthored = record.workshop_id != null;
+                const hasOrderLink = record.service_order_id != null;
                 return (
-                  <TableRow key={record.id} hover>
+                  <TableRow
+                    key={record.id}
+                    hover
+                    onClick={
+                      hasOrderLink
+                        ? () => setBreakdownOrderId(record.service_order_id ?? null)
+                        : undefined
+                    }
+                    sx={hasOrderLink ? { cursor: 'pointer' } : undefined}
+                  >
                     <TableCell>{vehicleLabel(record.vehicle_id)}</TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
@@ -321,6 +333,20 @@ export default function ServiceHistoryPage() {
                     <TableCell align="right">
                       <Tooltip title={isWorkshopAuthored ? 'Registro criado pela oficina — somente leitura' : ''}>
                         <span>
+                          {hasOrderLink && (
+                            <Tooltip title="Ver detalhes da ordem de serviço">
+                              <IconButton
+                                size="small"
+                                color="info"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setBreakdownOrderId(record.service_order_id ?? null);
+                                }}
+                              >
+                                <InfoIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           <IconButton
                             size="small"
                             color="primary"
@@ -462,6 +488,13 @@ export default function ServiceHistoryPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Order breakdown drill-down */}
+      <PartsBreakdownDialog
+        open={breakdownOrderId !== null}
+        serviceOrderId={breakdownOrderId}
+        onClose={() => setBreakdownOrderId(null)}
+      />
     </Box>
   );
 }
