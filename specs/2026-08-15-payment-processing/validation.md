@@ -65,7 +65,7 @@ workshop after paying. Checked during implementation on 2026-08-15.
 - [x] Mock redirect flow (browser-driven): completed order → "Pagar" → dialog → "Pagar com Stripe" → redirect to `/payments/return?payment_id=&session_id=mock_...` → backend confirm → back to Meus Serviços → order "Pago", workshop notified
 - [x] Client sees "Avaliar oficina" on the paid order → rating modal → submit → workshop "Avaliações" page shows it (duplicate rejection covered by backend tests)
 - [x] WORKSHOP → paid order shows "PAID" → "Reembolsar" → ConfirmDialog → order "REFUNDED", client sees "Reembolsado" (browser-driven)
-- [ ] Stripe test mode (real keys, user action): complete the payment on OS #29 in a real browser — `4242 4242 4242 4242` → Stripe returns to `/payments/return` → order "Pago" → transaction in the Stripe dashboard. Verified up to the hosted Checkout page (`cs_test_...` sessions); card completion is blocked for headless automation by Stripe hCaptcha.
+- [x] Stripe test mode (user, real browser, 2026-08-15): paid OS #31 with `4242 4242 4242 4242` → Stripe session `complete`/`paid`, PaymentIntent `succeeded` (30000 brl) → app returned to Meus Serviços with order `paid`; DB recorded 30000/3000/27000 cents (10% fee); transaction visible in the Stripe test dashboard.
 
 ## Full validation flow
 
@@ -111,7 +111,7 @@ npm run check && npm run build && npm run test
 | V4 | Backend behavior tests (payment, lifecycle, reviews, realtime) | ✅ |
 | V5 | Frontend adapter, PaymentDialog, review after payment | ✅ |
 | V6 | Workshop payment state, refund, status maps, tsc/build | ✅ |
-| V7 | Manual flows (mock redirect + refund verified; Stripe card step = user action) | ⚠️ |
+| V7 | Manual flows (mock redirect, refund, and real Stripe card payment all verified) | ✅ |
 | V8 | Backend Checkout Session flow (revision) | ✅ |
 | V9 | Frontend Checkout redirect + return page | ✅ |
 
