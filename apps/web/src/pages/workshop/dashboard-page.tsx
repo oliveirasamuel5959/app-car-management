@@ -230,7 +230,9 @@ export default function WorkshopDashboardPage() {
                               ? 'Em Progresso'
                               : activity.status === 'completed'
                                 ? 'Concluído'
-                                : activity.status}
+                                : activity.status === 'rejected'
+                                  ? 'Recusado'
+                                  : activity.status}
                         </Typography>
                       </TableCell>
                       <TableCell>{formatDate(activity.created_at || activity.checkin_date)}</TableCell>

@@ -40,6 +40,7 @@ interface FormData {
   estimated_finish_time: string;
   planned_maintenance_hours: number | '';
   planned_maintenance_minutes: number | '';
+  estimated_cost: number | '';
   service_types: string[];
   inspecao: boolean;
   troca_periodica: boolean;
@@ -56,6 +57,7 @@ const initialFormData: FormData = {
   estimated_finish_time: '',
   planned_maintenance_hours: '',
   planned_maintenance_minutes: '',
+  estimated_cost: '',
   service_types: [],
   inspecao: false,
   troca_periodica: false,
@@ -101,7 +103,8 @@ export default function CreateOrdersPage() {
     if (
       name === 'planned_maintenance_hours' ||
       name === 'planned_maintenance_minutes' ||
-      name === 'workshop_client_id'
+      name === 'workshop_client_id' ||
+      name === 'estimated_cost'
     ) {
       setFormData((prev) => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
     } else {
@@ -133,6 +136,14 @@ export default function CreateOrdersPage() {
     }
     if (!formData.checkin_date) {
       setError('Data inicial é obrigatória');
+      return false;
+    }
+    if (!formData.estimated_finish_date) {
+      setError('Data final é obrigatória');
+      return false;
+    }
+    if (formData.estimated_cost === '' || Number(formData.estimated_cost) <= 0) {
+      setError('Custo estimado é obrigatório e deve ser maior que zero');
       return false;
     }
     if (
@@ -191,6 +202,7 @@ export default function CreateOrdersPage() {
         checkin_date: checkinDatetime,
         estimated_finish_date: finishDatetime,
         estimated_hours: estimatedHours,
+        estimated_cost: Number(formData.estimated_cost),
         workshop_notes: noteParts.length > 0 ? noteParts.join(' | ') : undefined,
       });
 
@@ -323,6 +335,7 @@ export default function CreateOrdersPage() {
                     label="Data"
                     type="date"
                     fullWidth
+                    required
                     value={formData.estimated_finish_date}
                     onChange={handleInputChange}
                     name="estimated_finish_date"
@@ -341,6 +354,23 @@ export default function CreateOrdersPage() {
                   />
                 </Grid>
               </Grid>
+            </Box>
+
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                Custo estimado
+              </Typography>
+              <TextField
+                label="Custo estimado (R$)"
+                type="number"
+                fullWidth
+                required
+                value={formData.estimated_cost}
+                onChange={handleInputChange}
+                name="estimated_cost"
+                inputProps={{ min: 0, step: '0.01' }}
+                helperText="O cliente aceita ou recusa o orçamento com base neste valor e na data final."
+              />
             </Box>
 
             <Box>

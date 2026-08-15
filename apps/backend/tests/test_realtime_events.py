@@ -357,6 +357,23 @@ def test_client_accept_pushes_order_status_change_to_workshop():
     assert event_["actor_role"] == "CLIENT"
 
 
+def test_client_reject_pushes_order_status_change_to_workshop():
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+    ws_workshop = connect_fake(tenant.id, workshop_user.id)
+
+    ServiceService(session).reject_service_order_for_client(
+        service_id=service.id,
+        user_id=client_user.id,
+    )
+
+    events = received(ws_workshop)
+    types = {event_["type"] for event_ in events}
+    assert types == {"notification_new", "order_status_change"}
+    event_ = next(e for e in events if e["type"] == "order_status_change")
+    assert event_["new_status"] == "rejected"
+    assert event_["actor_role"] == "CLIENT"
+
+
 def test_order_status_event_not_delivered_to_other_tenant_socket():
     session, tenant, workshop_user, client_user, service = seed_service_graph()
     other_tenant = uuid.uuid4()
@@ -479,17 +496,20 @@ def test_chat_message_over_ws_reaches_recipient_via_service_push():
         from fastapi.testclient import TestClient
 
         with TestClient(app) as client:
-            with client.websocket_connect(
-                "/messages/ws",
-                params={
-                    "token": make_token(1, "WORKSHOP", tenant.id, "sender@test.dev")
-                },
-            ) as ws_sender, client.websocket_connect(
-                "/messages/ws",
-                params={
-                    "token": make_token(2, "CLIENT", tenant.id, "receiver@test.dev")
-                },
-            ) as ws_receiver:
+            with (
+                client.websocket_connect(
+                    "/messages/ws",
+                    params={
+                        "token": make_token(1, "WORKSHOP", tenant.id, "sender@test.dev")
+                    },
+                ) as ws_sender,
+                client.websocket_connect(
+                    "/messages/ws",
+                    params={
+                        "token": make_token(2, "CLIENT", tenant.id, "receiver@test.dev")
+                    },
+                ) as ws_receiver,
+            ):
                 ws_sender.send_json(
                     {"type": "chat_message", "receiver_id": 2, "content": "olá"}
                 )

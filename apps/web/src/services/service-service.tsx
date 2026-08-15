@@ -9,7 +9,13 @@ export interface ServiceOrder {
   vehicle_id?: number | null;
   name: string;
   description?: string | null;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'in_progress'
+    | 'completed'
+    | 'cancelled'
+    | 'rejected';
   progress_percentage: number;
   checkin_date: string;
   estimated_finish_date?: string | null;
@@ -19,6 +25,37 @@ export interface ServiceOrder {
   estimated_cost?: number | null;
   final_cost?: number | null;
   workshop_notes?: string | null;
+}
+
+export interface ServicePartInput {
+  description: string;
+  quantity: number;
+  unit_price: number;
+}
+
+export interface ServicePart {
+  id: number;
+  service_order_id: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
+export interface ServiceBreakdown {
+  id: number;
+  name: string;
+  status: string;
+  checkin_date: string;
+  estimated_finish_date?: string | null;
+  finished_at?: string | null;
+  estimated_cost?: number | null;
+  final_cost?: number | null;
+  workshop_notes?: string | null;
+  parts: ServicePart[];
+  labor_description?: string | null;
+  labor_cost?: number | null;
+  parts_cost?: number | null;
 }
 
 export interface ServiceOrderSummary {
@@ -109,6 +146,14 @@ export const serviceService = {
     return api.patch(`/service-orders/${serviceId}/accept`, {});
   },
 
+  rejectServiceOrder: async (serviceId: number) => {
+    return api.patch(`/service-orders/${serviceId}/reject`, {});
+  },
+
+  getServiceOrderBreakdown: async (serviceId: number) => {
+    return api.get(`/service-orders/${serviceId}/breakdown`);
+  },
+
   startServiceOrder: async (serviceId: number, data?: { workshop_notes?: string; estimated_cost?: number }) => {
     return api.patch(`/service-orders/${serviceId}/start`, data ?? {});
   },
@@ -118,6 +163,8 @@ export const serviceService = {
     data?: {
       workshop_notes?: string;
       final_cost?: number;
+      parts?: ServicePartInput[];
+      labor_description?: string;
       service_type?: ServiceHistoryType;
       current_mileage?: number;
       labor_cost?: number;

@@ -44,6 +44,7 @@ class Service(Base):
     in_progress
     completed
     cancelled
+    rejected
     """
 
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
@@ -69,3 +70,6 @@ class Service(Base):
     vehicle = relationship("Vehicle", backref="services")
     workshop_client = relationship("WorkshopClient", backref="services")
     notifications = relationship("Notification", back_populates="service")
+    parts = relationship(
+        "ServicePart", back_populates="service_order", cascade="all, delete-orphan"
+    )

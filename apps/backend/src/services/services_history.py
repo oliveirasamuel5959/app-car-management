@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from src.core.logger import get_logger
-from src.models.services_history import ServiceHistory
+from src.models.services_history import ServiceHistory, ServiceType
 from src.repositories.services_history import (
     repo_create_service_history,
     repo_delete_service_history,
@@ -81,11 +81,13 @@ class ServiceHistoryService:
         workshop_id: int,
         vehicle_id: int | None,
         workshop_client_id: int | None = None,
+        service_order_id: int | None = None,
         service_type: str | None,
         current_mileage: int | None,
         serviced_at: datetime,
         description: str | None = None,
         labor_cost: float | None = None,
+        labor_description: str | None = None,
         parts_cost: float | None = None,
         invoice_number: str | None = None,
         warranty_until_date: datetime | None = None,
@@ -93,9 +95,9 @@ class ServiceHistoryService:
     ) -> ServiceHistory | None:
         """Auto-create a service-history record when a workshop completes a service order.
 
-        Skips (returns None) when the order has no linked vehicle, or when the
-        workshop didn't supply enough information (service_type + current_mileage)
-        to log a meaningful maintenance record. The order still completes either way.
+        Skips (returns None) only when the order has no linked vehicle. Every
+        completed order with a vehicle appears in the maintenance history;
+        service_type defaults to "other" and mileage stays optional.
         """
         if vehicle_id is None:
             logger.info(
@@ -103,25 +105,26 @@ class ServiceHistoryService:
             )
             return None
 
-        if not service_type or current_mileage is None:
-            logger.info(
-                "Skipping service-history auto-create: missing service_type/current_mileage"
-            )
-            return None
-
-        next_service_mileage = calculate_next_service_mileage(
-            current_mileage, service_type
+        resolved_service_type = service_type or ServiceType.OTHER.value
+        next_service_mileage = (
+            calculate_next_service_mileage(current_mileage, resolved_service_type)
+            if current_mileage is not None
+            else None
         )
-        next_service_date = calculate_next_service_date(serviced_at, service_type)
+        next_service_date = calculate_next_service_date(
+            serviced_at, resolved_service_type
+        )
 
         history_data = {
             "vehicle_id": vehicle_id,
             "workshop_client_id": workshop_client_id,
-            "service_type": service_type,
+            "service_order_id": service_order_id,
+            "service_type": resolved_service_type,
             "description": description,
             "current_mileage": current_mileage,
             "next_service_mileage": next_service_mileage,
             "labor_cost": labor_cost,
+            "labor_description": labor_description,
             "parts_cost": parts_cost,
             "invoice_number": invoice_number,
             "warranty_until_date": warranty_until_date,

@@ -67,11 +67,25 @@ def repo_get_services_history_for_workshop(
     if vehicle_id is not None:
         query = query.filter(ServiceHistory.vehicle_id == vehicle_id)
     if workshop_client_id is not None:
-        query = query.filter(
-            ServiceHistory.workshop_client_id == workshop_client_id
-        )
+        query = query.filter(ServiceHistory.workshop_client_id == workshop_client_id)
 
     return query.order_by(ServiceHistory.serviced_at.desc()).all()
+
+
+def repo_get_service_history_by_order(
+    db: Session,
+    tenant_id: UUID | str,
+    service_order_id: int,
+) -> ServiceHistory | None:
+    """Get the service-history record auto-created for a service order, tenant-scoped."""
+    return (
+        db.query(ServiceHistory)
+        .filter(
+            ServiceHistory.tenant_id == tenant_id,
+            ServiceHistory.service_order_id == service_order_id,
+        )
+        .first()
+    )
 
 
 def repo_get_service_history_by_id(

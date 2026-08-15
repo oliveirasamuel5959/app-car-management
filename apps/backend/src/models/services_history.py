@@ -63,6 +63,12 @@ class ServiceHistory(Base):
         nullable=True,
     )
 
+    service_order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("services.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     # Lifecycle
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="completed", server_default="completed"
@@ -83,6 +89,7 @@ class ServiceHistory(Base):
     parts_cost: Mapped[float] = mapped_column(
         Numeric(precision=10, scale=2), nullable=True
     )
+    labor_description: Mapped[str] = mapped_column(String(255), nullable=True)
     invoice_number: Mapped[str] = mapped_column(String(100), nullable=True)
 
     # Warranty

@@ -43,6 +43,7 @@ const statusLabelMap: Record<string, string> = {
   in_progress: 'Em progresso',
   completed: 'Concluído',
   cancelled: 'Cancelado',
+  rejected: 'Recusado',
 };
 
 const statusColorMap: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
@@ -51,6 +52,7 @@ const statusColorMap: Record<string, 'default' | 'warning' | 'info' | 'success' 
   in_progress: 'info',
   completed: 'success',
   cancelled: 'error',
+  rejected: 'error',
 };
 
 function getServiceCreatedDate(service: ServiceItem) {
@@ -147,7 +149,7 @@ export default function WorkshopServicesPage() {
 
         if (services && Array.isArray(services)) {
           const openServices = (services as ServiceItem[]).filter(
-            (service) => service.status !== 'completed' && service.status !== 'cancelled'
+            (service) => service.status !== 'completed' && service.status !== 'cancelled' && service.status !== 'rejected'
           );
 
           const servicesByClient = new Map<number, ServiceItem[]>();

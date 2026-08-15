@@ -19,6 +19,7 @@ export interface ServiceHistory {
   vehicle_id: number;
   workshop_id?: number | null;
   workshop_client_id?: number | null;
+  service_order_id?: number | null;
   status: string;
   service_type: ServiceHistoryType;
   description?: string | null;
@@ -26,6 +27,7 @@ export interface ServiceHistory {
   next_service_mileage?: number | null;
   labor_cost?: number | null;
   parts_cost?: number | null;
+  labor_description?: string | null;
   invoice_number?: string | null;
   warranty_until_date?: string | null;
   warranty_mileage?: number | null;

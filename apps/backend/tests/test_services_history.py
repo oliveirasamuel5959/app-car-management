@@ -247,7 +247,7 @@ def test_completion_auto_creates_history_when_fields_present():
     assert row.next_service_date is not None
 
 
-def test_completion_skips_history_without_service_type_or_mileage():
+def test_completion_creates_history_with_defaults_when_type_or_mileage_missing():
     g = seed_graph()
 
     completed = complete_order(
@@ -259,7 +259,18 @@ def test_completion_skips_history_without_service_type_or_mileage():
     )
 
     assert completed.status == "completed"
-    assert g["session"].query(ServiceHistory).count() == 0
+
+    history_rows = g["session"].query(ServiceHistory).all()
+    assert len(history_rows) == 1
+    row = history_rows[0]
+    assert row.workshop_id == g["workshop"].id
+    assert row.status == "completed"
+    assert row.vehicle_id == g["vehicle"].id
+    assert row.service_type == "other"
+    assert row.current_mileage is None
+    assert row.next_service_mileage is None
+    assert row.next_service_date is not None
+    assert row.service_order_id == g["service"].id
 
 
 def test_completion_skips_history_when_vehicle_id_is_null():
