@@ -3,6 +3,12 @@
 Chronological project changes grouped by commit date. Newest entries appear first.
 
 ## 2026-08-14
+- FEAT: Search & filtering (Phase 4) — workshops declare offered service types (new `workshop_services` catalog, bulk-replace via `GET`/`PUT /workshop-services/me`, workshop-side "Serviços Oferecidos" page); clients filter the rebuilt search page by radius, min rating, and service type, sorted by distance/rating/reviews
+- FEAT: `GET /workshops/` extended with `min_rating`, `service_types` (CSV, OR), `sort` (`distance`|`rating`|`reviews`), radius capped at 100 km; response is the new `WorkshopSearchItem` (distance_km, service_types, ratings_count — no tenant/owner identifiers); exact Haversine distance in `src/utils/workshops.py` after the bounding-box prefilter
+- FEAT: Client search page rebuilt on the backend API (filter sidebar + WorkshopCard list + Leaflet map + pagination); OpenStreetMap Overpass query removed; cards show distance, service chips, ratings count, city/address, and link to the workshop page
+- DB: Alembic migration `f87ec4fd3f5c` (workshop_services: unique workshop+type, tenant FK, composite index); `migrations/env.py` now imports `src.models` so autogenerate compares real metadata
+- FIX: `repo_get_vehicles_by_user_id` restored as tenant-scoped (committed tenant-isolation test expected it; the unscoped lookup in service creation could leak vehicles across tenants)
+- TEST: 8 backend catalog lifecycle tests + 13 backend search tests (Haversine, filters, sort, pagination, response shape); Vitest slice for search query building and catalog payloads (4 tests)
 - FEAT: Reviews & ratings (Phase 3) — clients rate accepted schedules (0–5 stars + optional comment) via the existing `workshop_ratings` table (no migration); one rating per schedule, author can edit/delete
 - FEAT: `Workshop.rating_avg` recomputed on every rating write; workshop detail page, workshop cards, and the client workshop list show the live average
 - FEAT: `/workshop-ratings` API — POST (CLIENT), GET `?workshop_id=` (public), GET `/mine` (CLIENT), GET `/me` (WORKSHOP), GET/PUT/DELETE `/{id}` (author-only), all dual-tenant scoped

@@ -448,6 +448,13 @@ remain deferred to the payment phase. Spec: `specs/2026-08-14-reviews-ratings/`.
 
 **Objective:** Enable clients to discover workshops by services, rating, location.
 
+**Status:** Complete on 2026-08-14 — reconciled with the codebase: the existing
+`GET /workshops/` was extended in place (no new `/workshops/search` route);
+a `workshop_services` catalog anchors the service-type filter (no Service
+catalog existed); the client search page was rebuilt on the backend API
+(Overpass removed); `is_active` filtering deferred (no activation concept).
+Spec: `specs/2026-08-14-search-filtering/`.
+
 #### 4.1 Search API Endpoint
 - `GET /workshops/search?lat={lat}&lng={lng}&radius=10&services={id,id}&min_rating=4` — Search workshops
   - Input: latitude, longitude, radius (km), service IDs, min rating
