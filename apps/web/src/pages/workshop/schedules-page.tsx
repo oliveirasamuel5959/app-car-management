@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRealtime } from '../../context/realtime-context';
 import {
   Box,
   Typography,
@@ -73,6 +74,14 @@ export default function WorkshopSchedulesPage() {
   useEffect(() => {
     fetchSchedules();
   }, []);
+
+  // Live reload when a client creates a new request
+  const { subscribe } = useRealtime();
+  useEffect(() => {
+    return subscribe('schedule_status_change', () => {
+      fetchSchedules();
+    });
+  }, [subscribe]);
 
   const openDetail = async (schedule: Schedule) => {
     setSelected(schedule);

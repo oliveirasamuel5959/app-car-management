@@ -2,6 +2,15 @@
 
 Chronological project changes grouped by commit date. Newest entries appear first.
 
+## 2026-08-15
+- FEAT: WebSocket real-time (Phase 5) — `ConnectionManager` rekeyed to `(tenant_id, user_id) → set[WebSocket]` (multi-tab, tenant-scoped broadcast, dead-socket pruning, str/UUID key normalization); application-level `ping`/`pong` keepalive on `/messages/ws?token=`
+- FEAT: All WS pushes moved to the service layer via `src/core/ws_push.py` (running loop → task; threadpool route → `run_coroutine_threadsafe` on the lifespan-captured loop; else inline): `new_message` (chat + uploads, per-user tenant keys for cross-tenant conversations), `notification_new`, `order_status_change`, `schedule_status_change`, `rating_received`
+- FEAT: Schedule/rating notification helpers moved out of the routes into `ScheduleService` / `WorkshopRatingService`; `authenticate_websocket` and schedule creation normalize JWT `tenant_id` strings to UUID at the boundary
+- FEAT: Frontend shared socket — `RealtimeProvider` + `useRealtime()` (`src/realtime/realtime-socket.ts`): typed event union, subscribe/unsubscribe, reconnect with exponential backoff (1s → 30s, reset on open), 25s ping, close code 1008 → session cleanup + `/login`; both chat pages migrated off per-page raw sockets; `WS_BASE_URL` reads `VITE_WS_BASE_URL`
+- FEAT: Live surfaces — bell refetches on `notification_new` (30s polling stays as fallback); global MUI Snackbar toasts for order/schedule/rating events; client + workshop dashboards, orders, and schedules pages refresh on the matching events; event contract documented in `apps/web/WEBSOCKET_EVENTS.md`
+- TEST: 10 backend manager tests (tenant scoping, multi-socket, pruning, ping/pong end-to-end) + 10 backend realtime event tests (service-layer pushes, cross-tenant isolation, TestClient end-to-end for loop and threadpool paths); Vitest slice for `RealtimeSocket` (8 tests: registry, backoff cap, ping interval, 1008 logout, close semantics)
+- DEV: `httpx` added to backend dev dependencies (FastAPI `TestClient` WebSocket tests)
+
 ## 2026-08-14
 - FEAT: Search & filtering (Phase 4) — workshops declare offered service types (new `workshop_services` catalog, bulk-replace via `GET`/`PUT /workshop-services/me`, workshop-side "Serviços Oferecidos" page); clients filter the rebuilt search page by radius, min rating, and service type, sorted by distance/rating/reviews
 - FEAT: `GET /workshops/` extended with `min_rating`, `service_types` (CSV, OR), `sort` (`distance`|`rating`|`reviews`), radius capped at 100 km; response is the new `WorkshopSearchItem` (distance_km, service_types, ratings_count — no tenant/owner identifiers); exact Haversine distance in `src/utils/workshops.py` after the bounding-box prefilter

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRealtime } from '../../context/realtime-context';
 import {
   Box,
   Container,
@@ -75,6 +76,14 @@ export default function WorkshopOrdersPage() {
   useEffect(() => {
     fetchServices();
   }, [user]);
+
+  // Live reload when a client accepts/cancels an order
+  const { subscribe } = useRealtime();
+  useEffect(() => {
+    return subscribe('order_status_change', () => {
+      fetchServices();
+    });
+  }, [subscribe]);
 
   const fetchServices = async () => {
     try {

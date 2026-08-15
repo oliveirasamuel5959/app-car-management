@@ -1,3 +1,4 @@
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -99,8 +100,15 @@ async def authenticate_websocket(token: str, db: Session):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token missing tenant_id",
         )
+    try:
+        tenant_uuid = UUID(str(tenant_id))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid tenant_id in token",
+        )
 
-    user = repo_get_user_by_id(db, int(user_id), tenant_id)
+    user = repo_get_user_by_id(db, int(user_id), tenant_uuid)
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from src.core.logger import get_logger
+from src.core.ws_push import push_ws_event
 from src.models.services import Service
 from src.models.user import User
 from src.repositories.services import (
@@ -83,9 +84,7 @@ class ServiceService:
         if not client:
             raise ValueError(f"No client found for workshop id {workshop.id}")
 
-        vehicles = repo_get_vehicles_by_user_id(
-            self.db, client.user_id, tenant_id
-        )
+        vehicles = repo_get_vehicles_by_user_id(self.db, client.user_id, tenant_id)
         if not vehicles:
             raise ValueError(f"No vehicle found for user id {client.user_id}")
         vehicle = vehicles[0]
@@ -307,6 +306,18 @@ class ServiceService:
                 old_status=old_status,
                 new_status=service.status,
                 service_id=service.id,
+            )
+            push_ws_event(
+                recipient_tenant_id,
+                recipient_id,
+                {
+                    "type": "order_status_change",
+                    "service_order_id": service.id,
+                    "old_status": old_status,
+                    "new_status": service.status,
+                    "actor_role": actor_role,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                },
             )
 
     def transition_service_order_for_workshop(

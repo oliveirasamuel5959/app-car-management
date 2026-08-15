@@ -16,13 +16,15 @@ import {
   AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/auth-context';
-import { messageService, type Message, type WSMessage } from '../../services/message-service';
+import { useRealtime } from '../../context/realtime-context';
+import { messageService, type Message } from '../../services/message-service';
 
 export default function WorkshopChatPage() {
   const { clientUserId } = useParams<{ clientUserId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const { connected, send, subscribe } = useRealtime();
 
   const otherUserId = Number(clientUserId);
   const clientName = (location.state as any)?.clientName ?? `Cliente #${clientUserId}`;
@@ -30,14 +32,12 @@ export default function WorkshopChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
-  const [wsConnected, setWsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
-  const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  // Always-current user id — avoids stale closure in onmessage
+  // Always-current user id — avoids stale closure in event handlers
   const myUserIdRef = useRef<number>(Number(user?.id ?? 0));
   useEffect(() => { myUserIdRef.current = Number(user?.id ?? 0); }, [user?.id]);
 
@@ -50,68 +50,54 @@ export default function WorkshopChatPage() {
       .finally(() => setLoading(false));
   };
 
-  // Load conversation history on mount
+  // Load conversation history on mount and again on (re)connect to pick up
+  // messages sent while offline
   useEffect(() => { loadHistory(); }, [otherUserId]);
+  useEffect(() => { if (connected) loadHistory(); }, [connected]);
 
-  // Connect WebSocket
+  // Live events from the shared socket
   useEffect(() => {
-    if (!token) return;
-    const ws = new WebSocket(messageService.getWsUrl(token));
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      setWsConnected(true);
-      // Re-fetch history to pick up messages sent while offline
-      loadHistory();
-    };
-    ws.onclose = () => setWsConnected(false);
-    ws.onerror = () => setWsConnected(false);
-
-    ws.onmessage = (event) => {
-      try {
-        const data: WSMessage = JSON.parse(event.data);
-        if (data.type === 'new_message') {
-          // Coerce to Number to guard against string IDs from JSON/localStorage
-          const sId = Number(data.sender_id);
-          const rId = Number(data.receiver_id);
-          const myId = myUserIdRef.current;
-          const otherId = Number(otherUserId);
-          if (
-            (sId === myId && rId === otherId) ||
-            (sId === otherId && rId === myId)
-          ) {
-            const msg: Message = {
-              id: 0,
-              uuid: data.message_id ?? '',
-              sender_id: sId,
-              receiver_id: rId,
-              content: data.content ?? null,
-              message_type: (data.message_type as Message['message_type']) ?? 'text',
-              file_url: null,
-              file_name: null,
-              file_size: null,
-              mime_type: null,
-              is_edited: false,
-              created_at: data.timestamp ?? new Date().toISOString(),
-            };
-            setMessages((prev) => {
-              // Deduplicate by uuid to avoid double-display after history reload
-              if (msg.uuid && prev.some((m) => m.uuid === msg.uuid)) return prev;
-              return [...prev, msg];
-            });
-          }
-        } else if (data.type === 'user_typing' && Number(data.sender_id) === Number(otherUserId)) {
-          setIsTyping(data.typing ?? false);
-        }
-      } catch {
-        // ignore malformed frames
+    const unsubscribeMessage = subscribe('new_message', (data) => {
+      // Coerce to Number to guard against string IDs from JSON/localStorage
+      const sId = Number(data.sender_id);
+      const rId = Number(data.receiver_id);
+      const myId = myUserIdRef.current;
+      const otherId = Number(otherUserId);
+      if (
+        (sId === myId && rId === otherId) ||
+        (sId === otherId && rId === myId)
+      ) {
+        const msg: Message = {
+          id: 0,
+          uuid: data.message_id ?? '',
+          sender_id: sId,
+          receiver_id: rId,
+          content: data.content ?? null,
+          message_type: (data.message_type as Message['message_type']) ?? 'text',
+          file_url: data.file_url ?? null,
+          file_name: data.file_name ?? null,
+          file_size: data.file_size ?? null,
+          mime_type: data.mime_type ?? null,
+          is_edited: false,
+          created_at: data.timestamp ?? new Date().toISOString(),
+        };
+        setMessages((prev) => {
+          // Deduplicate by uuid to avoid double-display after history reload
+          if (msg.uuid && prev.some((m) => m.uuid === msg.uuid)) return prev;
+          return [...prev, msg];
+        });
       }
-    };
-
+    });
+    const unsubscribeTyping = subscribe('user_typing', (data) => {
+      if (Number(data.sender_id) === Number(otherUserId)) {
+        setIsTyping(data.typing);
+      }
+    });
     return () => {
-      ws.close();
+      unsubscribeMessage();
+      unsubscribeTyping();
     };
-  }, [token, otherUserId, user?.id]);
+  }, [subscribe, otherUserId]);
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -119,9 +105,7 @@ export default function WorkshopChatPage() {
   }, [messages, isTyping]);
 
   const sendTypingEvent = (type: 'typing_start' | 'typing_stop') => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type, receiver_id: otherUserId }));
-    }
+    send({ type, receiver_id: otherUserId });
   };
 
   const handleInputChange = (value: string) => {
@@ -133,16 +117,14 @@ export default function WorkshopChatPage() {
 
   const handleSend = () => {
     const text = inputText.trim();
-    if (!text || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (!text || !connected) return;
 
-    wsRef.current.send(
-      JSON.stringify({
-        type: 'chat_message',
-        receiver_id: otherUserId,
-        content: text,
-        message_type: 'text',
-      })
-    );
+    send({
+      type: 'chat_message',
+      receiver_id: otherUserId,
+      content: text,
+      message_type: 'text',
+    });
     setInputText('');
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     sendTypingEvent('typing_stop');
@@ -192,7 +174,7 @@ export default function WorkshopChatPage() {
             width: 8,
             height: 8,
             borderRadius: '50%',
-            bgcolor: wsConnected ? 'success.main' : 'error.main',
+            bgcolor: connected ? 'success.main' : 'error.main',
           }}
         />
       </Box>
@@ -299,7 +281,7 @@ export default function WorkshopChatPage() {
         <IconButton
           color="primary"
           onClick={handleSend}
-          disabled={!inputText.trim() || !wsConnected}
+          disabled={!inputText.trim() || !connected}
         >
           <SendIcon />
         </IconButton>

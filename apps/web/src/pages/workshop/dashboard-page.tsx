@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRealtimeRefresh } from '../../realtime/use-realtime-refresh';
 import {
   Box,
   Typography,
@@ -78,6 +79,7 @@ export default function WorkshopDashboardPage() {
   const [totalOrders, setTotalOrders] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
   const [recentActivities, setRecentActivities] = useState<ServiceItem[]>([]);
+  const refreshKey = useRealtimeRefresh('order_status_change');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -123,7 +125,7 @@ export default function WorkshopDashboardPage() {
     };
 
     fetchData();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <Box sx={{ width: '100%' }}>

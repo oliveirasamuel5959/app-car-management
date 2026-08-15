@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRealtime } from '../../context/realtime-context';
 import {
   Box,
   Typography,
@@ -87,6 +88,14 @@ export default function MySchedulesPage() {
     fetchSchedules();
     fetchMyRatings();
   }, []);
+
+  // Live reload when the workshop accepts/rejects a schedule
+  const { subscribe } = useRealtime();
+  useEffect(() => {
+    return subscribe('schedule_status_change', () => {
+      fetchSchedules();
+    });
+  }, [subscribe]);
 
   if (loading) {
     return (

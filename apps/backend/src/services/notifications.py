@@ -1,10 +1,17 @@
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
+from src.core.ws_push import push_ws_event
 from src.models.notification import Notification
 from src.repositories.notifications import (
-    repo_create_notification, repo_get_notification_by_id,
-    repo_get_notifications_by_user_id, repo_get_unread_notifications_count,
-    repo_mark_all_notifications_as_read, repo_mark_notification_as_read)
+    repo_create_notification,
+    repo_get_notification_by_id,
+    repo_get_notifications_by_user_id,
+    repo_get_unread_notifications_count,
+    repo_mark_all_notifications_as_read,
+    repo_mark_notification_as_read,
+)
 
 
 class NotificationService:
@@ -30,7 +37,19 @@ class NotificationService:
             "service_id": service_id,
             "schedule_id": schedule_id,
         }
-        return repo_create_notification(self.db, tenant_id, notification_data)
+        notification = repo_create_notification(self.db, tenant_id, notification_data)
+        push_ws_event(
+            tenant_id,
+            user_id,
+            {
+                "type": "notification_new",
+                "notification_id": notification.id,
+                "title": title,
+                "text": message,
+                "timestamp": datetime.now(UTC).isoformat(),
+            },
+        )
+        return notification
 
     def get_notification_by_id(
         self, tenant_id, notification_id: int
