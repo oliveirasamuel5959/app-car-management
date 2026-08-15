@@ -497,3 +497,188 @@ def test_rating_read_dict_includes_client_name():
     assert data["rating"] == 4
     assert data["schedule_id"] == schedule.id
     assert data["comment"] == "Bom serviço"
+
+
+# ---------------------------------------------------------------------------
+# Order-anchored reviews (paid service orders) — Phase 6
+# ---------------------------------------------------------------------------
+
+
+def seed_paid_order_graph():
+    """Single-tenant graph: workshop + client in tenant A with a paid order."""
+    session = build_session()
+    tenant = Tenant(id=uuid.uuid4(), slug="tenant-a", name="Tenant A")
+    session.add(tenant)
+    session.commit()
+
+    workshop_user = User(
+        tenant_id=tenant.id,
+        name="Workshop Owner",
+        age=35,
+        sex="M",
+        email="workshop@test.dev",
+        password_hash="hashed",
+        role="WORKSHOP",
+        is_active=True,
+    )
+    client_user = User(
+        tenant_id=tenant.id,
+        name="Client User",
+        age=28,
+        sex="F",
+        email="client@test.dev",
+        password_hash="hashed",
+        role="CLIENT",
+        is_active=True,
+    )
+    session.add_all([workshop_user, client_user])
+    session.commit()
+
+    workshop = Workshop(
+        id=1,
+        tenant_id=tenant.id,
+        user_id=workshop_user.id,
+        name="Tenant Workshop",
+        email="tenant-workshop@test.dev",
+        description="desc",
+        latitude=10,
+        longitude=20,
+        rating_avg=0.0,
+    )
+    vehicle = Vehicle(
+        tenant_id=tenant.id,
+        brand="Honda",
+        model="Civic",
+        year=2020,
+        plate="AAA-0001",
+        user_id=client_user.id,
+    )
+    from src.models.workshop_client import WorkshopClient
+
+    workshop_client = WorkshopClient(
+        tenant_id=tenant.id,
+        workshop_id=workshop.id,
+        name="Client User",
+        email=client_user.email,
+        phone="5551999999999",
+        vehicle_brand="Honda",
+        vehicle_model="Civic",
+        vehicle_year=2020,
+        vehicle_plate="AAA-0001",
+        user_id=client_user.id,
+    )
+    session.add_all([workshop, vehicle, workshop_client])
+    session.commit()
+
+    from src.models.services import Service
+
+    service = Service(
+        tenant_id=tenant.id,
+        workshop_id=workshop.id,
+        vehicle_id=vehicle.id,
+        workshop_client_id=workshop_client.id,
+        name="Troca de óleo",
+        status="paid",
+        checkin_date=datetime(2026, 8, 10, 9, 0),
+        estimated_cost=100.0,
+        final_cost=100.0,
+    )
+    session.add(service)
+    session.commit()
+    session.refresh(service)
+    return session, tenant, workshop_user, client_user, workshop, service
+
+
+def _order_rating_payload(service_id):
+    return {"service_order_id": service_id, "rating": 5, "comment": "Excelente"}
+
+
+def test_order_rating_requires_paid_order():
+    session, tenant, w_user, c_user, workshop, service = seed_paid_order_graph()
+    service.status = "completed"
+    session.commit()
+
+    with pytest.raises(ValueError, match="pagos"):
+        WorkshopRatingService(session).create_rating(
+            _order_rating_payload(service.id),
+            client_tenant_id=tenant.id,
+            client_user_id=c_user.id,
+            client_email=c_user.email,
+        )
+
+
+def test_order_rating_rejects_unowned_order():
+    session, tenant, w_user, c_user, workshop, service = seed_paid_order_graph()
+
+    with pytest.raises(ValueError, match="não encontrado"):
+        WorkshopRatingService(session).create_rating(
+            _order_rating_payload(service.id),
+            client_tenant_id=tenant.id,
+            client_user_id=999,
+            client_email="stranger@test.dev",
+        )
+
+
+def test_order_rating_creates_for_paid_order_and_recomputes_avg():
+    session, tenant, w_user, c_user, workshop, service = seed_paid_order_graph()
+
+    rating = WorkshopRatingService(session).create_rating(
+        _order_rating_payload(service.id),
+        client_tenant_id=tenant.id,
+        client_user_id=c_user.id,
+        client_email=c_user.email,
+    )
+
+    assert rating.service_order_id == service.id
+    assert rating.schedule_id is None
+    assert rating.workshop_tenant_id == tenant.id
+    assert rating.client_tenant_id == tenant.id
+    session.refresh(workshop)
+    assert workshop.rating_avg == 5.0
+
+    data = WorkshopRatingService(session).to_read_dict(rating)
+    assert data["service_order_id"] == service.id
+
+
+def test_order_rating_rejects_duplicate_for_same_order():
+    session, tenant, w_user, c_user, workshop, service = seed_paid_order_graph()
+    rating_service = WorkshopRatingService(session)
+    rating_service.create_rating(
+        _order_rating_payload(service.id),
+        client_tenant_id=tenant.id,
+        client_user_id=c_user.id,
+        client_email=c_user.email,
+    )
+
+    with pytest.raises(ValueError, match="Já existe"):
+        rating_service.create_rating(
+            _order_rating_payload(service.id),
+            client_tenant_id=tenant.id,
+            client_user_id=c_user.id,
+            client_email=c_user.email,
+        )
+
+
+def test_order_rating_requires_exactly_one_anchor():
+    session, tenant, w_user, c_user, workshop, service = seed_paid_order_graph()
+    rating_service = WorkshopRatingService(session)
+
+    with pytest.raises(ValueError, match="apenas um"):
+        rating_service.create_rating(
+            {
+                "schedule_id": 1,
+                "service_order_id": service.id,
+                "rating": 5,
+                "comment": None,
+            },
+            client_tenant_id=tenant.id,
+            client_user_id=c_user.id,
+            client_email=c_user.email,
+        )
+    with pytest.raises(ValueError, match="apenas um"):
+        rating_service.create_rating(
+            {"rating": 5, "comment": None},
+            client_tenant_id=tenant.id,
+            client_user_id=c_user.id,
+            client_email=c_user.email,
+        )
