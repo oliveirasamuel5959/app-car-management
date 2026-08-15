@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from src.api.routes.auth import router as auth
 from src.api.routes.messages import router as messages
 from src.api.routes.notifications import router as notifications
+from src.api.routes.payments import router as payments
 from src.api.routes.schedules import router as schedules
 from src.api.routes.service_orders import router as service_orders
 from src.api.routes.services import router as services
@@ -41,3 +42,4 @@ api_router.include_router(
 api_router.include_router(
     workshop_services, prefix="/workshop-services", tags=["workshop-services"]
 )
+api_router.include_router(payments, prefix="/payments", tags=["payments"])

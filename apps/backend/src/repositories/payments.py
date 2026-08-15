@@ -1,9 +1,13 @@
 from uuid import UUID
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from src.core.logger import get_logger
 from src.models.payment import Payment
+from src.models.services import Service
+from src.models.vehicle import Vehicle
+from src.models.workshop_client import WorkshopClient
 
 logger = get_logger(__name__)
 
@@ -55,6 +59,37 @@ def repo_get_payment_by_id(
     return (
         db.query(Payment)
         .filter(Payment.id == payment_id, Payment.tenant_id == tenant_id)
+        .first()
+    )
+
+
+def repo_get_payment_for_client(
+    db: Session,
+    payment_id: int,
+    user_id: int,
+    user_email: str | None = None,
+) -> Payment | None:
+    """A payment reachable only through an order the client owns.
+
+    Mirrors repo_get_service_by_user_id: ownership is relationship-backed via
+    the order's vehicle or workshop client, so a payment can never be fetched
+    for an order the user does not own.
+    """
+    ownership_filters = [
+        Vehicle.user_id == user_id,
+        WorkshopClient.user_id == user_id,
+    ]
+    if user_email is not None:
+        ownership_filters.append(WorkshopClient.email == user_email)
+
+    return (
+        db.query(Payment)
+        .join(Service, Payment.service_order_id == Service.id)
+        .outerjoin(Vehicle, Service.vehicle_id == Vehicle.id)
+        .outerjoin(WorkshopClient, Service.workshop_client_id == WorkshopClient.id)
+        .filter(Payment.id == payment_id)
+        .filter(or_(*ownership_filters))
+        .distinct()
         .first()
     )
 

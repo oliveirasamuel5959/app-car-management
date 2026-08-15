@@ -54,6 +54,8 @@ SERVICE_STATUS_IN_PROGRESS = "in_progress"
 SERVICE_STATUS_COMPLETED = "completed"
 SERVICE_STATUS_CANCELLED = "cancelled"
 SERVICE_STATUS_REJECTED = "rejected"
+SERVICE_STATUS_PAID = "paid"
+SERVICE_STATUS_REFUNDED = "refunded"
 
 VALID_SERVICE_STATUSES = {
     SERVICE_STATUS_PENDING,
@@ -62,6 +64,8 @@ VALID_SERVICE_STATUSES = {
     SERVICE_STATUS_COMPLETED,
     SERVICE_STATUS_CANCELLED,
     SERVICE_STATUS_REJECTED,
+    SERVICE_STATUS_PAID,
+    SERVICE_STATUS_REFUNDED,
 }
 
 # Fields on ServiceActionUpdate that only feed the completion side-effects
@@ -259,9 +263,15 @@ class ServiceService:
                 SERVICE_STATUS_COMPLETED: {"WORKSHOP"},
                 SERVICE_STATUS_CANCELLED: {"WORKSHOP"},
             },
-            SERVICE_STATUS_COMPLETED: {},
+            SERVICE_STATUS_COMPLETED: {
+                SERVICE_STATUS_PAID: {"CLIENT"},
+            },
+            SERVICE_STATUS_PAID: {
+                SERVICE_STATUS_REFUNDED: {"WORKSHOP"},
+            },
             SERVICE_STATUS_CANCELLED: {},
             SERVICE_STATUS_REJECTED: {},
+            SERVICE_STATUS_REFUNDED: {},
         }
 
         if next_status not in VALID_SERVICE_STATUSES:
@@ -515,6 +525,66 @@ class ServiceService:
             old_status,
             updated_service.tenant_id,
             actor_role="CLIENT",
+            actor_user_id=user_id,
+        )
+        return updated_service
+
+    def pay_service_order(
+        self,
+        *,
+        service_id: int,
+        user_id: int,
+        user_email: str | None = None,
+    ) -> Service | None:
+        """Transition a completed order to paid after a confirmed payment."""
+        service = self._get_client_owned_service(
+            service_id, user_id, user_email=user_email
+        )
+        if not service:
+            return None
+
+        self._validate_transition(service.status, SERVICE_STATUS_PAID, "CLIENT")
+        old_status = service.status
+        updated_service = repo_update_service(
+            self.db,
+            service,
+            {"status": SERVICE_STATUS_PAID},
+        )
+        self._notify_status_change(
+            updated_service,
+            old_status,
+            updated_service.tenant_id,
+            actor_role="CLIENT",
+            actor_user_id=user_id,
+        )
+        return updated_service
+
+    def refund_service_order(
+        self,
+        *,
+        service_id: int,
+        user_id: int,
+        tenant_id,
+    ) -> Service | None:
+        """Transition a paid order to refunded after a workshop refund."""
+        service = repo_get_service_for_workshop_user(
+            self.db, tenant_id, user_id, service_id
+        )
+        if not service:
+            return None
+
+        self._validate_transition(service.status, SERVICE_STATUS_REFUNDED, "WORKSHOP")
+        old_status = service.status
+        updated_service = repo_update_service(
+            self.db,
+            service,
+            {"status": SERVICE_STATUS_REFUNDED},
+        )
+        self._notify_status_change(
+            updated_service,
+            old_status,
+            tenant_id,
+            actor_role="WORKSHOP",
             actor_user_id=user_id,
         )
         return updated_service

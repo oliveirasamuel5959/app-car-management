@@ -45,6 +45,8 @@ class Service(Base):
     completed
     cancelled
     rejected
+    paid
+    refunded
     """
 
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)

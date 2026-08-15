@@ -1,17 +1,20 @@
 import uuid
 from datetime import datetime
 
+import pytest
 from sqlalchemy import UniqueConstraint, create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from src.db.base import Base
-from src.models import Tenant, User, Vehicle, Workshop, WorkshopClient
+from src.models import Notification, Payment, Tenant, User, Vehicle, Workshop, WorkshopClient
 from src.models.services import Service
 from src.repositories.payments import (
     repo_create_payment,
     repo_get_payment_by_id,
     repo_get_payment_for_order,
 )
+from src.services.payments import PaymentService
+from src.utils.payments import MockProvider
 
 
 def build_session():
@@ -180,3 +183,289 @@ def test_repo_create_payment_persists_and_is_tenant_scoped():
     assert repo_get_payment_for_order(session, uuid.uuid4(), service.id) is None
     assert repo_get_payment_by_id(session, tenant.id, payment.id) is not None
     assert repo_get_payment_by_id(session, uuid.uuid4(), payment.id) is None
+
+
+# ----------------------------------------------------------------------
+# PaymentService (TG2)
+# ----------------------------------------------------------------------
+
+
+class FailingProvider:
+    """Provider stub whose intents never confirm (simulates a failed card)."""
+
+    def create_intent(self, amount_cents: int, order_id: int) -> tuple[str, str]:
+        return "pi_failing", "mock_secret_pi_failing"
+
+    def retrieve_intent(self, intent_id: str) -> str:
+        return "requires_payment_method"
+
+    def refund(self, intent_id: str) -> None:
+        raise AssertionError("refund must not be called for failed intents")
+
+
+def test_intent_requires_completed_order():
+    session, tenant, service = seed_payment_graph()
+    service.status = "pending"
+    session.commit()
+
+    with pytest.raises(ValueError):
+        PaymentService(session, MockProvider()).create_payment_intent(
+            service_order_id=service.id,
+            user_id=2,
+            user_email="client@test.dev",
+        )
+
+
+def test_intent_requires_final_cost():
+    session, tenant, service = seed_payment_graph()
+    service.final_cost = None
+    session.commit()
+
+    with pytest.raises(ValueError):
+        PaymentService(session, MockProvider()).create_payment_intent(
+            service_order_id=service.id,
+            user_id=2,
+            user_email="client@test.dev",
+        )
+
+
+def test_fee_math_ten_percent():
+    session, tenant, service = seed_payment_graph()
+    service.final_cost = 100.50
+    session.commit()
+
+    intent = PaymentService(session, MockProvider()).create_payment_intent(
+        service_order_id=service.id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    assert intent.amount_cents == 10050
+    payment = repo_get_payment_for_order(session, tenant.id, service.id)
+    assert payment is not None
+    assert payment.amount_cents == 10050
+    assert payment.platform_fee_cents == 1005
+    assert payment.workshop_amount_cents == 9045
+    assert payment.status == "pending"
+    assert payment.stripe_payment_intent_id is not None
+
+
+def test_intent_reuses_pending_payment_row():
+    session, tenant, service = seed_payment_graph()
+    service = PaymentService(session, MockProvider())
+
+    first = service.create_payment_intent(
+        service_order_id=1,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+    second = service.create_payment_intent(
+        service_order_id=1,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    assert first.payment_id == second.payment_id
+    assert session.query(Payment).count() == 1
+
+
+def test_intent_raises_when_order_already_paid():
+    session, tenant, service = seed_payment_graph()
+    payment_service = PaymentService(session, MockProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+    payment_service.confirm_payment(
+        payment_id=intent.payment_id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    # The order is no longer completed, so the order-status gate fires first.
+    with pytest.raises(ValueError, match="concluídos"):
+        payment_service.create_payment_intent(
+            service_order_id=service.id,
+            user_id=2,
+            user_email="client@test.dev",
+        )
+
+
+def test_intent_blocks_when_succeeded_payment_row_exists():
+    """Defensive branch: a completed order that already has a succeeded payment."""
+    session, tenant, service = seed_payment_graph()
+    repo_create_payment(
+        session,
+        tenant.id,
+        service_order_id=service.id,
+        amount_cents=10050,
+        platform_fee_cents=1005,
+        workshop_amount_cents=9045,
+        stripe_payment_intent_id="pi_test_1",
+    )
+    session.query(Payment).update({"status": "succeeded"})
+    session.commit()
+
+    with pytest.raises(ValueError, match="já"):
+        PaymentService(session, MockProvider()).create_payment_intent(
+            service_order_id=service.id,
+            user_id=2,
+            user_email="client@test.dev",
+        )
+
+
+def test_confirm_pays_order_and_notifies_workshop():
+    session, tenant, service = seed_payment_graph()
+    payment_service = PaymentService(session, MockProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    result = payment_service.confirm_payment(
+        payment_id=intent.payment_id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    assert result.status == "succeeded"
+    session.refresh(service)
+    assert service.status == "paid"
+    notifications = (
+        session.query(Notification).filter(Notification.service_id == service.id).all()
+    )
+    assert len(notifications) == 1
+    assert {n.user_id for n in notifications} == {1}
+    assert all(n.notification_type == "status_change" for n in notifications)
+
+
+def test_confirm_is_idempotent():
+    session, tenant, service = seed_payment_graph()
+    payment_service = PaymentService(session, MockProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+    payment_service.confirm_payment(
+        payment_id=intent.payment_id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    again = payment_service.confirm_payment(
+        payment_id=intent.payment_id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    assert again.status == "succeeded"
+    notifications = (
+        session.query(Notification).filter(Notification.service_id == service.id).all()
+    )
+    assert len(notifications) == 1
+
+
+def test_confirm_marks_failed_when_provider_not_succeeded():
+    session, tenant, service = seed_payment_graph()
+    payment_service = PaymentService(session, FailingProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    with pytest.raises(ValueError):
+        payment_service.confirm_payment(
+            payment_id=intent.payment_id,
+            user_id=2,
+            user_email="client@test.dev",
+        )
+
+    payment = repo_get_payment_by_id(session, tenant.id, intent.payment_id)
+    assert payment is not None
+    assert payment.status == "failed"
+    session.refresh(service)
+    assert service.status == "completed"
+
+
+def test_refund_requires_succeeded_payment():
+    session, tenant, service = seed_payment_graph()
+    payment_service = PaymentService(session, MockProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    with pytest.raises(ValueError):
+        payment_service.refund_payment(
+            payment_id=intent.payment_id,
+            user_id=1,
+            tenant_id=tenant.id,
+        )
+
+
+def test_refund_workshop_flow_notifies_client():
+    session, tenant, service = seed_payment_graph()
+    payment_service = PaymentService(session, MockProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+    payment_service.confirm_payment(
+        payment_id=intent.payment_id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    refunded = payment_service.refund_payment(
+        payment_id=intent.payment_id,
+        user_id=1,
+        tenant_id=tenant.id,
+    )
+
+    assert refunded.status == "refunded"
+    session.refresh(service)
+    assert service.status == "refunded"
+    newest = (
+        session.query(Notification)
+        .filter(Notification.service_id == service.id)
+        .order_by(Notification.id.desc())
+        .first()
+    )
+    assert newest is not None and newest.user_id == 2
+
+
+def test_cross_tenant_payment_denied():
+    session, tenant, service = seed_payment_graph()
+    payment_service = PaymentService(session, MockProvider())
+    intent = payment_service.create_payment_intent(
+        service_order_id=service.id,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+
+    other_tenant = Tenant(id=uuid.uuid4(), slug="tenant-b", name="Tenant B")
+    session.add(other_tenant)
+    session.commit()
+
+    assert (
+        payment_service.create_payment_intent(
+            service_order_id=service.id,
+            user_id=3,
+            user_email="other@test.dev",
+        )
+        is None
+    )
+    assert (
+        payment_service.refund_payment(
+            payment_id=intent.payment_id,
+            user_id=3,
+            tenant_id=other_tenant.id,
+        )
+        is None
+    )
