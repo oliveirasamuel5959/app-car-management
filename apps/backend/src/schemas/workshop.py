@@ -1,7 +1,7 @@
 import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class WorkshopCreate(BaseModel):
@@ -63,6 +63,36 @@ class WorkshopUpdate(BaseModel):
     closing_time: datetime.time | None = None
     work_days: str | None = None
     employee_count: int | None = None
+
+
+# ---------------------------------------------------------------------------
+# Search schemas (Phase 4)
+# ---------------------------------------------------------------------------
+
+
+class WorkshopSearchItem(BaseModel):
+    """Public directory shape returned by the client search endpoint.
+
+    Deliberately excludes tenant/owner identifiers and profile-management
+    fields; client discovery is the cross-tenant read path.
+    """
+
+    id: int
+    name: str
+    description: str | None
+    latitude: float
+    longitude: float
+    rating_avg: float
+    phone: str | None = None
+    address: str | None = None
+    city: str | None = None
+    state: str | None = None
+    logo_url: str | None = None
+    distance_km: float | None = None
+    service_types: list[str] = []
+    ratings_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ---------------------------------------------------------------------------

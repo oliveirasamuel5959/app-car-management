@@ -9,6 +9,10 @@ from src.models.user import User
 from src.models.vehicle import Vehicle
 from src.models.workshop import Workshop
 from src.models.workshop_client import WorkshopClient
+from src.models.workshop_rating import WorkshopRating
+from src.models.workshop_service import WorkshopService
+from src.schemas.workshop import WorkshopSearchItem
+from src.utils.workshops import haversine_km
 
 
 def repo_search_workshops(
@@ -18,11 +22,24 @@ def repo_search_workshops(
     lat: float | None = None,
     lng: float | None = None,
     radius_km: float = 10.0,
+    min_rating: float | None = None,
+    service_types: list[str] | None = None,
+    sort: str = "rating",
     skip: int = 0,
     limit: int = 50,
-) -> list[Workshop]:
-    """Search workshops with optional name and location filters, paginated."""
-    query = db.query(Workshop)
+) -> list[WorkshopSearchItem]:
+    """Search workshops with name, location, rating, and service-type filters.
+
+    Location filtering uses a bounding-box prefilter in SQL plus exact
+    Haversine distance in Python. Results are sorted before pagination.
+    """
+    ratings_count_subq = (
+        db.query(func.count(WorkshopRating.id))
+        .filter(WorkshopRating.workshop_tenant_id == Workshop.tenant_id)
+        .scalar_subquery()
+    )
+
+    query = db.query(Workshop, ratings_count_subq.label("ratings_count"))
 
     if tenant_id is not None:
         query = query.filter(Workshop.tenant_id == tenant_id)
@@ -30,7 +47,20 @@ def repo_search_workshops(
     if name:
         query = query.filter(Workshop.name.ilike(f"%{name}%"))
 
-    if lat is not None and lng is not None:
+    if min_rating is not None:
+        query = query.filter(Workshop.rating_avg >= min_rating)
+
+    if service_types:
+        query = query.filter(
+            Workshop.id.in_(
+                db.query(WorkshopService.workshop_id).filter(
+                    WorkshopService.service_type.in_(service_types)
+                )
+            )
+        )
+
+    has_coords = lat is not None and lng is not None
+    if has_coords:
         lat_delta = radius_km / 111.0
         lng_delta = (
             radius_km / (111.0 * cos(radians(lat))) if lat != 0 else radius_km / 111.0
@@ -40,7 +70,59 @@ def repo_search_workshops(
             Workshop.longitude.between(lng - lng_delta, lng + lng_delta),
         )
 
-    return query.offset(skip).limit(limit).all()
+    rows = query.all()
+
+    # Offered service types, keyed by workshop
+    service_types_by_workshop: dict[int, list[str]] = {}
+    workshop_ids = [workshop.id for workshop, _ in rows]
+    if workshop_ids:
+        for ws in (
+            db.query(WorkshopService)
+            .filter(WorkshopService.workshop_id.in_(workshop_ids))
+            .order_by(WorkshopService.id)
+        ):
+            service_types_by_workshop.setdefault(ws.workshop_id, []).append(
+                ws.service_type
+            )
+
+    results: list[WorkshopSearchItem] = []
+    for workshop, ratings_count in rows:
+        distance = (
+            haversine_km(lat, lng, workshop.latitude, workshop.longitude)
+            if has_coords
+            else None
+        )
+        if distance is not None and distance > radius_km:
+            continue
+        results.append(
+            WorkshopSearchItem(
+                id=workshop.id,
+                name=workshop.name,
+                description=workshop.description,
+                latitude=workshop.latitude,
+                longitude=workshop.longitude,
+                rating_avg=workshop.rating_avg,
+                phone=workshop.phone,
+                address=workshop.address,
+                city=workshop.city,
+                state=workshop.state,
+                logo_url=workshop.logo_url,
+                distance_km=round(distance, 2) if distance is not None else None,
+                service_types=service_types_by_workshop.get(workshop.id, []),
+                ratings_count=int(ratings_count),
+            )
+        )
+
+    if sort == "distance":
+        results.sort(
+            key=lambda i: i.distance_km if i.distance_km is not None else float("inf")
+        )
+    elif sort == "reviews":
+        results.sort(key=lambda i: i.ratings_count, reverse=True)
+    else:  # rating
+        results.sort(key=lambda i: i.rating_avg, reverse=True)
+
+    return results[skip : skip + limit]
 
 
 def repo_get_workshop_by_id_any_tenant(
