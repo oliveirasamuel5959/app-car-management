@@ -1,6 +1,6 @@
 # 🗺 Implementation Roadmap
 
-**Current Status:** Pre-Alpha (Phase 3 Complete)  
+**Current Status:** Pre-Alpha (Phases 1–5 Complete)  
 **Target:** MVP Ready in ~8 weeks  
 **Scale:** Hundreds of tenants with tenant-scoped isolation
 
@@ -96,7 +96,7 @@
 ### ⚠️ Partial / In-Progress
 
 - ✅ **Reviews & ratings** (schedule-anchored ratings shipped on 2026-08-14; order-anchored reviews deferred to the payment phase)
-- ⚠️ **Real-time chat over WebSocket** (notifications now persisted + delivered to the bell; live chat transport integration still incomplete)
+- ✅ **Real-time over WebSocket** (chat, live notification pushes, order/schedule/rating status events — Phase 5 complete on 2026-08-15)
 - ⚠️ **Database migrations** (tenant foundation + `services_history` feature migrations implemented; future feature migrations still pending)
 - ⚠️ **Backend/frontend contract consistency** (many pages and routes already exist, but some service modules still need response/path normalization)
 
@@ -505,6 +505,18 @@ Spec: `specs/2026-08-14-search-filtering/`.
 
 **Objective:** Enable real-time notifications and live chat updates.
 
+**Status:** Complete on 2026-08-15 — reconciled with the codebase: the existing
+`/messages/ws?token=` chat socket was kept as the single endpoint (the brief's
+`?tenant={slug}` was redundant — the tenant is in the JWT); the
+`ConnectionManager` was rekeyed to `(tenant_id, user_id) → set[WebSocket]`
+with ping/pong keepalive; all WS pushes moved to the service layer
+(`new_message`, `notification_new`, `order_status_change`,
+`schedule_status_change`, `rating_received`); the frontend got a shared
+`RealtimeProvider`/`useRealtime()` socket with reconnect, a live bell, toasts,
+and live page refreshes. The brief's `workshop_accepted` event was dropped (no
+matching flow — acceptance is an order lifecycle transition). Spec:
+`specs/2026-08-15-websocket-realtime/`.
+
 #### 5.1 WebSocket Connection Manager
 - Extend WebSocketManager (already exists) to:
   - Track connections by tenant_id + user_id
@@ -849,7 +861,7 @@ Spec: `specs/2026-08-14-search-filtering/`.
 | 2.5 | 2 | Service order lifecycle complete | ✅ |
 | 3 | 3 | Reviews & ratings | ✅ |
 | 3.5 | 4 | Search and filtering | 🚧 |
-| 4.5 | 5 | WebSocket real-time | 🚧 |
+| 4.5 | 5 | WebSocket real-time | ✅ |
 | 5.5 | 6 | Stripe integration and payment flow | 🚧 |
 | 6.5 | 7 | Test suite complete and polish pass | 🚧 |
 | 7.5 | 8 | Deployment and documentation | 🚧 |
