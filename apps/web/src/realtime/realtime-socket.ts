@@ -143,10 +143,14 @@ export class RealtimeSocket {
 
   private readonly handlers = new Map<RealtimeEventType, Set<Handler>>();
 
-  constructor(
-    private readonly url: string,
-    private readonly options: RealtimeSocketOptions,
-  ) {}
+  private readonly url: string;
+
+  private readonly options: RealtimeSocketOptions;
+
+  constructor(url: string, options: RealtimeSocketOptions) {
+    this.url = url;
+    this.options = options;
+  }
 
   get status(): RealtimeStatus {
     return this.statusValue;

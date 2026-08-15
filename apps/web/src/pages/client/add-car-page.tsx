@@ -1,24 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Box, Button, Typography, Container, CircularProgress, Alert } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Stack,
+  Typography,
+} from '@mui/material';
+
 import AddCarModal from '../../components/cars/add-car-modal';
+import CarCard, { type CarData } from '../../components/cars/car-card';
 import { carService } from '../../services/car-service';
-import { useNavigate } from 'react-router-dom';
 
 export function AddCarPage() {
-  const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
-  const [cars, setCars] = useState([]);
+  const [cars, setCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
-
-  const handleCarAddedSuccess = () => {
-    // Refresh the car list
-    setRefreshKey((prev) => prev + 1);
-  };
+  const handleCarAddedSuccess = () => setRefreshKey((prev) => prev + 1);
 
   useEffect(() => {
     const fetchCars = async () => {
@@ -26,10 +30,11 @@ export function AddCarPage() {
         setLoading(true);
         setError(null);
         const data = await carService.getAllCars();
-        setCars(data);
+        setCars(Array.isArray(data) ? data : []);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load cars';
-        setError(errorMessage);
+        setError(
+          err instanceof Error ? err.message : 'Não foi possível carregar seus veículos',
+        );
         console.error('Error fetching cars:', err);
       } finally {
         setLoading(false);
@@ -48,16 +53,21 @@ export function AddCarPage() {
           justifyContent: 'space-between',
           alignItems: 'center',
           mb: 4,
+          gap: 2,
+          flexWrap: 'wrap',
         }}
       >
-        <div>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 1 }}>
-            My Vehicles
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 0.5 }}>
+            Meus Veículos
           </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Manage your car collection
+          <Typography variant="body2" color="text.secondary">
+            Gerencie os carros da sua garagem.
           </Typography>
-        </div>
+        </Box>
+        <Button variant="contained" size="small" onClick={handleOpenModal}>
+          Adicionar veículo
+        </Button>
       </Box>
 
       {/* Error State */}
@@ -72,38 +82,33 @@ export function AddCarPage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
-      ) : cars && cars.length > 0 ? (
-        <Box>
-          <CarList cars={cars} />
-        </Box>
-      ) : (
+      ) : cars.length === 0 ? (
         <Box
           sx={{
             textAlign: 'center',
             py: 8,
-            backgroundColor: '#F8FAFC',
+            backgroundColor: 'background.default',
             borderRadius: 2,
-            border: '1px solid #E5E7EB',
+            border: '1px solid',
+            borderColor: 'divider',
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-            No vehicles yet
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+            Nenhum veículo cadastrado
           </Typography>
-          <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-            Get started by adding your first car to the collection
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Adicione seu primeiro carro para começar.
           </Typography>
-          <Button
-            variant="contained"
-            onClick={handleOpenModal}
-            sx={{
-              backgroundColor: '#2563EB',
-              '&:hover': { backgroundColor: '#1D4ED8' },
-              textTransform: 'none',
-            }}
-          >
-            Add Your First Car
+          <Button variant="contained" size="small" onClick={handleOpenModal}>
+            Adicionar meu primeiro carro
           </Button>
         </Box>
+      ) : (
+        <Stack spacing={2}>
+          {cars.map((car) => (
+            <CarCard key={car.id} carData={car} />
+          ))}
+        </Stack>
       )}
 
       {/* Add Car Modal */}

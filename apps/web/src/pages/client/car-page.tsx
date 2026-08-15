@@ -1,28 +1,40 @@
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/auth-context";
-import travelingSvg from "../../assets/undraw_traveling_yhxq.svg";
-import { useEffect, useState } from "react";
-import { carService } from "../../services/car-service";
-import CarCard from "../../components/cars/car-card";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material';
+
+import { useAuth } from '../../context/auth-context';
+import travelingSvg from '../../assets/undraw_traveling_yhxq.svg';
+import { carService } from '../../services/car-service';
+import CarCard, { type CarData } from '../../components/cars/car-card';
 
 export function CarPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [carData, setCarData] = useState([]);
+  const [carData, setCarData] = useState<CarData[]>([]);
   const [loadingState, setLoadingState] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCars = async () => {
       try {
         setLoadingState(true);
         const data = await carService.getAllCars();
-        console.log("Fetched cars:", data);
         setCarData(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("CarList error:", err);
-        setError(err.message || "Failed to load cars");
+        console.error('CarList error:', err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Não foi possível carregar seus veículos',
+        );
       } finally {
         setLoadingState(false);
       }
@@ -31,104 +43,85 @@ export function CarPage() {
     fetchCars();
   }, []);
 
-
-  const WelcomeMessage = () => (
-    <div className="flex flex-col items-center text-center py-20 px-6">
-      <img
-        src={travelingSvg}
-        alt="Start"
-        className="w-72 mb-8 opacity-90"
-      />
-
-      <h2 className="text-3xl font-bold text-gray-900 mb-4">
-        Welcome to DrivePluss
-      </h2>
-
-      <p className="text-gray-500 max-w-xl mb-8">
-        You haven't registered any vehicles yet. Add your first car and start
-        managing everything in one place.
-      </p>
-
-      <button
-        onClick={() => navigate("/cars/new")}
-        className="bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow-md shadow-blue-500/20"
-      >
-        + Add Your First Car
-      </button>
-    </div>
-  );
-
-  const ErrorState = () => (
-    <div className="flex flex-col items-center text-center py-20 px-6">
-      <img
-        src={travelingSvg}
-        alt="Error"
-        className="w-72 mb-8 opacity-60"
-      />
-
-      <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-        Something went wrong
-      </h2>
-
-      <p className="text-gray-500 max-w-xl mb-8">
-        We couldn’t load your cars. Try refreshing the page.
-      </p>
-
-      <button
-        onClick={() => window.location.reload()}
-        className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition"
-      >
-        Try Again
-      </button>
-    </div>
-  );
-
-  const LoadingState = () => (
-    <div className="flex items-center justify-center py-20">
-      <p className="text-gray-500 animate-pulse">
-        Loading your cars...
-      </p>
-    </div>
-  );
-
-  /* ---------------- RENDER ---------------- */
-
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="w-full px-6 py-10">
-
-        {/* Header only appears if user has cars */}
-        {!loadingState && !error && carData && carData.length > 0 && (
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                My Car
-              </h1>
-              <p className="text-gray-500 mt-1">
-                Welcome back{user?.name ? `, ${user.name}` : ""}. Here's your vehicle overview.
-              </p>
-            </div>
-          </div>
+    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', p: { xs: 2, md: 4 } }}>
+      {/* Header */}
+      <Box
+        sx={{
+          mb: 4,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Meu Carro
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {user?.name
+              ? `Olá, ${user.name.split(' ')[0]}. Seus veículos em um só lugar.`
+              : 'Seus veículos em um só lugar.'}
+          </Typography>
+        </Box>
+        {!loadingState && !error && carData.length > 0 && (
+          <Button variant="contained" size="small" onClick={() => navigate('/cars/new')}>
+            Adicionar veículo
+          </Button>
         )}
+      </Box>
 
-        {/* Main Container */}
-        <div className="min-h-[60vh] flex flex-col justify-center">
-
-          {loadingState ? (
-            <LoadingState />
-          ) : error ? (
-            <ErrorState />
-          ) : !carData || carData.length === 0 ? (
-            <WelcomeMessage />
-          ) : (
-            <CarCard
-              carData={carData[0]}
-              loading={loadingState}
-            />
-          )}
-        </div>
-      </div>
-    </div>
+      {/* States */}
+      {loadingState ? (
+        <Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 3 }}>
+          <Skeleton variant="text" width={140} />
+          <Skeleton variant="text" width={280} sx={{ mt: 1 }} />
+          <Skeleton variant="rounded" width={180} height={44} sx={{ mt: 2 }} />
+        </Paper>
+      ) : error ? (
+        <Paper
+          elevation={0}
+          sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 6, textAlign: 'center' }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Algo deu errado
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Não conseguimos carregar seus veículos. {error}
+          </Typography>
+          <Button variant="contained" size="small" sx={{ mt: 3 }} onClick={() => window.location.reload()}>
+            Tentar novamente
+          </Button>
+        </Paper>
+      ) : carData.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8, px: 3 }}>
+          <Box
+            component="img"
+            src={travelingSvg}
+            alt="Carro na estrada"
+            sx={{ width: 200, mx: 'auto', display: 'block', opacity: 0.9 }}
+          />
+          <Typography variant="h6" sx={{ fontWeight: 700, mt: 4 }}>
+            Você ainda não cadastrou nenhum veículo
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, maxWidth: 420, mx: 'auto' }}>
+            Adicione seu primeiro carro e acompanhe serviços, agendamentos e o
+            histórico de manutenção em um só lugar.
+          </Typography>
+          <Button variant="contained" size="small" sx={{ mt: 3 }} onClick={() => navigate('/cars/new')}>
+            Adicionar meu primeiro carro
+          </Button>
+        </Box>
+      ) : (
+        <Stack spacing={2}>
+          {carData.map((car) => (
+            <CarCard key={car.id} carData={car} />
+          ))}
+        </Stack>
+      )}
+    </Box>
   );
 }
 
