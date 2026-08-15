@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 
 from src.core.auth import get_current_user
 from src.db.database import get_session
-from src.repositories.user import repo_find_user_by_tenant_and_role
-from src.schemas.workshop_rating import (WorkshopRatingCreate,
-                                         WorkshopRatingRead,
-                                         WorkshopRatingUpdate)
-from src.services.notifications import NotificationService
+from src.schemas.workshop_rating import (
+    WorkshopRatingCreate,
+    WorkshopRatingRead,
+    WorkshopRatingUpdate,
+)
 from src.services.workshop_rating import WorkshopRatingService
 
 router = APIRouter()
@@ -26,19 +26,8 @@ def _require_role(current_user: dict, role: str) -> None:
         )
 
 
-def _notify_workshop_new_rating(db: Session, rating) -> None:
-    """Send a notification to the workshop user about the new rating."""
-    workshop_user = repo_find_user_by_tenant_and_role(
-        db, rating.workshop_tenant_id, "WORKSHOP"
-    )
-    if workshop_user:
-        notif_service = NotificationService(db)
-        notif_service.create_rating_notification(
-            tenant_id=rating.workshop_tenant_id,
-            user_id=workshop_user.id,
-            schedule_id=rating.schedule_id,
-            rating_value=rating.rating,
-        )
+# Notification helper moved to WorkshopRatingService.notify_workshop_of_new_rating
+# (services/workshop_rating.py) so the WS push lives in the service layer.
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +130,7 @@ def create_rating(
         rating = service.create_rating(
             rating_in.model_dump(), current_user.get("tenant_id")
         )
-        _notify_workshop_new_rating(db, rating)
+        service.notify_workshop_of_new_rating(rating)
         return service.to_read_dict(rating)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

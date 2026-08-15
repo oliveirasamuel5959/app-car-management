@@ -1,7 +1,7 @@
-
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
+from src.core.ws_push import push_ws_event
 from src.models.messages import Message
 from src.models.services import Service
 from src.models.user import User
@@ -103,7 +103,7 @@ class MessageService:
         if conversation_tenant_id is None:
             raise ValueError("No shared conversation context found")
 
-        return repo_create_message(
+        db_message = repo_create_message(
             self.db,
             tenant_id=conversation_tenant_id,
             sender_id=sender_id,
@@ -115,6 +115,29 @@ class MessageService:
             file_size=file_size,
             mime_type=mime_type,
         )
+        self._push_new_message(db_message, sender, receiver)
+        return db_message
+
+    def _push_new_message(self, db_message: Message, sender: User, receiver: User):
+        """Push the new_message envelope to receiver and echo to the sender."""
+        envelope = {
+            "type": "new_message",
+            "message_id": db_message.uuid,
+            "sender_id": sender.id,
+            "sender_name": sender.name,
+            "receiver_id": receiver.id,
+            "content": db_message.content,
+            "timestamp": db_message.created_at.isoformat(),
+            "message_type": db_message.message_type,
+            "file_url": db_message.file_url,
+            "file_name": db_message.file_name,
+            "file_size": db_message.file_size,
+            "mime_type": db_message.mime_type,
+        }
+        # Sockets are keyed by each user's own tenant, which may differ in
+        # cross-tenant conversations (client tenant vs workshop tenant).
+        push_ws_event(receiver.tenant_id, receiver.id, envelope)
+        push_ws_event(sender.tenant_id, sender.id, envelope)
 
     def get_conversation(
         self, tenant_id, user_a: int, user_b: int, skip: int = 0, limit: int = 50

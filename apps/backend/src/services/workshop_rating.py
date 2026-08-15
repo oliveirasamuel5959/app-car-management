@@ -1,18 +1,28 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from src.core.ws_push import push_ws_event
 from src.models.workshop_rating import WorkshopRating
 from src.repositories.schedules import repo_get_schedule_by_id_for_client
 from src.repositories.user import repo_find_user_by_tenant_and_role
-from src.repositories.workshop import (repo_get_workshop_by_id_any_tenant,
-                                       repo_get_workshop_by_tenant_id,
-                                       repo_update_workshop)
+from src.repositories.workshop import (
+    repo_get_workshop_by_id_any_tenant,
+    repo_get_workshop_by_tenant_id,
+    repo_update_workshop,
+)
 from src.repositories.workshop_rating import (
-    repo_average_for_workshop_tenant, repo_create_rating, repo_delete_rating,
-    repo_get_rating_by_id, repo_get_rating_by_schedule,
-    repo_list_ratings_for_client_tenant, repo_list_ratings_for_workshop_tenant,
-    repo_update_rating)
+    repo_average_for_workshop_tenant,
+    repo_create_rating,
+    repo_delete_rating,
+    repo_get_rating_by_id,
+    repo_get_rating_by_schedule,
+    repo_list_ratings_for_client_tenant,
+    repo_list_ratings_for_workshop_tenant,
+    repo_update_rating,
+)
+from src.services.notifications import NotificationService
 
 
 class WorkshopRatingService:
@@ -153,6 +163,34 @@ class WorkshopRatingService:
             "comment": rating.comment,
             "created_at": rating.created_at,
         }
+
+    # ------------------------------------------------------------------
+    # Notifications + realtime pushes (service layer per four-layer rule)
+    # ------------------------------------------------------------------
+
+    def notify_workshop_of_new_rating(self, rating: WorkshopRating) -> None:
+        """Notify the workshop user about a new rating."""
+        workshop_user = repo_find_user_by_tenant_and_role(
+            self.db, rating.workshop_tenant_id, "WORKSHOP"
+        )
+        if not workshop_user:
+            return
+        NotificationService(self.db).create_rating_notification(
+            tenant_id=rating.workshop_tenant_id,
+            user_id=workshop_user.id,
+            schedule_id=rating.schedule_id,
+            rating_value=rating.rating,
+        )
+        push_ws_event(
+            rating.workshop_tenant_id,
+            workshop_user.id,
+            {
+                "type": "rating_received",
+                "schedule_id": rating.schedule_id,
+                "rating": rating.rating,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
     # ------------------------------------------------------------------
     # Internal

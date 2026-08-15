@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -9,7 +10,17 @@ from src.core.middleware import (
     RateLimitMiddleware,
     SecurityHeadersMiddleware,
 )
+from src.core.ws_push import capture_ws_loop
 from src.routers import api_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Remember the loop that owns the WebSocket connections so sync services
+    # running in the threadpool can hand pushes to it (see core/ws_push.py).
+    capture_ws_loop()
+    yield
+
 
 servers = [
     {"url": "http://localhost:5500", "description": "Staging environment"},
@@ -28,6 +39,7 @@ tags_metadata = [
 ]
 
 app = FastAPI(
+    lifespan=lifespan,
     title="Account API",
     version="1.0.0",
     summary="API for banck account transactions control",

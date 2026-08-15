@@ -7,7 +7,6 @@ from src.core.auth import get_current_user
 from src.db.database import get_session
 from src.repositories.user import repo_find_user_by_tenant_and_role
 from src.schemas.schedules import ScheduleCreate, ScheduleRead
-from src.services.notifications import NotificationService
 from src.services.schedules import ScheduleService
 from src.services.workshop import WorkshopService
 
@@ -55,7 +54,9 @@ def list_schedules(
             if workshop_tenant_id == "me"
             else workshop_tenant_id
         )
-        schedules = service.get_schedules_for_workshop(tenant_id, skip=skip, limit=limit)
+        schedules = service.get_schedules_for_workshop(
+            tenant_id, skip=skip, limit=limit
+        )
         # Attach client name to each schedule
         result: list[dict] = []
         for s in schedules:
@@ -123,7 +124,9 @@ def create_schedule(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     # Validate scheduled_at is within workshop operating hours, if configured
-    scheduled_time = schedule_in.scheduled_at.time() if schedule_in.scheduled_at else None
+    scheduled_time = (
+        schedule_in.scheduled_at.time() if schedule_in.scheduled_at else None
+    )
     if workshop.opening_time and workshop.closing_time and scheduled_time:
         if not (workshop.opening_time <= scheduled_time <= workshop.closing_time):
             raise HTTPException(
@@ -153,17 +156,8 @@ def create_schedule(
         data["workshop_tenant_id"] = workshop.tenant_id
         schedule = service.create_schedule(data, current_user.get("tenant_id"))
 
-        # Notify the workshop owner about the new request
-        notif_service = NotificationService(db)
-        workshop_owner_id = workshop.user_id
-        if workshop_owner_id:
-            notif_service.create_schedule_status_notification(
-                tenant_id=workshop.tenant_id,
-                user_id=workshop_owner_id,
-                schedule_id=schedule.id,
-                new_status="pendente",
-                workshop_name=workshop.name,
-            )
+        # Notify the workshop owner about the new request (+ WS push)
+        service.notify_workshop_of_new_request(schedule, workshop)
 
         return schedule
     except Exception as e:
@@ -254,8 +248,8 @@ def accept_schedule(
     try:
         schedule = service.accept_schedule(schedule_id, current_user.get("tenant_id"))
 
-        # Notify the client about the acceptance
-        _notify_client(db, schedule, "aceito")
+        # Notify the client about the acceptance (+ WS push)
+        service.notify_client_of_status(schedule, "aceito")
 
         return schedule
     except ValueError as e:
@@ -278,8 +272,8 @@ def reject_schedule(
     try:
         schedule = service.reject_schedule(schedule_id, current_user.get("tenant_id"))
 
-        # Notify the client about the rejection
-        _notify_client(db, schedule, "recusado")
+        # Notify the client about the rejection (+ WS push)
+        service.notify_client_of_status(schedule, "recusado")
 
         return schedule
     except ValueError as e:
@@ -287,20 +281,5 @@ def reject_schedule(
 
 
 # ---------------------------------------------------------------------------
-# Notification helpers
+# Notification helpers (moved to ScheduleService in services/schedules.py)
 # ---------------------------------------------------------------------------
-
-
-def _notify_client(db: Session, schedule, new_status: str) -> None:
-    """Send a notification to the client who created this schedule."""
-    client_user = repo_find_user_by_tenant_and_role(
-        db, schedule.client_tenant_id, "CLIENT"
-    )
-    if client_user:
-        notif_service = NotificationService(db)
-        notif_service.create_schedule_status_notification(
-            tenant_id=schedule.client_tenant_id,
-            user_id=client_user.id,
-            schedule_id=schedule.id,
-            new_status=new_status,
-        )
