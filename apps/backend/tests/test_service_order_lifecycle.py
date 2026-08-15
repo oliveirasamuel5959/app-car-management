@@ -168,6 +168,95 @@ def test_client_can_accept_pending_service_order_and_notify_workshop():
     )
 
 
+def test_client_can_reject_pending_service_order_and_notify_workshop():
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+
+    updated_service = ServiceService(session).reject_service_order_for_client(
+        service_id=service.id,
+        user_id=client_user.id,
+        user_email=client_user.email,
+    )
+
+    assert updated_service is not None
+    assert updated_service.status == "rejected"
+    notifications = (
+        session.query(Notification).filter(Notification.service_id == service.id).all()
+    )
+    assert len(notifications) == 1
+    assert {notification.user_id for notification in notifications} == {
+        workshop_user.id
+    }
+    assert all(
+        notification.notification_type == "status_change"
+        for notification in notifications
+    )
+
+
+def test_rejected_order_is_terminal():
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+    service_service = ServiceService(session)
+    service_service.reject_service_order_for_client(
+        service_id=service.id,
+        user_id=client_user.id,
+        user_email=client_user.email,
+    )
+
+    with pytest.raises(ValueError):
+        service_service.accept_service_order_for_client(
+            service_id=service.id,
+            user_id=client_user.id,
+            user_email=client_user.email,
+        )
+    with pytest.raises(ValueError):
+        service_service.transition_service_order_for_workshop(
+            service_id=service.id,
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+            next_status="in_progress",
+        )
+    with pytest.raises(ValueError):
+        service_service.transition_service_order_for_workshop(
+            service_id=service.id,
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+            next_status="completed",
+        )
+    with pytest.raises(ValueError):
+        service_service.cancel_service_order_for_actor(
+            service_id=service.id,
+            actor_role="WORKSHOP",
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+        )
+
+
+def test_create_requires_estimated_cost_and_finish_date():
+    session, tenant, workshop_user, client_user, _ = seed_service_graph()
+    service_service = ServiceService(session)
+    base_fields = dict(
+        workshop_client_id=1,
+        name="Brake Replacement",
+        checkin_date=datetime(2026, 6, 3, 9, 0, 0),
+    )
+
+    with pytest.raises(ValueError):
+        service_service.create_service(
+            ServiceCreate(
+                **base_fields,
+                estimated_finish_date=datetime(2026, 6, 4, 17, 0, 0),
+            ),
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+        )
+
+    with pytest.raises(ValueError):
+        service_service.create_service(
+            ServiceCreate(**base_fields, estimated_cost=200.0),
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+        )
+
+
 def test_workshop_must_follow_transition_matrix():
     session, tenant, workshop_user, client_user, service = seed_service_graph()
     service_service = ServiceService(session)
