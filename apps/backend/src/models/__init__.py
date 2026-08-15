@@ -1,5 +1,6 @@
 from src.models.messages import Message
 from src.models.notification import Notification
+from src.models.payment import Payment
 from src.models.schedule import Schedule
 from src.models.service_part import ServicePart
 from src.models.services import Service

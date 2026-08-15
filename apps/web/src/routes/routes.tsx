@@ -20,6 +20,7 @@ import WorkshopOrdersPage from '../pages/workshop/orders-page';
 import WorkshopServicesPage from '../pages/workshop/services-page';
 import CreateOrdersPage from '../pages/workshop/create-orders-page';
 import ServicesPage from '../pages/client/services-page.tsx';
+import PaymentReturnPage from '../pages/payment-return-page';
 import WorkshopUsersPage from '../pages/workshop/users-page.tsx';
 import WorkshopClientsPage from '../pages/workshop/clients-page.tsx';
 import ClientDetailPage from '../pages/workshop/client-detail-page.tsx';
@@ -113,6 +114,11 @@ export const protectedRoutes = [
     path: '/client/service-history',
     role: 'CLIENT',
     element: <AppLayout><ServiceHistoryPage /></AppLayout>,
+  },
+  {
+    path: '/payments/return',
+    role: 'CLIENT',
+    element: <PaymentReturnPage />,
   },
   {
     path: '/client/profile',

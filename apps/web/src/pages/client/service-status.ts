@@ -16,6 +16,8 @@ export const STATUS_META: Record<string, ServiceStatusMeta> = {
   completed: { label: 'Concluído', color: '#15803D', bg: '#DCFCE7' },
   cancelled: { label: 'Cancelado', color: '#B91C1C', bg: '#FEE2E2' },
   rejected: { label: 'Recusado', color: '#B91C1C', bg: '#FEE2E2' },
+  paid: { label: 'Pago', color: '#166534', bg: '#DCFCE7' },
+  refunded: { label: 'Reembolsado', color: '#9A3412', bg: '#FFEDD5' },
 };
 
 export function formatBRL(value: number): string {

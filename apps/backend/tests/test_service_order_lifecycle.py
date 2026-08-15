@@ -348,3 +348,120 @@ def test_client_summary_counts_current_orders():
     assert summary.active_orders == 1
     assert summary.confirmed_orders == 1
     assert summary.recent_orders[0].id == service.id
+
+
+def test_paid_and_refunded_are_valid_statuses():
+    from src.services.services import VALID_SERVICE_STATUSES
+
+    assert "paid" in VALID_SERVICE_STATUSES
+    assert "refunded" in VALID_SERVICE_STATUSES
+
+
+def _complete_order(service_service, session, workshop_user, tenant):
+    service_service.accept_service_order_for_client(
+        service_id=1,
+        user_id=2,
+        user_email="client@test.dev",
+    )
+    service_service.transition_service_order_for_workshop(
+        service_id=1,
+        user_id=workshop_user.id,
+        tenant_id=tenant.id,
+        next_status="in_progress",
+    )
+    return service_service.transition_service_order_for_workshop(
+        service_id=1,
+        user_id=workshop_user.id,
+        tenant_id=tenant.id,
+        next_status="completed",
+    )
+
+
+def test_completed_order_can_be_paid_and_refunded():
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+    service_service = ServiceService(session)
+    _complete_order(service_service, session, workshop_user, tenant)
+
+    paid = service_service.pay_service_order(
+        service_id=service.id,
+        user_id=client_user.id,
+        user_email=client_user.email,
+    )
+    assert paid.status == "paid"
+    newest = (
+        session.query(Notification)
+        .filter(Notification.service_id == service.id)
+        .order_by(Notification.id.desc())
+        .first()
+    )
+    assert newest is not None and newest.user_id == workshop_user.id
+
+    refunded = service_service.refund_service_order(
+        service_id=service.id,
+        user_id=workshop_user.id,
+        tenant_id=tenant.id,
+    )
+    assert refunded.status == "refunded"
+    newest = (
+        session.query(Notification)
+        .filter(Notification.service_id == service.id)
+        .order_by(Notification.id.desc())
+        .first()
+    )
+    assert newest is not None and newest.user_id == client_user.id
+
+
+def test_pending_order_cannot_be_paid():
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+
+    with pytest.raises(ValueError):
+        ServiceService(session).pay_service_order(
+            service_id=service.id,
+            user_id=client_user.id,
+            user_email=client_user.email,
+        )
+
+
+def test_refund_requires_paid_order():
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+    service_service = ServiceService(session)
+    _complete_order(service_service, session, workshop_user, tenant)
+
+    with pytest.raises(ValueError):
+        service_service.refund_service_order(
+            service_id=service.id,
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+        )
+
+
+def test_paid_order_is_terminal():
+    session, tenant, workshop_user, client_user, service = seed_service_graph()
+    service_service = ServiceService(session)
+    _complete_order(service_service, session, workshop_user, tenant)
+    service_service.pay_service_order(
+        service_id=service.id,
+        user_id=client_user.id,
+        user_email=client_user.email,
+    )
+
+    with pytest.raises(ValueError):
+        service_service.pay_service_order(
+            service_id=service.id,
+            user_id=client_user.id,
+            user_email=client_user.email,
+        )
+    with pytest.raises(ValueError):
+        service_service.transition_service_order_for_workshop(
+            service_id=service.id,
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+            next_status="completed",
+        )
+    with pytest.raises(ValueError):
+        service_service.cancel_service_order_for_actor(
+            service_id=service.id,
+            actor_role="WORKSHOP",
+            user_id=workshop_user.id,
+            tenant_id=tenant.id,
+        )

@@ -37,6 +37,25 @@ def repo_get_rating_by_id(
     )
 
 
+def repo_get_rating_by_service_order(
+    db: Session,
+    service_order_id: int,
+    client_tenant_id: UUID | str,
+) -> WorkshopRating | None:
+    """The rating for a service order, scoped to the authoring client tenant."""
+    if not client_tenant_id:
+        raise TypeError("client_tenant_id is required")
+
+    return (
+        db.query(WorkshopRating)
+        .filter(
+            WorkshopRating.service_order_id == service_order_id,
+            WorkshopRating.client_tenant_id == client_tenant_id,
+        )
+        .first()
+    )
+
+
 def repo_get_rating_by_schedule(
     db: Session,
     schedule_id: int,

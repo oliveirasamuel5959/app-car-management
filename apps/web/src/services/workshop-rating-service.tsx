@@ -16,7 +16,8 @@ export interface WorkshopRating {
 }
 
 export interface WorkshopRatingCreate {
-  schedule_id: number;
+  schedule_id?: number | null;
+  service_order_id?: number | null;
   rating: number; // 0–5
   comment?: string | null;
 }

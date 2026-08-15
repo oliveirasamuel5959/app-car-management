@@ -15,7 +15,9 @@ export interface ServiceOrder {
     | 'in_progress'
     | 'completed'
     | 'cancelled'
-    | 'rejected';
+    | 'rejected'
+    | 'paid'
+    | 'refunded';
   progress_percentage: number;
   checkin_date: string;
   estimated_finish_date?: string | null;

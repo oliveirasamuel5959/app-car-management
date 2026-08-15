@@ -18,11 +18,13 @@ from src.repositories.workshop_rating import (
     repo_delete_rating,
     repo_get_rating_by_id,
     repo_get_rating_by_schedule,
+    repo_get_rating_by_service_order,
     repo_list_ratings_for_client_tenant,
     repo_list_ratings_for_workshop_tenant,
     repo_update_rating,
 )
 from src.services.notifications import NotificationService
+from src.services.services import SERVICE_STATUS_PAID, ServiceService
 
 
 class WorkshopRatingService:
@@ -39,9 +41,26 @@ class WorkshopRatingService:
         self,
         data: dict,
         client_tenant_id: UUID | str,
+        *,
+        client_user_id: int | None = None,
+        client_email: str | None = None,
     ) -> WorkshopRating:
+        schedule_id = data.get("schedule_id")
+        service_order_id = data.get("service_order_id")
+        if (schedule_id is None) == (service_order_id is None):
+            raise ValueError("Forneça schedule_id ou service_order_id (apenas um)")
+
+        if service_order_id is not None:
+            return self._create_order_rating(
+                service_order_id,
+                data,
+                client_tenant_id,
+                client_user_id,
+                client_email,
+            )
+
         schedule = repo_get_schedule_by_id_for_client(
-            self.db, data["schedule_id"], client_tenant_id
+            self.db, schedule_id, client_tenant_id
         )
         if not schedule:
             raise ValueError("Schedule not found")
@@ -63,6 +82,42 @@ class WorkshopRatingService:
             },
         )
         self._recompute_workshop_avg(schedule.workshop_tenant_id)
+        return rating
+
+    def _create_order_rating(
+        self,
+        service_order_id: int,
+        data: dict,
+        client_tenant_id: UUID | str,
+        client_user_id: int | None,
+        client_email: str | None,
+    ) -> WorkshopRating:
+        """Order-anchored review: the client reviews a paid service order."""
+        order = ServiceService(self.db).get_service_order_for_client(
+            service_order_id, client_user_id, user_email=client_email
+        )
+        if not order:
+            raise ValueError("Serviço não encontrado")
+        if order.status != SERVICE_STATUS_PAID:
+            raise ValueError("Avaliações são permitidas apenas para serviços pagos")
+
+        existing = repo_get_rating_by_service_order(
+            self.db, service_order_id, client_tenant_id
+        )
+        if existing:
+            raise ValueError("Já existe uma avaliação para este serviço")
+
+        rating = repo_create_rating(
+            self.db,
+            {
+                "workshop_tenant_id": order.tenant_id,
+                "client_tenant_id": client_tenant_id,
+                "service_order_id": order.id,
+                "rating": data["rating"],
+                "comment": data.get("comment"),
+            },
+        )
+        self._recompute_workshop_avg(order.tenant_id)
         return rating
 
     def update_rating(
@@ -156,6 +211,7 @@ class WorkshopRatingService:
         return {
             "id": rating.id,
             "schedule_id": rating.schedule_id,
+            "service_order_id": rating.service_order_id,
             "workshop_tenant_id": rating.workshop_tenant_id,
             "client_tenant_id": rating.client_tenant_id,
             "client_name": client_user.name if client_user else None,
@@ -187,6 +243,7 @@ class WorkshopRatingService:
             {
                 "type": "rating_received",
                 "schedule_id": rating.schedule_id,
+                "service_order_id": rating.service_order_id,
                 "rating": rating.rating,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             },

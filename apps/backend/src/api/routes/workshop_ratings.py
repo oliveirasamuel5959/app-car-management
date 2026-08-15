@@ -128,7 +128,10 @@ def create_rating(
     service = WorkshopRatingService(db)
     try:
         rating = service.create_rating(
-            rating_in.model_dump(), current_user.get("tenant_id")
+            rating_in.model_dump(),
+            current_user.get("tenant_id"),
+            client_user_id=int(current_user.get("user_id")),
+            client_email=current_user.get("sub"),
         )
         service.notify_workshop_of_new_rating(rating)
         return service.to_read_dict(rating)

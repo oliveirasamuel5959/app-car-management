@@ -22,7 +22,7 @@ import {
 
 interface Service {
   id: number;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'rejected' | 'paid' | 'refunded';
   name: string;
   checkin_date?: string | null;
   estimated_finish_date?: string | null;
