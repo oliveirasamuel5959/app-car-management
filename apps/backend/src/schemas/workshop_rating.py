@@ -5,7 +5,8 @@ from pydantic import BaseModel, Field
 
 
 class WorkshopRatingCreate(BaseModel):
-    schedule_id: int
+    schedule_id: int | None = None
+    service_order_id: int | None = None
     rating: int = Field(ge=0, le=5)
     comment: str | None = None
 
@@ -20,6 +21,7 @@ class WorkshopRatingUpdate(BaseModel):
 class WorkshopRatingRead(BaseModel):
     id: int
     schedule_id: int | None = None
+    service_order_id: int | None = None
     workshop_tenant_id: UUID
     client_tenant_id: UUID
     client_name: str | None = None

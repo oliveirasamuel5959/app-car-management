@@ -18,6 +18,9 @@ class WorkshopRating(Base):
     __tablename__ = "workshop_ratings"
     __table_args__ = (
         UniqueConstraint("schedule_id", name="uq_workshop_ratings_schedule_id"),
+        UniqueConstraint(
+            "service_order_id", name="uq_workshop_ratings_service_order_id"
+        ),
         CheckConstraint(
             "rating >= 0 AND rating <= 5", name="ck_workshop_ratings_rating_range"
         ),
@@ -34,6 +37,9 @@ class WorkshopRating(Base):
 
     schedule_id: Mapped[int | None] = mapped_column(
         ForeignKey("schedules.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    service_order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("services.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     rating: Mapped[int] = mapped_column(Integer, nullable=False)

@@ -1,5 +1,5 @@
-
 from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # AI Settings
     ANTHROPIC_API_KEY: str
     OPENAI_API_KEY: str
+
+    # Stripe Settings
+    STRIPE_SECRET_KEY: str | None = None
+    STRIPE_PUBLISHABLE_KEY: str | None = None
+    PAYMENT_PROVIDER: str = "stripe"
 
     class Config:
         env_file = ".env"
