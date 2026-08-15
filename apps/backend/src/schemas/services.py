@@ -53,10 +53,52 @@ class ServiceUpdate(BaseModel):
     status: str | None = None
 
 
+class ServicePartCreate(BaseModel):
+    """A single replaced part line on completion. Total is computed server-side."""
+
+    description: str = Field(min_length=1)
+    quantity: int = Field(gt=0)
+    unit_price: float = Field(ge=0)
+
+
+class ServicePartRead(BaseModel):
+    id: int
+    service_order_id: int
+    description: str
+    quantity: int
+    unit_price: float
+    total_price: float
+
+    class Config:
+        from_attributes = True
+
+
+class ServiceBreakdownRead(BaseModel):
+    """Order detail for the maintenance-history drill-down."""
+
+    id: int
+    name: str
+    status: str
+    checkin_date: datetime
+    estimated_finish_date: datetime | None = None
+    finished_at: datetime | None = None
+    estimated_cost: float | None = None
+    final_cost: float | None = None
+    workshop_notes: str | None = None
+    parts: list[ServicePartRead]
+    labor_description: str | None = None
+    labor_cost: float | None = None
+    parts_cost: float | None = None
+
+
 class ServiceActionUpdate(BaseModel):
     workshop_notes: str | None = None
     estimated_cost: float | None = None
     final_cost: float | None = None
+    # Parts checklist + labor description, only used when completing an order
+    # (next_status == "completed"). Ignored on /start and /cancel.
+    parts: list[ServicePartCreate] | None = None
+    labor_description: str | None = None
     # Optional service-history fields, only used when completing an order
     # (next_status == "completed"). Ignored on /start and /cancel.
     service_type: str | None = None

@@ -56,6 +56,7 @@ class ServiceHistoryRead(BaseModel):
     vehicle_id: int
     workshop_id: int | None = None
     workshop_client_id: int | None = None
+    service_order_id: int | None = None
     status: str
     service_type: ServiceType
     description: str | None = None
@@ -63,6 +64,7 @@ class ServiceHistoryRead(BaseModel):
     next_service_mileage: int | None = None
     labor_cost: float | None = None
     parts_cost: float | None = None
+    labor_description: str | None = None
     invoice_number: str | None = None
     warranty_until_date: datetime | None = None
     warranty_mileage: int | None = None
