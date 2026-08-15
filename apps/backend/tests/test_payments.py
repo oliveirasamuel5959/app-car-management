@@ -190,39 +190,45 @@ def test_repo_create_payment_persists_and_is_tenant_scoped():
 # ----------------------------------------------------------------------
 
 
-class FailingProvider:
-    """Provider stub whose intents never confirm (simulates a failed card)."""
+class OpenSessionProvider:
+    """Provider stub whose checkout session never completes (failed card)."""
 
-    def create_intent(self, amount_cents: int, order_id: int) -> tuple[str, str]:
-        return "pi_failing", "mock_secret_pi_failing"
+    def create_checkout_session(
+        self,
+        amount_cents: int,
+        order_id: int,
+        success_url: str,
+        cancel_url: str,
+    ) -> tuple[str, str]:
+        return "cs_open", "http://localhost:5173/payments/return?payment_id=1"
 
-    def retrieve_intent(self, intent_id: str) -> str:
-        return "requires_payment_method"
+    def retrieve_checkout_session(self, session_id: str) -> str:
+        return "open"
 
-    def refund(self, intent_id: str) -> None:
-        raise AssertionError("refund must not be called for failed intents")
+    def refund(self, reference: str) -> None:
+        raise AssertionError("refund must not be called for failed sessions")
 
 
-def test_intent_requires_completed_order():
+def test_checkout_requires_completed_order():
     session, tenant, service = seed_payment_graph()
     service.status = "pending"
     session.commit()
 
     with pytest.raises(ValueError):
-        PaymentService(session, MockProvider()).create_payment_intent(
+        PaymentService(session, MockProvider()).create_checkout(
             service_order_id=service.id,
             user_id=2,
             user_email="client@test.dev",
         )
 
 
-def test_intent_requires_final_cost():
+def test_checkout_requires_final_cost():
     session, tenant, service = seed_payment_graph()
     service.final_cost = None
     session.commit()
 
     with pytest.raises(ValueError):
-        PaymentService(session, MockProvider()).create_payment_intent(
+        PaymentService(session, MockProvider()).create_checkout(
             service_order_id=service.id,
             user_id=2,
             user_email="client@test.dev",
@@ -234,13 +240,14 @@ def test_fee_math_ten_percent():
     service.final_cost = 100.50
     session.commit()
 
-    intent = PaymentService(session, MockProvider()).create_payment_intent(
+    checkout = PaymentService(session, MockProvider()).create_checkout(
         service_order_id=service.id,
         user_id=2,
         user_email="client@test.dev",
     )
 
-    assert intent.amount_cents == 10050
+    assert checkout.amount_cents == 10050
+    assert "/payments/return?payment_id=" in checkout.checkout_url
     payment = repo_get_payment_for_order(session, tenant.id, service.id)
     assert payment is not None
     assert payment.amount_cents == 10050
@@ -248,18 +255,19 @@ def test_fee_math_ten_percent():
     assert payment.workshop_amount_cents == 9045
     assert payment.status == "pending"
     assert payment.stripe_payment_intent_id is not None
+    assert payment.stripe_payment_intent_id.startswith("mock_session_")
 
 
-def test_intent_reuses_pending_payment_row():
+def test_checkout_reuses_pending_payment_row():
     session, tenant, service = seed_payment_graph()
     service = PaymentService(session, MockProvider())
 
-    first = service.create_payment_intent(
+    first = service.create_checkout(
         service_order_id=1,
         user_id=2,
         user_email="client@test.dev",
     )
-    second = service.create_payment_intent(
+    second = service.create_checkout(
         service_order_id=1,
         user_id=2,
         user_email="client@test.dev",
@@ -269,10 +277,10 @@ def test_intent_reuses_pending_payment_row():
     assert session.query(Payment).count() == 1
 
 
-def test_intent_raises_when_order_already_paid():
+def test_checkout_raises_when_order_already_paid():
     session, tenant, service = seed_payment_graph()
     payment_service = PaymentService(session, MockProvider())
-    intent = payment_service.create_payment_intent(
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=2,
         user_email="client@test.dev",
@@ -285,14 +293,14 @@ def test_intent_raises_when_order_already_paid():
 
     # The order is no longer completed, so the order-status gate fires first.
     with pytest.raises(ValueError, match="concluídos"):
-        payment_service.create_payment_intent(
+        payment_service.create_checkout(
             service_order_id=service.id,
             user_id=2,
             user_email="client@test.dev",
         )
 
 
-def test_intent_blocks_when_succeeded_payment_row_exists():
+def test_checkout_blocks_when_succeeded_payment_row_exists():
     """Defensive branch: a completed order that already has a succeeded payment."""
     session, tenant, service = seed_payment_graph()
     repo_create_payment(
@@ -308,7 +316,7 @@ def test_intent_blocks_when_succeeded_payment_row_exists():
     session.commit()
 
     with pytest.raises(ValueError, match="já"):
-        PaymentService(session, MockProvider()).create_payment_intent(
+        PaymentService(session, MockProvider()).create_checkout(
             service_order_id=service.id,
             user_id=2,
             user_email="client@test.dev",
@@ -318,7 +326,7 @@ def test_intent_blocks_when_succeeded_payment_row_exists():
 def test_confirm_pays_order_and_notifies_workshop():
     session, tenant, service = seed_payment_graph()
     payment_service = PaymentService(session, MockProvider())
-    intent = payment_service.create_payment_intent(
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=2,
         user_email="client@test.dev",
@@ -344,7 +352,7 @@ def test_confirm_pays_order_and_notifies_workshop():
 def test_confirm_is_idempotent():
     session, tenant, service = seed_payment_graph()
     payment_service = PaymentService(session, MockProvider())
-    intent = payment_service.create_payment_intent(
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=2,
         user_email="client@test.dev",
@@ -368,10 +376,10 @@ def test_confirm_is_idempotent():
     assert len(notifications) == 1
 
 
-def test_confirm_marks_failed_when_provider_not_succeeded():
+def test_confirm_marks_failed_when_session_not_complete():
     session, tenant, service = seed_payment_graph()
-    payment_service = PaymentService(session, FailingProvider())
-    intent = payment_service.create_payment_intent(
+    payment_service = PaymentService(session, OpenSessionProvider())
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=2,
         user_email="client@test.dev",
@@ -394,7 +402,7 @@ def test_confirm_marks_failed_when_provider_not_succeeded():
 def test_refund_requires_succeeded_payment():
     session, tenant, service = seed_payment_graph()
     payment_service = PaymentService(session, MockProvider())
-    intent = payment_service.create_payment_intent(
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=2,
         user_email="client@test.dev",
@@ -411,7 +419,7 @@ def test_refund_requires_succeeded_payment():
 def test_refund_workshop_flow_notifies_client():
     session, tenant, service = seed_payment_graph()
     payment_service = PaymentService(session, MockProvider())
-    intent = payment_service.create_payment_intent(
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=2,
         user_email="client@test.dev",
@@ -443,7 +451,7 @@ def test_refund_workshop_flow_notifies_client():
 def test_cross_tenant_payment_denied():
     session, tenant, service = seed_payment_graph()
     payment_service = PaymentService(session, MockProvider())
-    intent = payment_service.create_payment_intent(
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=2,
         user_email="client@test.dev",
@@ -454,7 +462,7 @@ def test_cross_tenant_payment_denied():
     session.commit()
 
     assert (
-        payment_service.create_payment_intent(
+        payment_service.create_checkout(
             service_order_id=service.id,
             user_id=3,
             user_email="other@test.dev",

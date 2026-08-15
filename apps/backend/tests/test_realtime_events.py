@@ -422,7 +422,7 @@ def test_payment_confirm_pushes_order_status_change_to_workshop():
     ws_workshop = connect_fake(tenant.id, workshop_user.id)
 
     payment_service = PaymentService(session, MockProvider())
-    intent = payment_service.create_payment_intent(
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=client_user.id,
         user_email=client_user.email,
@@ -454,7 +454,7 @@ def test_payment_refund_pushes_order_status_change_to_client():
         service_service, session, workshop_user, client_user, tenant, service
     )
     payment_service = PaymentService(session, MockProvider())
-    intent = payment_service.create_payment_intent(
+    intent = payment_service.create_checkout(
         service_order_id=service.id,
         user_id=client_user.id,
         user_email=client_user.email,

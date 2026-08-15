@@ -2,7 +2,9 @@
 
 The service layer talks to the PaymentProvider protocol only — never to the
 Stripe SDK directly — so tests and local development run on MockProvider
-without network access or API keys.
+without network access or API keys. Both providers share one redirect-based
+flow: create a checkout session (Stripe-hosted payment page), verify it via
+retrieve, refund it.
 """
 
 from typing import Protocol
@@ -14,32 +16,51 @@ logger = get_logger(__name__)
 
 
 class PaymentProvider(Protocol):
-    """Provider contract: create an intent, verify it, refund it."""
+    """Provider contract: create a checkout session, verify it, refund it."""
 
-    def create_intent(self, amount_cents: int, order_id: int) -> tuple[str, str]: ...
+    def create_checkout_session(
+        self,
+        amount_cents: int,
+        order_id: int,
+        success_url: str,
+        cancel_url: str,
+    ) -> tuple[str, str]: ...
 
-    def retrieve_intent(self, intent_id: str) -> str: ...
+    def retrieve_checkout_session(self, session_id: str) -> str: ...
 
-    def refund(self, intent_id: str) -> None: ...
+    def refund(self, reference: str) -> None: ...
 
 
 class MockProvider:
-    """Deterministic local provider — intents always confirm successfully."""
+    """Deterministic local provider — sessions always verify as complete.
 
-    def create_intent(self, amount_cents: int, order_id: int) -> tuple[str, str]:
-        intent_id = f"mock_intent_{order_id}_{uuid4().hex[:8]}"
-        logger.info(f"MockProvider: intent {intent_id} for order {order_id}")
-        return intent_id, f"mock_secret_{intent_id}"
+    The returned URL points at the app's own return page (the
+    {CHECKOUT_SESSION_ID} template in `success_url` is filled with the
+    synthetic session id), so the mock flow exercises the same redirect as
+    the real Stripe flow.
+    """
 
-    def retrieve_intent(self, intent_id: str) -> str:
-        return "succeeded" if (intent_id or "").startswith("mock_") else "failed"
+    def create_checkout_session(
+        self,
+        amount_cents: int,
+        order_id: int,
+        success_url: str,
+        cancel_url: str,
+    ) -> tuple[str, str]:
+        session_id = f"mock_session_{order_id}_{uuid4().hex[:8]}"
+        url = success_url.replace("{CHECKOUT_SESSION_ID}", session_id)
+        logger.info(f"MockProvider: session {session_id} for order {order_id}")
+        return session_id, url
 
-    def refund(self, intent_id: str) -> None:
-        logger.info(f"MockProvider: refunding intent {intent_id}")
+    def retrieve_checkout_session(self, session_id: str) -> str:
+        return "complete" if (session_id or "").startswith("mock_") else "open"
+
+    def refund(self, reference: str) -> None:
+        logger.info(f"MockProvider: refunding session {reference}")
 
 
 class StripeProvider:
-    """Stripe test-mode PaymentIntents on the platform account."""
+    """Stripe test-mode Checkout Sessions on the platform account."""
 
     def __init__(self, api_key: str):
         import stripe
@@ -47,19 +68,37 @@ class StripeProvider:
         self._stripe = stripe
         self._stripe.api_key = api_key
 
-    def create_intent(self, amount_cents: int, order_id: int) -> tuple[str, str]:
-        intent = self._stripe.PaymentIntent.create(
-            amount=amount_cents,
-            currency="brl",
+    def create_checkout_session(
+        self,
+        amount_cents: int,
+        order_id: int,
+        success_url: str,
+        cancel_url: str,
+    ) -> tuple[str, str]:
+        session = self._stripe.checkout.Session.create(
+            mode="payment",
+            line_items=[
+                {
+                    "quantity": 1,
+                    "price_data": {
+                        "currency": "brl",
+                        "unit_amount": amount_cents,
+                        "product_data": {"name": f"Serviço OS #{order_id}"},
+                    },
+                }
+            ],
             metadata={"service_order_id": str(order_id)},
+            success_url=success_url,
+            cancel_url=cancel_url,
         )
-        return intent.id, intent.client_secret
+        return session.id, session.url
 
-    def retrieve_intent(self, intent_id: str) -> str:
-        return self._stripe.PaymentIntent.retrieve(intent_id).status
+    def retrieve_checkout_session(self, session_id: str) -> str:
+        return self._stripe.checkout.Session.retrieve(session_id).status
 
-    def refund(self, intent_id: str) -> None:
-        self._stripe.Refund.create(payment_intent=intent_id)
+    def refund(self, reference: str) -> None:
+        session = self._stripe.checkout.Session.retrieve(reference)
+        self._stripe.Refund.create(payment_intent=session.payment_intent)
 
 
 def get_payment_provider(app_settings) -> PaymentProvider:

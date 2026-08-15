@@ -9,7 +9,7 @@ from src.repositories.payments import (
     repo_get_payment_for_order,
     repo_update_payment_status,
 )
-from src.schemas.payments import PaymentIntentRead, PaymentRead, PaymentRefundRead
+from src.schemas.payments import PaymentCheckoutRead, PaymentRead, PaymentRefundRead
 from src.services.services import (
     SERVICE_STATUS_COMPLETED,
     ServiceService,
@@ -35,14 +35,14 @@ class PaymentService:
             provider if provider is not None else get_payment_provider(settings)
         )
 
-    def create_payment_intent(
+    def create_checkout(
         self,
         *,
         service_order_id: int,
         user_id: int,
         user_email: str | None = None,
-    ) -> PaymentIntentRead | None:
-        """Create (or reuse) the intent for a client-owned completed order."""
+    ) -> PaymentCheckoutRead | None:
+        """Create (or reuse) the checkout session for a client-owned completed order."""
         service = ServiceService(self.db).get_service_order_for_client(
             service_order_id, user_id, user_email=user_email
         )
@@ -70,15 +70,9 @@ class PaymentService:
         platform_fee_cents = round(amount_cents * PLATFORM_FEE_RATE)
         workshop_amount_cents = amount_cents - platform_fee_cents
 
-        intent_id, client_secret = self.provider.create_intent(
-            amount_cents, service_order_id
-        )
         if existing:
             payment = repo_update_payment_status(
-                self.db,
-                existing,
-                PAYMENT_STATUS_PENDING,
-                intent_id=intent_id,
+                self.db, existing, PAYMENT_STATUS_PENDING
             )
         else:
             payment = repo_create_payment(
@@ -88,12 +82,25 @@ class PaymentService:
                 amount_cents=amount_cents,
                 platform_fee_cents=platform_fee_cents,
                 workshop_amount_cents=workshop_amount_cents,
-                stripe_payment_intent_id=intent_id,
             )
-        logger.info(f"Payment intent {intent_id} ready for order {service_order_id}")
-        return PaymentIntentRead(
+
+        success_url = (
+            f"{settings.FRONTEND_URL}/payments/return"
+            f"?payment_id={payment.id}&session_id={{CHECKOUT_SESSION_ID}}"
+        )
+        cancel_url = f"{settings.FRONTEND_URL}/payments/return?canceled=1"
+        session_id, checkout_url = self.provider.create_checkout_session(
+            amount_cents, service_order_id, success_url, cancel_url
+        )
+        repo_update_payment_status(
+            self.db, payment, PAYMENT_STATUS_PENDING, reference_id=session_id
+        )
+        logger.info(
+            f"Checkout session {session_id} ready for order {service_order_id}"
+        )
+        return PaymentCheckoutRead(
             payment_id=payment.id,
-            client_secret=client_secret,
+            checkout_url=checkout_url,
             amount_cents=amount_cents,
         )
 
@@ -121,10 +128,10 @@ class PaymentService:
         if payment.status != PAYMENT_STATUS_PENDING:
             raise ValueError("Este pagamento não pode mais ser confirmado")
 
-        provider_status = self.provider.retrieve_intent(
+        provider_status = self.provider.retrieve_checkout_session(
             payment.stripe_payment_intent_id
         )
-        if provider_status != "succeeded":
+        if provider_status != "complete":
             repo_update_payment_status(self.db, payment, PAYMENT_STATUS_FAILED)
             raise ValueError("O pagamento não foi confirmado pela operadora")
 

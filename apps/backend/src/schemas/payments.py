@@ -4,11 +4,11 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class PaymentIntentRead(BaseModel):
-    """Response of intent creation: what the frontend needs to confirm payment."""
+class PaymentCheckoutRead(BaseModel):
+    """Response of checkout creation: the URL the client's browser redirects to."""
 
     payment_id: int
-    client_secret: str
+    checkout_url: str
     amount_cents: int
 
 

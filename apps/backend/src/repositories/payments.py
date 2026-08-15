@@ -99,12 +99,12 @@ def repo_update_payment_status(
     payment: Payment,
     status: str,
     *,
-    intent_id: str | None = None,
+    reference_id: str | None = None,
 ) -> Payment:
-    """Apply a status change (and optionally the provider intent id) to a row."""
+    """Apply a status change (and optionally the provider session id) to a row."""
     payment.status = status
-    if intent_id is not None:
-        payment.stripe_payment_intent_id = intent_id
+    if reference_id is not None:
+        payment.stripe_payment_intent_id = reference_id
     db.commit()
     db.refresh(payment)
     return payment

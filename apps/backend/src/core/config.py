@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     STRIPE_PUBLISHABLE_KEY: str | None = None
     PAYMENT_PROVIDER: str = "stripe"
 
+    # Frontend base URL (used to build the Stripe Checkout return URLs)
+    FRONTEND_URL: str = "http://localhost:5173"
+
     class Config:
         env_file = ".env"
         case_sensitive = True

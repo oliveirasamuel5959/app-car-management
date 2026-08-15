@@ -3,19 +3,19 @@ from sqlalchemy.orm import Session
 
 from src.core.auth import get_current_user
 from src.db.database import get_session
-from src.schemas.payments import PaymentIntentRead, PaymentRead, PaymentRefundRead
+from src.schemas.payments import PaymentCheckoutRead, PaymentRead, PaymentRefundRead
 from src.services.payments import PaymentService
 
 router = APIRouter()
 
 
 @router.post(
-    "/service-orders/{service_order_id}/intent",
-    response_model=PaymentIntentRead,
+    "/service-orders/{service_order_id}/checkout",
+    response_model=PaymentCheckoutRead,
     status_code=status.HTTP_200_OK,
-    summary="Create a payment intent for a completed service order",
+    summary="Create a Stripe Checkout session for a completed service order",
 )
-def create_payment_intent(
+def create_payment_checkout(
     service_order_id: int,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_session),
@@ -27,7 +27,7 @@ def create_payment_intent(
         )
 
     try:
-        result = PaymentService(db).create_payment_intent(
+        result = PaymentService(db).create_checkout(
             service_order_id=service_order_id,
             user_id=int(current_user.get("user_id")),
             user_email=current_user.get("sub"),
