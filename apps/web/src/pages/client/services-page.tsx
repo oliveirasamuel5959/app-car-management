@@ -13,6 +13,8 @@ import {
 import { useRealtime } from '../../context/realtime-context';
 import { serviceService } from '../../services/service-service';
 import ConfirmDialog from '../../components/ui/confirm-dialog';
+import PaymentDialog from '../../components/payments/payment-dialog';
+import RatingModal from './rating-modal';
 import {
   STATUS_META,
   formatBRL,
@@ -22,11 +24,12 @@ import {
 
 interface Service {
   id: number;
+  tenant_id: string;
   workshop_id: number;
   vehicle_id: number;
   name: string;
   description: string;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'rejected' | 'paid' | 'refunded';
   progress_percentage: number;
   checkin_date: string;
   estimated_finish_date: string;
@@ -70,6 +73,8 @@ export default function ServicesPage() {
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
+  const [payingService, setPayingService] = useState<Service | null>(null);
+  const [reviewingService, setReviewingService] = useState<Service | null>(null);
 
   const reloadServices = async () => {
     const response = await serviceService.getMyServices();
@@ -325,6 +330,30 @@ export default function ServicesPage() {
                   </Typography>
                 )}
               </Box>
+
+              {/* Payment / review actions */}
+              {(service.status === 'completed' || service.status === 'paid') && (
+                <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
+                  {service.status === 'completed' && service.final_cost != null && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => setPayingService(service)}
+                    >
+                      Pagar {formatBRL(service.final_cost)}
+                    </Button>
+                  )}
+                  {service.status === 'paid' && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setReviewingService(service)}
+                    >
+                      Avaliar oficina
+                    </Button>
+                  )}
+                </Stack>
+              )}
             </Paper>
           );
         })}
@@ -348,6 +377,32 @@ export default function ServicesPage() {
           }
         }}
         onClose={() => setConfirmRejectOpen(false)}
+      />
+
+      <PaymentDialog
+        open={payingService !== null}
+        serviceOrder={payingService}
+        onClose={() => setPayingService(null)}
+        onPaid={() => {
+          setPayingService(null);
+          reloadServices().catch(console.error);
+        }}
+      />
+
+      <RatingModal
+        open={reviewingService !== null}
+        scheduleId={null}
+        serviceOrderId={reviewingService?.id ?? null}
+        scheduleLabel={
+          reviewingService
+            ? `OS #${reviewingService.id} — ${reviewingService.name}`
+            : ''
+        }
+        existing={null}
+        onClose={() => setReviewingService(null)}
+        onSaved={() => {
+          reloadServices().catch(console.error);
+        }}
       />
     </Box>
   );

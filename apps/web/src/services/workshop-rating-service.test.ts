@@ -41,6 +41,15 @@ describe('workshop-rating-service', () => {
     });
   });
 
+  it('posts the order-anchored review payload', async () => {
+    await workshopRatingService.create({ service_order_id: 42, rating: 5, comment: null });
+    expect(api.post).toHaveBeenCalledWith('/workshop-ratings/', {
+      service_order_id: 42,
+      rating: 5,
+      comment: null,
+    });
+  });
+
   it('puts updates and deletes by id', async () => {
     await workshopRatingService.update(9, { rating: 2 });
     expect(api.put).toHaveBeenCalledWith('/workshop-ratings/9', { rating: 2 });

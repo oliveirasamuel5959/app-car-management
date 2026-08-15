@@ -16,6 +16,8 @@ describe('service-status', () => {
       'completed',
       'cancelled',
       'rejected',
+      'paid',
+      'refunded',
     ] as const;
 
     for (const status of statuses) {

@@ -23,6 +23,8 @@ interface RatingModalProps {
   open: boolean;
   /** Schedule being rated (create mode) — null when editing an existing rating. */
   scheduleId: number | null;
+  /** Paid service order being reviewed (create mode) — mutually exclusive with scheduleId. */
+  serviceOrderId?: number | null;
   /** Human-readable label for the schedule (type + date). */
   scheduleLabel: string;
   /** Existing rating (edit mode) or null (create mode). */
@@ -35,6 +37,7 @@ interface RatingModalProps {
 export default function RatingModal({
   open,
   scheduleId,
+  serviceOrderId = null,
   scheduleLabel,
   existing,
   onClose,
@@ -66,6 +69,12 @@ export default function RatingModal({
       if (existing) {
         await workshopRatingService.update(existing.id, {
           rating: rating ?? undefined,
+          comment: trimmedComment,
+        });
+      } else if (serviceOrderId !== null) {
+        await workshopRatingService.create({
+          service_order_id: serviceOrderId,
+          rating: rating ?? 0,
           comment: trimmedComment,
         });
       } else if (scheduleId !== null) {
