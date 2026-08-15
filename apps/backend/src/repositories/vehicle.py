@@ -39,8 +39,18 @@ def repo_get_vehicle_by_id(
     )
 
 
-def repo_get_vehicle_by_user_id(db: Session, user_id: int) -> list[Vehicle]:
-    return db.query(Vehicle).filter(Vehicle.user_id == user_id).first()
+def repo_get_vehicles_by_user_id(
+    db: Session, user_id: int, tenant_id: UUID | str
+) -> list[Vehicle]:
+    """List a user's vehicles, scoped to the user's tenant."""
+    if not tenant_id:
+        raise TypeError("tenant_id is required")
+
+    return (
+        db.query(Vehicle)
+        .filter(Vehicle.user_id == user_id, Vehicle.tenant_id == tenant_id)
+        .all()
+    )
 
 
 def check_duplicate_plate(

@@ -1,12 +1,13 @@
-
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import (APIRouter, Depends, File, HTTPException, Query,
+                     UploadFile, status)
 from sqlalchemy.orm import Session
 
 from src.core.auth import get_current_user
 from src.core.file_uploader import handle_file_upload
 from src.db.database import get_session
 from src.schemas.user import UserRead
-from src.schemas.workshop import WorkshopAgenda, WorkshopCreate, WorkshopRead, WorkshopUpdate
+from src.schemas.workshop import (WorkshopAgenda, WorkshopCreate, WorkshopRead,
+                                  WorkshopSearchItem, WorkshopUpdate)
 from src.services.workshop import WorkshopService
 
 router = APIRouter()
@@ -14,22 +15,37 @@ router = APIRouter()
 
 @router.get(
     "/",
-    response_model=list[WorkshopRead],
+    response_model=list[WorkshopSearchItem],
     status_code=status.HTTP_200_OK,
     summary="Search workshops",
-    description="Search workshops by name, location, or both. Paginated with skip/limit.",
+    description=(
+        "Search workshops by name, location, minimum rating, offered service "
+        "types, or a combination. Sorted (distance | rating | reviews) and "
+        "paginated with skip/limit."
+    ),
 )
 def search_workshops(
     name: str | None = Query(None, description="Case-insensitive name filter"),
     lat: float | None = Query(None, description="Latitude for location search"),
     lng: float | None = Query(None, description="Longitude for location search"),
-    radius_km: float = Query(10.0, description="Search radius in km"),
+    radius_km: float = Query(10.0, ge=0, le=100, description="Search radius in km"),
+    min_rating: float | None = Query(
+        None, ge=0, le=5, description="Minimum average rating"
+    ),
+    service_types: str | None = Query(
+        None,
+        description="CSV of offered service types: manutencao,reparo,inspecao,outro",
+    ),
+    sort: str | None = Query(
+        None,
+        description="Sort order: distance (needs lat/lng), rating, or reviews",
+    ),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_session),
 ):
-    """Returns a paginated list of workshops, optionally filtered by name and/or location."""
+    """Returns a paginated list of workshops with distance, offered types, and ratings count."""
     service = WorkshopService(db)
     try:
         results = service.search_workshops(
@@ -37,10 +53,18 @@ def search_workshops(
             lat=lat,
             lng=lng,
             radius_km=radius_km,
+            min_rating=min_rating,
+            service_types=service_types.split(",") if service_types else None,
+            sort=sort,
             skip=skip,
             limit=limit,
         )
         return results
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

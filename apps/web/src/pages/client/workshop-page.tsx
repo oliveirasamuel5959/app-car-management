@@ -12,11 +12,11 @@ import {
 } from "@mui/material";
 import { Refresh as RefreshIcon, Storefront as StorefrontIcon } from "@mui/icons-material";
 import { WorkshopCard } from "../../components/workshops/workshop-card";
-import type { Workshop } from "../../services/workshop-service";
+import type { WorkshopSearchItem } from "../../services/workshop-service";
 import { workshopService } from "../../services/workshop-service";
 
 export default function WorkshopPage() {
-  const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [workshops, setWorkshops] = useState<WorkshopSearchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
