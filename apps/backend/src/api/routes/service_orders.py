@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -6,6 +5,7 @@ from src.core.auth import get_current_user
 from src.db.database import get_session
 from src.schemas.services import (
     ServiceActionUpdate,
+    ServiceBreakdownRead,
     ServiceCreate,
     ServiceRead,
     ServiceSummaryRead,
@@ -172,6 +172,69 @@ def accept_service_order(
         )
 
     return updated_service
+
+
+@router.patch(
+    "/{service_id}/reject",
+    response_model=ServiceRead,
+    status_code=status.HTTP_200_OK,
+    summary="Reject a pending service order as the client",
+)
+def reject_service_order(
+    service_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_session),
+):
+    if current_user.get("role") != "CLIENT":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only clients can reject service orders",
+        )
+
+    service = ServiceService(db)
+    try:
+        updated_service = service.reject_service_order_for_client(
+            service_id=service_id,
+            user_id=int(current_user.get("user_id")),
+            user_email=current_user.get("sub"),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    if not updated_service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found"
+        )
+
+    return updated_service
+
+
+@router.get(
+    "/{service_id}/breakdown",
+    response_model=ServiceBreakdownRead,
+    status_code=status.HTTP_200_OK,
+    summary="Get a service order breakdown with parts and labor",
+)
+def get_service_order_breakdown(
+    service_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_session),
+):
+    service = ServiceService(db)
+    result = service.get_service_order_breakdown(
+        service_id=service_id,
+        user_id=int(current_user.get("user_id")),
+        tenant_id=current_user.get("tenant_id"),
+        role=current_user.get("role"),
+        user_email=current_user.get("sub"),
+    )
+
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service order not found"
+        )
+
+    return result
 
 
 @router.patch(

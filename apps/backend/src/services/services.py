@@ -6,6 +6,10 @@ from src.core.logger import get_logger
 from src.core.ws_push import push_ws_event
 from src.models.services import Service
 from src.models.user import User
+from src.repositories.service_parts import (
+    repo_create_service_part,
+    repo_get_service_parts_for_order,
+)
 from src.repositories.services import (
     repo_create_service,
     repo_delete_service,
@@ -20,6 +24,7 @@ from src.repositories.services import (
     repo_update_service,
     repo_update_service_by_current_workshop,
 )
+from src.repositories.services_history import repo_get_service_history_by_order
 from src.repositories.vehicle import (
     repo_get_vehicle_by_id,
     repo_get_vehicles_by_user_id,
@@ -29,7 +34,14 @@ from src.repositories.workshop import (
     repo_get_workshop_for_user,
 )
 from src.repositories.workshop_client import repo_get_workshop_client_by_id
-from src.schemas.services import ServiceActionUpdate, ServiceCreate, ServiceSummaryRead
+from src.schemas.services import (
+    ServiceActionUpdate,
+    ServiceBreakdownRead,
+    ServiceCreate,
+    ServicePartCreate,
+    ServicePartRead,
+    ServiceSummaryRead,
+)
 from src.services.notifications import NotificationService
 from src.services.services_history import ServiceHistoryService
 
@@ -41,6 +53,7 @@ SERVICE_STATUS_CONFIRMED = "confirmed"
 SERVICE_STATUS_IN_PROGRESS = "in_progress"
 SERVICE_STATUS_COMPLETED = "completed"
 SERVICE_STATUS_CANCELLED = "cancelled"
+SERVICE_STATUS_REJECTED = "rejected"
 
 VALID_SERVICE_STATUSES = {
     SERVICE_STATUS_PENDING,
@@ -48,12 +61,16 @@ VALID_SERVICE_STATUSES = {
     SERVICE_STATUS_IN_PROGRESS,
     SERVICE_STATUS_COMPLETED,
     SERVICE_STATUS_CANCELLED,
+    SERVICE_STATUS_REJECTED,
 }
 
-# Fields on ServiceActionUpdate that only feed the auto-created service-history
-# record on completion; they aren't real columns on Service and must never
-# reach repo_update_service's blind setattr loop.
+# Fields on ServiceActionUpdate that only feed the completion side-effects
+# (parts rows + the auto-created service-history record); they aren't real
+# columns on Service and must never reach repo_update_service's blind setattr
+# loop.
 SERVICE_HISTORY_ONLY_FIELDS = {
+    "parts",
+    "labor_description",
     "service_type",
     "current_mileage",
     "labor_cost",
@@ -117,6 +134,14 @@ class ServiceService:
         # Validate progress_percentage
         if not (0 <= service_in.progress_percentage <= 100):
             raise ValueError("Progress percentage must be between 0 and 100")
+
+        # The client decides on cost + deadline, so both are mandatory
+        if service_in.estimated_cost is None:
+            raise ValueError("estimated_cost is required to create a service order")
+        if service_in.estimated_finish_date is None:
+            raise ValueError(
+                "estimated_finish_date is required to create a service order"
+            )
 
         # Build service data with workshop_id
         service_data = service_in.model_dump()
@@ -219,6 +244,7 @@ class ServiceService:
         allowed_transitions = {
             SERVICE_STATUS_PENDING: {
                 SERVICE_STATUS_CONFIRMED: {"CLIENT"},
+                SERVICE_STATUS_REJECTED: {"CLIENT"},
                 SERVICE_STATUS_CANCELLED: {"CLIENT", "WORKSHOP"},
             },
             SERVICE_STATUS_CONFIRMED: {
@@ -231,6 +257,7 @@ class ServiceService:
             },
             SERVICE_STATUS_COMPLETED: {},
             SERVICE_STATUS_CANCELLED: {},
+            SERVICE_STATUS_REJECTED: {},
         }
 
         if next_status not in VALID_SERVICE_STATUSES:
@@ -342,6 +369,9 @@ class ServiceService:
             for key in list(update_data)
             if key in SERVICE_HISTORY_ONLY_FIELDS
         }
+        parts: list[ServicePartCreate] = [
+            ServicePartCreate(**part) for part in history_fields.get("parts") or []
+        ]
         update_data["status"] = next_status
 
         if (
@@ -349,11 +379,27 @@ class ServiceService:
             and "progress_percentage" not in update_data
         ):
             update_data["progress_percentage"] = max(service.progress_percentage, 25)
+        parts_total: float | None = None
         if next_status == SERVICE_STATUS_COMPLETED:
             update_data["progress_percentage"] = 100
             update_data["finished_at"] = datetime.now(UTC).replace(tzinfo=None)
-            if "final_cost" not in update_data and service.estimated_cost is not None:
-                update_data["final_cost"] = service.estimated_cost
+
+            for part in parts:
+                if not part.description.strip():
+                    raise ValueError("Part description cannot be blank")
+            if parts:
+                parts_total = round(
+                    sum(part.quantity * part.unit_price for part in parts), 2
+                )
+
+            labor_cost = history_fields.get("labor_cost")
+            if "final_cost" not in update_data:
+                if parts_total is not None or labor_cost is not None:
+                    update_data["final_cost"] = (parts_total or 0.0) + (
+                        labor_cost or 0.0
+                    )
+                elif service.estimated_cost is not None:
+                    update_data["final_cost"] = service.estimated_cost
         if next_status == SERVICE_STATUS_CANCELLED:
             update_data["progress_percentage"] = min(service.progress_percentage, 100)
 
@@ -363,6 +409,16 @@ class ServiceService:
         logger.info(f"Next Status {next_status}")
 
         if next_status == SERVICE_STATUS_COMPLETED:
+            for part in parts:
+                repo_create_service_part(
+                    self.db,
+                    tenant_id=tenant_id,
+                    service_order_id=updated_service.id,
+                    description=part.description.strip(),
+                    quantity=part.quantity,
+                    unit_price=part.unit_price,
+                    total_price=round(part.quantity * part.unit_price, 2),
+                )
             service_type_value = getattr(
                 history_fields.get("service_type"),
                 "value",
@@ -373,11 +429,17 @@ class ServiceService:
                 workshop_id=updated_service.workshop_id,
                 vehicle_id=updated_service.vehicle_id,
                 workshop_client_id=updated_service.workshop_client_id,
+                service_order_id=updated_service.id,
                 service_type=service_type_value,
                 current_mileage=history_fields.get("current_mileage"),
                 serviced_at=updated_service.finished_at,
                 labor_cost=history_fields.get("labor_cost"),
-                parts_cost=history_fields.get("parts_cost"),
+                labor_description=history_fields.get("labor_description"),
+                parts_cost=(
+                    parts_total
+                    if parts_total is not None
+                    else history_fields.get("parts_cost")
+                ),
                 invoice_number=history_fields.get("invoice_number"),
                 warranty_until_date=history_fields.get("warranty_until_date"),
                 warranty_mileage=history_fields.get("warranty_mileage"),
@@ -414,6 +476,35 @@ class ServiceService:
                 "status": SERVICE_STATUS_CONFIRMED,
                 "progress_percentage": max(service.progress_percentage, 10),
             },
+        )
+        self._notify_status_change(
+            updated_service,
+            old_status,
+            updated_service.tenant_id,
+            actor_role="CLIENT",
+            actor_user_id=user_id,
+        )
+        return updated_service
+
+    def reject_service_order_for_client(
+        self,
+        *,
+        service_id: int,
+        user_id: int,
+        user_email: str | None = None,
+    ) -> Service | None:
+        service = self._get_client_owned_service(
+            service_id, user_id, user_email=user_email
+        )
+        if not service:
+            return None
+
+        self._validate_transition(service.status, SERVICE_STATUS_REJECTED, "CLIENT")
+        old_status = service.status
+        updated_service = repo_update_service(
+            self.db,
+            service,
+            {"status": SERVICE_STATUS_REJECTED},
         )
         self._notify_status_change(
             updated_service,
@@ -464,6 +555,66 @@ class ServiceService:
     def get_service_by_id(self, service_id: int, tenant_id) -> Service | None:
         """Get a service by ID."""
         return repo_get_service_by_id(self.db, service_id, tenant_id)
+
+    def get_service_order_breakdown(
+        self,
+        *,
+        service_id: int,
+        user_id: int,
+        tenant_id,
+        role: str,
+        user_email: str | None = None,
+    ) -> ServiceBreakdownRead | None:
+        """Order + parts + labor detail for the maintenance-history drill-down."""
+        if role == "WORKSHOP":
+            service = repo_get_service_for_workshop_user(
+                self.db, tenant_id, user_id, service_id
+            )
+        else:
+            service = self._get_client_owned_service(
+                service_id, user_id, user_email=user_email
+            )
+        if not service:
+            return None
+
+        parts = repo_get_service_parts_for_order(self.db, service.tenant_id, service.id)
+        history_row = repo_get_service_history_by_order(
+            self.db, service.tenant_id, service.id
+        )
+
+        parts_cost = (
+            float(history_row.parts_cost)
+            if history_row is not None and history_row.parts_cost is not None
+            else (
+                round(sum(float(part.total_price) for part in parts), 2)
+                if parts
+                else None
+            )
+        )
+        labor_cost = (
+            float(history_row.labor_cost)
+            if history_row is not None and history_row.labor_cost is not None
+            else None
+        )
+        labor_description = (
+            history_row.labor_description if history_row is not None else None
+        )
+
+        return ServiceBreakdownRead(
+            id=service.id,
+            name=service.name,
+            status=service.status,
+            checkin_date=service.checkin_date,
+            estimated_finish_date=service.estimated_finish_date,
+            finished_at=service.finished_at,
+            estimated_cost=service.estimated_cost,
+            final_cost=service.final_cost,
+            workshop_notes=service.workshop_notes,
+            parts=[ServicePartRead.model_validate(part) for part in parts],
+            labor_description=labor_description,
+            labor_cost=labor_cost,
+            parts_cost=parts_cost,
+        )
 
     def get_service_by_client_access(
         self,
