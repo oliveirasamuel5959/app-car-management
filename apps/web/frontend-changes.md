@@ -58,24 +58,28 @@ Spec: `specs/2026-08-14-reviews-ratings/`
 Feature branch: `feature/2026-08-15-payment-processing`
 Spec: `specs/2026-08-15-payment-processing/`
 
+> Revised after user review: the payment UX is a **Stripe Checkout redirect**
+> (Stripe-hosted payment page) — the frontend carries no Stripe SDK.
+
 ## New files
 
 - `src/services/payment-service.tsx` — typed API module for `/payments`:
-  `createPaymentIntent`, `confirmPayment`, `getPaymentForOrder`,
-  `refundPayment`. Interfaces `PaymentIntent`, `Payment`, `PaymentRefund`,
+  `createCheckout` (POST `/service-orders/{id}/checkout` → `{payment_id,
+  checkout_url, amount_cents}`), `confirmPayment`, `getPaymentForOrder`,
+  `refundPayment`. Interfaces `PaymentCheckout`, `Payment`, `PaymentRefund`,
   `PaymentStatus` (no `any`).
-- `src/components/payments/payment-dialog.tsx` — payment dialog for completed
-  orders: creates the intent on open, renders a Stripe Elements CardElement
-  when `VITE_STRIPE_PUBLISHABLE_KEY` is set, or a "Simular pagamento" mock
-  button otherwise; always confirms server-side via `confirmPayment`; PT-BR
-  error surface and `formatBRL` amounts.
-- `src/components/payments/payment-mode.ts` — pure `resolvePaymentMode(key)`
-  helper (`'stripe' | 'mock'`), unit-tested.
+- `src/components/payments/payment-dialog.tsx` — creates the Checkout Session
+  on open and shows "Pagar com Stripe" (amount via `formatBRL`); clicking it
+  redirects the browser to `checkout_url`. PT-BR loading/error states.
 - `src/components/payments/refund-payment-button.tsx` — workshop-side full
   refund: fetches the order payment, renders only for `succeeded` payments,
   `ConfirmDialog` flow calling `refundPayment`, PT-BR copy.
-- `src/services/payment-service.test.ts`, `src/components/payments/payment-mode.test.ts`
-  — Vitest slices (mocked `api` endpoint building; mode resolution).
+- `src/pages/payment-return-page.tsx` — `/payments/return` landing page
+  (protected CLIENT, no layout): confirms the payment on the backend
+  (`confirmPayment`) and returns to `/client/services`; `canceled=1` skips
+  the confirm; PT-BR loading/error states.
+- `src/services/payment-service.test.ts` — Vitest slice (mocked `api`
+  endpoint building for checkout/confirm/status/refund).
 
 ## Modified files
 
@@ -97,4 +101,11 @@ Spec: `specs/2026-08-15-payment-processing/`
 - `src/pages/workshop/dashboard-page.tsx` — activity badges render Pago /
   Reembolsado with matching colors; `src/pages/client/dashboard-page.tsx`
   status union gains `paid`/`refunded` (STATUS_META-driven).
-- `package.json` — `@stripe/stripe-js` + `@stripe/react-stripe-js` dependencies.
+- `src/routes/routes.tsx` — `/payments/return` registered as a protected
+  CLIENT route.
+
+## Removed (Checkout revision)
+
+- `src/components/payments/payment-mode.ts` + test, the Stripe Elements card
+  form and mock button in `payment-dialog.tsx`, and the
+  `@stripe/stripe-js`/`@stripe/react-stripe-js` dependencies.
