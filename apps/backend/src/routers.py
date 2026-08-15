@@ -11,6 +11,7 @@ from src.api.routes.users import router as users
 from src.api.routes.vehicles import router as vehicles
 from src.api.routes.workshop_clients import router as workshop_clients
 from src.api.routes.workshop_ratings import router as workshop_ratings
+from src.api.routes.workshop_services import router as workshop_services
 from src.api.routes.workshops import router as workshops
 
 api_router = APIRouter()
@@ -36,4 +37,7 @@ api_router.include_router(
 api_router.include_router(schedules, prefix="/schedules", tags=["schedules"])
 api_router.include_router(
     workshop_ratings, prefix="/workshop-ratings", tags=["workshop-ratings"]
+)
+api_router.include_router(
+    workshop_services, prefix="/workshop-services", tags=["workshop-services"]
 )

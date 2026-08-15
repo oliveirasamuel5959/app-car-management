@@ -7,6 +7,7 @@ from sqlalchemy import engine_from_config, pool
 
 load_dotenv()
 
+import src.models  # noqa: F401  (registers all tables on Base.metadata)
 from src.db.base import Base
 
 config = context.config

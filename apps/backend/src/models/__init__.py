@@ -9,3 +9,4 @@ from src.models.vehicle import Vehicle
 from src.models.workshop import Workshop
 from src.models.workshop_client import WorkshopClient
 from src.models.workshop_rating import WorkshopRating
+from src.models.workshop_service import WorkshopService

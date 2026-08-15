@@ -21,7 +21,7 @@ from src.repositories.services import (
 )
 from src.repositories.vehicle import (
     repo_get_vehicle_by_id,
-    repo_get_vehicle_by_user_id,
+    repo_get_vehicles_by_user_id,
 )
 from src.repositories.workshop import (
     repo_get_workshop_by_id,
@@ -83,9 +83,12 @@ class ServiceService:
         if not client:
             raise ValueError(f"No client found for workshop id {workshop.id}")
 
-        vehicle = repo_get_vehicle_by_user_id(self.db, user_id=client.user_id)
-        if not vehicle:
+        vehicles = repo_get_vehicles_by_user_id(
+            self.db, client.user_id, tenant_id
+        )
+        if not vehicles:
             raise ValueError(f"No vehicle found for user id {client.user_id}")
+        vehicle = vehicles[0]
 
         logger.info(f"Vehicle info: {vehicle.id}")
 
