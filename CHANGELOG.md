@@ -2,6 +2,10 @@
 
 Chronological project changes grouped by commit date. Newest entries appear first.
 
+## 2026-09-27
+- DEVOPS: Added Azure deployment specification, backend/frontend container definitions, root Docker Compose stack, environment template, Nginx reverse proxy, GitHub Actions CI/CD workflows, and Azure provisioning runbook.
+- FIX: Backend CORS, health checks, upload storage path, and Alembic migrations now use deployment environment configuration instead of hardcoded local values.
+
 ## 2026-08-15
 - FEAT: Payment UX revised to **Stripe Checkout redirect** (user review): `POST /service-orders/{id}/checkout` creates a Checkout Session (brl `price_data`, order metadata, success/cancel URLs from `FRONTEND_URL`) and the app redirects the browser to Stripe's hosted payment page; Stripe returns to `/payments/return` which verifies the session server-side (`complete`) before the order reaches `paid`; the MockProvider shares the same redirect flow (local return URL), so local dev exercises the identical navigation
 - FEAT: Frontend — `PaymentDialog` redirects to the Checkout URL ("Pagar com Stripe", amount shown via `formatBRL`); new protected `/payments/return` page (confirm + back to Meus Serviços, PT-BR states); Stripe Elements, the mock button, `payment-mode` helper, and the `@stripe/*` frontend deps removed — no Stripe SDK on the frontend; `payments.stripe_payment_intent_id` now stores the checkout session id

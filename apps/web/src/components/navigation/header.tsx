@@ -25,7 +25,7 @@ const Header = () => {
   const dashboardPath = user?.role === 'WORKSHOP' ? '/workshop/dashboard' : '/client/dashboard';
   const profilePath = user?.role === 'WORKSHOP' ? '/workshop/profile' : '/client/profile';
   const isWorkshop = user?.role === 'WORKSHOP';
-  const API_BASE_URL = 'http://localhost:5500';
+  const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
   const avatarSrc = user?.avatar_url
     ? user.avatar_url.startsWith('http')
       ? user.avatar_url

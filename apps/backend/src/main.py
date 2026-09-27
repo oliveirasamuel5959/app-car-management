@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from src.core.config import settings
 from src.core.middleware import (
     AuthMiddleware,
     RateLimitMiddleware,
@@ -58,27 +59,22 @@ Banck account transactions management.
     servers=servers,
 )
 
-app.mount("/images", StaticFiles(directory="static/images"), name="images")
+APP_ROOT = Path(__file__).resolve().parent.parent
+STATIC_IMAGES_DIRECTORY = APP_ROOT / "static" / "images"
+UPLOAD_DIRECTORY = Path(settings.UPLOAD_DIRECTORY)
+UPLOAD_DIRECTORY.mkdir(exist_ok=True, parents=True)
+
+app.mount("/images", StaticFiles(directory=STATIC_IMAGES_DIRECTORY), name="images")
 
 # Serve user-uploaded files (avatars, workshop logos, chat attachments)
-Path("uploads").mkdir(exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
-# CORS Configuration for React frontend (from environment variables)
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=settings.cors_origins_list,
-#     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
-#     allow_methods=settings.cors_methods_list,
-#     allow_headers=settings.CORS_ALLOW_HEADERS.split(","),
-# )
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIRECTORY), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.cors_methods_list,
+    allow_headers=[header.strip() for header in settings.CORS_ALLOW_HEADERS.split(",")],
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
@@ -92,6 +88,7 @@ app.add_middleware(
         "/docs",
         "/redoc",
         "/openapi.json",
+        "/health",
         "/auth/register",
         "/auth/login",
         "/messages/ws",
@@ -99,3 +96,9 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+
+@app.get("/health", include_in_schema=False)
+def health() -> dict[str, str]:
+    """Expose a lightweight liveness probe for containers and App Service."""
+    return {"status": "ok"}

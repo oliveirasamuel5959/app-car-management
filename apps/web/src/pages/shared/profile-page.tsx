@@ -22,7 +22,7 @@ import { workshopService } from '../../services/workshop-service';
 import type { Workshop } from '../../services/workshop-service';
 import { useAuth } from '../../context/auth-context';
 
-const API_BASE_URL = 'http://localhost:5500';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 const resolveAssetUrl = (url?: string | null) => {
   if (!url) return undefined;

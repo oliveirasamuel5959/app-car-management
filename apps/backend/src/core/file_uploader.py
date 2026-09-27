@@ -3,13 +3,15 @@ from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
 
-UPLOAD_DIRECTORY = Path("uploads")
+from src.core.config import settings
+
+UPLOAD_DIRECTORY = Path(settings.UPLOAD_DIRECTORY)
 ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"]
 ALLOWED_VIDEO_TYPES = ["video/mp4", "video/mpeg", "video/ogg"]
 ALLOWED_AUDIO_TYPES = ["audio/mpeg", "audio/wav", "audio/ogg"]
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 # Create upload directory if it doesn't exist
-UPLOAD_DIRECTORY.mkdir(exist_ok=True)
+UPLOAD_DIRECTORY.mkdir(exist_ok=True, parents=True)
 
 
 async def handle_file_upload(file: UploadFile, user_id: int):
@@ -37,7 +39,7 @@ async def handle_file_upload(file: UploadFile, user_id: int):
 
     # Create user-specific directory
     user_dir = UPLOAD_DIRECTORY / str(user_id)
-    user_dir.mkdir(exist_ok=True)
+    user_dir.mkdir(exist_ok=True, parents=True)
 
     file_path = user_dir / unique_filename
 

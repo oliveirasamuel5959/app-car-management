@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5500';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 type AddressLookupResult = {
   display_name: string;

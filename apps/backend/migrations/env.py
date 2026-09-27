@@ -19,7 +19,9 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    if not url:
+        raise RuntimeError("DATABASE_URL must be set to run migrations")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -32,8 +34,12 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    database_url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    if not database_url:
+        raise RuntimeError("DATABASE_URL must be set to run migrations")
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        {"sqlalchemy.url": database_url},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

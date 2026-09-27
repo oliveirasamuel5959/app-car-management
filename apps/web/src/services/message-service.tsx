@@ -1,6 +1,12 @@
 import { api } from './api';
 
-const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL ?? 'ws://localhost:5500';
+const configuredWsBaseUrl = import.meta.env.VITE_WS_BASE_URL;
+const defaultWsBaseUrl =
+  typeof window === 'undefined'
+    ? 'ws://localhost:5500'
+    : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
+const WS_BASE_URL = (configuredWsBaseUrl || defaultWsBaseUrl).replace(/\/$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 export interface Message {
   id: number;
@@ -39,8 +45,10 @@ export const messageService = {
     try {
       const response = await api.get(`/messages/conversation/${otherUserId}?skip=${skip}&limit=${limit}`);
       return response;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to fetch conversation');
+    } catch (error: unknown) {
+      throw new Error(
+        error instanceof Error ? error.message : 'Failed to fetch conversation',
+      );
     }
   },
 
@@ -49,7 +57,7 @@ export const messageService = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`http://localhost:5500/messages/conversation/${receiverId}/upload`, {
+    const response = await fetch(`${API_BASE_URL}/messages/conversation/${receiverId}/upload`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

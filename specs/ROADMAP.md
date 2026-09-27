@@ -1,6 +1,6 @@
 # 🗺 Implementation Roadmap
 
-**Current Status:** Pre-Alpha (Phases 1–6 Complete)  
+**Current Status:** Pre-Alpha (Phases 1–6 Complete, Phase 8 In Progress)  
 **Target:** MVP Ready in ~8 weeks  
 **Scale:** Hundreds of tenants with tenant-scoped isolation
 
@@ -728,16 +728,24 @@ redirect flow for local dev. Spec: `specs/2026-08-15-payment-processing/`.
 
 **Objective:** Prepare for production deployment and document the system.
 
+**Status:** In progress on 2026-09-27 — Azure DevOps specification and local
+container implementation started. Spec: `specs/2026-09-27-azure-devops/`.
+
 #### 8.1 Deployment Infrastructure
 - Docker configuration for backend
 - Docker Compose for local development
-- Railway / Fly.io deployment setup
+- Azure App Service deployment setup
+- Azure Container Registry image publishing
+- Azure PostgreSQL Flexible Server provisioning
 - Environment configuration for staging/prod
 - Database backup strategy
 
 **Deliverables:**
 - Dockerfile for backend
+- Dockerfile for frontend
+- Nginx reverse proxy configuration
 - docker-compose.yml
+- GitHub Actions CI/CD workflows
 - Deployment guide
 - Environment templates (.env.example)
 

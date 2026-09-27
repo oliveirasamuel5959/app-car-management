@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Frontend base URL (used to build the Stripe Checkout return URLs)
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Runtime file storage. App Service can point this at its persistent /home mount.
+    UPLOAD_DIRECTORY: str = "uploads"
+
     class Config:
         env_file = ".env"
         case_sensitive = True

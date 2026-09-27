@@ -223,9 +223,15 @@ The backend follows a **layered (clean) architecture** with **tenant context pro
 - Environment-based configuration
 
 ### Deployment Targets
-- Frontend: Vercel
-- Backend: Railway / Fly.io / AWS
-- Database: Managed PostgreSQL (Neon, Supabase, RDS)
+- Frontend: Azure App Service for Containers with Nginx
+- Backend: Azure App Service for Containers
+- Database: Azure Database for PostgreSQL Flexible Server
+- Images: Azure Container Registry
+- CI/CD: GitHub Actions with Azure OpenID Connect
+
+The frontend and backend are separate App Services. Nginx serves the React
+build and reverse-proxies REST and WebSocket paths to FastAPI. Local development
+uses the root Docker Compose stack; Compose is not deployed to Azure.
 
 ---
 

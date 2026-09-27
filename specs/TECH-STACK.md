@@ -13,7 +13,7 @@ This document defines the **technology choices** for SaaS Oficina and the **rati
 | Database | PostgreSQL 14+ | ACID compliance, multi-tenant isolation |
 | Real-time | WebSockets + FastAPI | Live chat, instant notifications |
 | State Management | Zustand + React Query | Client and server state |
-| Hosting | Vercel (frontend), Railway/Fly.io (backend) | Scalable, multi-tenant ready |
+| Hosting | Azure App Service for Containers | Scalable, multi-tenant ready |
 | Authentication | JWT + Refresh Tokens | Stateless, distributed auth |
 | Payment | Stripe (split payment API) | Secure processing, marketplace support |
 | Monitoring | Sentry + CloudWatch | Error tracking, performance |
@@ -189,7 +189,7 @@ class BaseRepository:
 
 ## 5. Deployment & Infrastructure
 
-### Frontend: Vercel
+### Frontend: Azure App Service for Containers
 
 **Why:**
 - 1-click deployment from Git
@@ -203,31 +203,26 @@ class BaseRepository:
 - Single Vercel deployment serves all tenants
 - Path-based routing: vercel-domain.com/oficina-xyz/
 
-### Backend: Railway or Fly.io
+### Backend: Azure App Service for Containers
 
-**Why (Railway):**
-- Simple, Git-based deployment
-- Managed PostgreSQL database
-- Redis add-on (future caching)
-- Simple environment management
-
-**Why (Fly.io):**
-- Multi-region deployment (if needed later)
-- Generous free tier
-- Global load balancing
+**Why:**
+- Runs the committed Docker image without changing application architecture.
+- Supports separate staging and production applications.
+- Supports WebSockets for the FastAPI chat endpoint.
+- Integrates with managed identities and Azure Container Registry.
 
 **Multi-tenancy deployment:**
 - Single backend instance serves all tenants
 - Database contains all tenant data
 - Horizontal scaling: multiple backend instances behind load balancer
 
-### Database: Managed PostgreSQL (Supabase, Neon, or RDS)
+### Database: Azure Database for PostgreSQL Flexible Server
 
 **Why:**
-- No operational overhead
-- Automatic backups
-- Connection pooling
-- Metrics and monitoring included
+- Managed PostgreSQL with automated backups and maintenance.
+- Separate staging and production servers.
+- Azure networking and monitoring integration.
+- SSL-required connection strings supported by the backend.
 
 **Multi-tenancy hosting:**
 - Shared database for all tenants (MVP)

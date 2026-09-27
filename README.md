@@ -85,9 +85,14 @@ A platform that allows:
 - GitHub Actions (CI/CD)
 
 ### Deployment
-- Frontend: Vercel
-- Backend: Railway / Fly.io / Render / AWS
-- Database: Neon / Supabase / RDS
+- Frontend: Azure App Service for Containers with Nginx
+- Backend: Azure App Service for Containers
+- Database: Azure Database for PostgreSQL Flexible Server
+- Registry: Azure Container Registry
+- CI/CD: GitHub Actions with Azure OIDC
+
+See [`AZURE_DEPLOYMENT.md`](AZURE_DEPLOYMENT.md) for the provisioning and
+deployment runbook. Local development uses the root `docker-compose.yml`.
 
 ---
 
@@ -97,20 +102,22 @@ A platform that allows:
 saas-car-platform/
 │
 ├── apps/
-│   ├── web/            # Frontend (React + TypeScript)
-│   └── api/            # Backend (FastAPI)
+│   ├── web/            # Frontend (React + TypeScript + Nginx)
+│   └── backend/        # Backend (FastAPI)
 │
 ├── packages/
 │   ├── shared-types/   # Shared DTOs and types
 │   ├── ui/             # Reusable UI components
 │   └── config/         # Shared configuration
 │
-├── docker/
-│   ├── docker-compose.yml
-│   └── nginx/
+├── apps/backend/Dockerfile
+├── apps/web/Dockerfile
+├── apps/web/nginx.conf.template
+├── docker-compose.yml
 │
 ├── .github/workflows/
-│   └── ci.yml
+│   ├── ci.yml
+│   └── deploy.yml
 │
 ├── turbo.json
 ├── package.json
