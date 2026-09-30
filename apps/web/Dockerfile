@@ -24,7 +24,7 @@ RUN npm run build --workspace=web
 
 FROM nginx:1.27-alpine AS runtime
 
-ENV NGINX_ENVSUBST_FILTER="^BACKEND_URL$"
+ENV NGINX_ENVSUBST_FILTER="^(BACKEND_URL|BACKEND_HOST)$"
 
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
