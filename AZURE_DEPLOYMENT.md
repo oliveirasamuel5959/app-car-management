@@ -290,3 +290,37 @@ az webapp config container set \
 Repeat for the frontend and restart both applications. Database migrations must
 remain backward-compatible; automatic database downgrades are not part of the
 rollback procedure.
+
+## Azure Container Apps
+
+1. Create azure container registry and enable access keys admin:
+
+```bash
+az acr create --resource-group rg-drivepluss-app --name acrdriveplussapp --sku Basic --location westus2
+```
+
+2. Login to acr created:
+
+```bash
+az acr login --name acrdriveplussapp
+```
+
+3. Build and push docker image to acr:
+
+```bash
+az acr login --name acrdriveplussapp
+docker build -t acrdriveplussapp.azurecr.io/<image_name>:<tag> -f ./path_to_dockerfile/Dockerfile .
+docker push acrdriveplussapp.azurecr.io/<image_name>:<tag>
+```
+
+4. Create azure app container environment
+
+```bash
+az containerapp env create --name driveplusscontainerenv --resource-group rg-drivepluss-app --location westus2
+```
+
+5. Create azure container app
+
+```bash
+az containerapp create --name backend
+```
