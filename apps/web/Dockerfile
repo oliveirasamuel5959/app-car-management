@@ -21,14 +21,13 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL} \
 
 RUN npm run build --workspace=web
 
-
 FROM nginx:1.27-alpine AS runtime
 
-ENV NGINX_ENVSUBST_FILTER="^(BACKEND_URL|BACKEND_HOST)$"
+ENV NGINX_ENVSUBST_FILTER="^(BACKEND_URL)$"
 
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
-COPY apps/web/nginx.conf \
+COPY apps/web/nginx/nginx.conf \
      /etc/nginx/templates/default.conf.template
 
 EXPOSE 80

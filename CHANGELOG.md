@@ -5,6 +5,10 @@ Chronological project changes grouped by commit date. Newest entries appear firs
 ## 2026-10-01
 - FIX: Realtime WebSocket handshake failed with `HTTP Authentication failed` — `getWsUrl` appended `/api/v1/messages/ws` to a `WS_BASE_URL` that already carried the `/api/v1` prefix (from `VITE_WS_BASE_URL=/api/v1`), producing the doubled `ws://localhost:4200/api/v1/api/v1/messages/ws`.
 - The WS origin is now derived from `API_BASE_URL` (origin + `/api/v1`, scheme swapped to `ws`), so the path prefix has a single source of truth and cannot be duplicated; `VITE_WS_BASE_URL` is no longer read by any code.
+- FIX: Frontend API calls failing with `ERR_NAME_NOT_RESOLVED` on `http://backend` — Nginx proxied with `Host ${BACKEND_HOST}` (`backend`), so the `307` FastAPI emits for a missing trailing slash (`/api/v1/vehicles` → `/api/v1/vehicles/`) came back with an absolute `Location` on the internal service name. Proxied requests now send the browser-facing host (`X-Forwarded-Host` when behind TLS, else `$http_host`), so redirects resolve to the public origin.
+- FIX: Frontend container reported `unhealthy` — its healthcheck probed `127.0.0.1:4200`, but Nginx listens on port `80` inside the container; probes now target `/`.
+- FIX: Backend now runs with `--proxy-headers --forwarded-allow-ips` so `X-Forwarded-Proto`/`Host` are honoured and redirects behind a TLS-terminating proxy are built with the public scheme.
+- DEVOPS: Dropped the now-unused `BACKEND_HOST`/`FRONTEND_URL` Nginx runtime vars from Compose, the env templates, and the `NGINX_ENVSUBST_FILTER`.
 
 ## 2026-09-27
 - DEVOPS: Added Azure deployment specification, backend/frontend container definitions, root Docker Compose stack, environment template, Nginx reverse proxy, GitHub Actions CI/CD workflows, and Azure provisioning runbook.
