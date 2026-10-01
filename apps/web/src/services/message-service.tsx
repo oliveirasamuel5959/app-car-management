@@ -1,14 +1,14 @@
 import { api, API_BASE_URL } from './api';
 
-const configuredWsBaseUrl = import.meta.env.VITE_WS_BASE_URL?.startsWith('/')
-  ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}${import.meta.env.VITE_WS_BASE_URL}`
-  : import.meta.env.VITE_WS_BASE_URL;
-  
-const defaultWsBaseUrl =
-  typeof window === 'undefined'
-    ? 'ws://localhost:5500'
-    : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
-const WS_BASE_URL = (configuredWsBaseUrl || defaultWsBaseUrl).replace(/\/$/, '');
+// Derive the WS origin from the API base URL (already normalised to end with
+// `/api/v1` in api.tsx), so the path prefix is never duplicated and there is a
+// single source of truth for where the API lives.
+const httpApiBaseUrl = API_BASE_URL.startsWith('/')
+  ? `${location.origin}${API_BASE_URL}`
+  : API_BASE_URL;
+const WS_BASE_URL = httpApiBaseUrl
+  .replace(/^http/, 'ws')
+  .replace(/\/$/, '');
 
 export interface Message {
   id: number;
@@ -76,6 +76,6 @@ export const messageService = {
   },
 
   getWsUrl: (token: string): string => {
-    return `${WS_BASE_URL}/api/v1/messages/ws?token=${token}`;
+    return `${WS_BASE_URL}/messages/ws?token=${token}`;
   },
 };

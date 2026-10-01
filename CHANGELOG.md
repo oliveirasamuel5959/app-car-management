@@ -2,6 +2,10 @@
 
 Chronological project changes grouped by commit date. Newest entries appear first.
 
+## 2026-10-01
+- FIX: Realtime WebSocket handshake failed with `HTTP Authentication failed` — `getWsUrl` appended `/api/v1/messages/ws` to a `WS_BASE_URL` that already carried the `/api/v1` prefix (from `VITE_WS_BASE_URL=/api/v1`), producing the doubled `ws://localhost:4200/api/v1/api/v1/messages/ws`.
+- The WS origin is now derived from `API_BASE_URL` (origin + `/api/v1`, scheme swapped to `ws`), so the path prefix has a single source of truth and cannot be duplicated; `VITE_WS_BASE_URL` is no longer read by any code.
+
 ## 2026-09-27
 - DEVOPS: Added Azure deployment specification, backend/frontend container definitions, root Docker Compose stack, environment template, Nginx reverse proxy, GitHub Actions CI/CD workflows, and Azure provisioning runbook.
 - FIX: Backend CORS, health checks, upload storage path, and Alembic migrations now use deployment environment configuration instead of hardcoded local values.
