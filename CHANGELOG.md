@@ -3,6 +3,7 @@
 Chronological project changes grouped by commit date. Newest entries appear first.
 
 ## 2026-10-01
+- FIX: Backend CI red after the `/api/v1` route restructure — three realtime tests still connected to the old unprefixed paths (`/messages/ws`, `/schedules/`), so the WebSocket route closed immediately (`WebSocketDisconnect`) and the schedules POST returned `404`. Tests now use `/api/v1/messages/ws` and `/api/v1/schedules/`; suite back to 139 passing.
 - FIX: Frontend API calls failing with `ERR_NAME_NOT_RESOLVED` on `http://backend` — Nginx proxied with `Host ${BACKEND_HOST}` (`backend`), so the `307` FastAPI emits for a missing trailing slash (`/api/v1/vehicles` → `/api/v1/vehicles/`) came back with an absolute `Location` on the internal service name. Proxied requests now send the browser-facing host (`X-Forwarded-Host` when behind TLS, else `$http_host`), so redirects resolve to the public origin.
 - FIX: Frontend container reported `unhealthy` — its healthcheck probed `127.0.0.1:4200`, but Nginx listens on port `80` inside the container; probes now target `/`.
 - FIX: Backend now runs with `--proxy-headers --forwarded-allow-ips` so `X-Forwarded-Proto`/`Host` are honoured and redirects behind a TLS-terminating proxy are built with the public scheme.

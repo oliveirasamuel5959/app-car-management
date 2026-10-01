@@ -208,7 +208,7 @@ def test_ws_route_replies_pong_to_ping():
 
         with TestClient(app) as client:
             with client.websocket_connect(
-                "/messages/ws", params={"token": token}
+                "/api/v1/messages/ws", params={"token": token}
             ) as websocket:
                 websocket.send_json({"type": "ping"})
                 reply = websocket.receive_json()
