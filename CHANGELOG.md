@@ -2,6 +2,9 @@
 
 Chronological project changes grouped by commit date. Newest entries appear first.
 
+## 2026-10-01
+- FIX: Backend CI red after the `/api/v1` route restructure — three realtime tests still connected to the old unprefixed paths (`/messages/ws`, `/schedules/`), so the WebSocket route closed immediately (`WebSocketDisconnect`) and the schedules POST returned `404`. Tests now use `/api/v1/messages/ws` and `/api/v1/schedules/`; suite back to 139 passing.
+
 ## 2026-09-27
 - DEVOPS: Added Azure deployment specification, backend/frontend container definitions, root Docker Compose stack, environment template, Nginx reverse proxy, GitHub Actions CI/CD workflows, and Azure provisioning runbook.
 - FIX: Backend CORS, health checks, upload storage path, and Alembic migrations now use deployment environment configuration instead of hardcoded local values.
