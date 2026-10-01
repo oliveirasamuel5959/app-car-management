@@ -51,13 +51,14 @@ services:
     container_name: frontend
     environment:
       BACKEND_URL: ${BACKEND_URL:-http://backend:5500}
+      BACKEND_HOST: ${BACKEND_HOST:-localhost}
     ports:
-      - "4200:4200"
+      - "80:80"
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider --quiet http://127.0.0.1:4200/ || exit 1"]
+      test: ["CMD-SHELL", "wget --spider --quiet http://127.0.0.1:80/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10

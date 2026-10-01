@@ -91,7 +91,10 @@ app.add_middleware(
         "/health",
         "/auth/register",
         "/auth/login",
+        "/api/v1/auth/register",
+        "/api/v1/auth/login",
         "/messages/ws",
+        "/api/v1/messages/ws",
     ],
 )
 

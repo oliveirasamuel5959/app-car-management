@@ -28,9 +28,9 @@ ENV NGINX_ENVSUBST_FILTER="^(BACKEND_URL|BACKEND_HOST)$"
 
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
-COPY apps/web/nginx.conf.template \
+COPY apps/web/nginx.conf \
      /etc/nginx/templates/default.conf.template
 
-EXPOSE 4200
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

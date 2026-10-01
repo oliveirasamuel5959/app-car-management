@@ -15,7 +15,7 @@ from src.api.routes.workshop_ratings import router as workshop_ratings
 from src.api.routes.workshop_services import router as workshop_services
 from src.api.routes.workshops import router as workshops
 
-api_router = APIRouter()
+api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(auth, prefix="/auth", tags=["auth"])
 api_router.include_router(users, prefix="/users", tags=["users"])

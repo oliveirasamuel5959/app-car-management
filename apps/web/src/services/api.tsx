@@ -1,4 +1,7 @@
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+export const API_BASE_URL = configuredApiBaseUrl.endsWith('/api/v1')
+  ? configuredApiBaseUrl
+  : `${configuredApiBaseUrl}/api/v1`;
 
 type AddressLookupResult = {
   display_name: string;
@@ -97,7 +100,7 @@ const handleResponse = async (response: Response) => {
 export const api = {
   // GET request
   get: async (endpoint: string) => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -106,7 +109,7 @@ export const api = {
 
   // POST request
   post: async (endpoint: string, data: any) => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -116,7 +119,7 @@ export const api = {
 
   // PUT request
   put: async (endpoint: string, data: any) => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -126,7 +129,7 @@ export const api = {
 
   // DELETE request
   delete: async (endpoint: string) => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -141,7 +144,7 @@ export const api = {
 
   // PATCH request
   patch: async (endpoint: string, data: any) => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -155,7 +158,7 @@ export const api = {
     const token = localStorage.getItem('access_token');
     const formData = new FormData();
     formData.append(fieldName, file);
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),

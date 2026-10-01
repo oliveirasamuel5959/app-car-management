@@ -1,12 +1,14 @@
-import { api } from './api';
+import { api, API_BASE_URL } from './api';
 
-const configuredWsBaseUrl = import.meta.env.VITE_WS_BASE_URL;
+const configuredWsBaseUrl = import.meta.env.VITE_WS_BASE_URL?.startsWith('/')
+  ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}${import.meta.env.VITE_WS_BASE_URL}`
+  : import.meta.env.VITE_WS_BASE_URL;
+  
 const defaultWsBaseUrl =
   typeof window === 'undefined'
     ? 'ws://localhost:5500'
     : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
 const WS_BASE_URL = (configuredWsBaseUrl || defaultWsBaseUrl).replace(/\/$/, '');
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 export interface Message {
   id: number;
@@ -74,6 +76,6 @@ export const messageService = {
   },
 
   getWsUrl: (token: string): string => {
-    return `${WS_BASE_URL}/messages/ws?token=${token}`;
+    return `${WS_BASE_URL}/api/v1/messages/ws?token=${token}`;
   },
 };

@@ -185,6 +185,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
     PUBLIC_ROUTES = {
         "/auth/register",
         "/auth/login",
+        "/api/v1/auth/register",
+        "/api/v1/auth/login",
         "/docs",
         "/redoc",
         "/openapi.json",
