@@ -1,6 +1,6 @@
 # Validation: Azure DevOps Deployment
 
-Last Updated: 2026-09-27
+Last Updated: 2026-10-05
 Branch: feature/2026-09-27-azure-devops
 Status: In Progress
 
@@ -22,6 +22,14 @@ GitHub Actions. References [requirements.md](requirements.md) and
 docker build -f apps/backend/Dockerfile .
 docker build -f apps/web/Dockerfile .
 ```
+
+Regression evidence recorded on 2026-10-05: frontend CD uses repository-root
+context (`.`), matching the Dockerfile COPY paths. The local full frontend
+image build passed, including the Nginx template COPY. Docker still reports
+four `SecretsUsedInArgOrEnv` warnings for the browser-facing Maps API key and
+Stripe publishable key; these did not fail the full build. Maps keys must be
+restricted to approved HTTP referrers and APIs. A GitHub Actions rerun and ACR
+push remain unverified.
 
 ## V2 — Backend runtime
 

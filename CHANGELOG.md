@@ -2,6 +2,9 @@
 
 Chronological project changes grouped by commit date. Newest entries appear first.
 
+## 2026-10-05
+- FIX: Frontend CD now builds from the monorepo root instead of `apps/web`, matching the Dockerfile COPY paths for the root npm manifests and Nginx template. Verified with `docker build --progress=plain -f apps/web/Dockerfile .`.
+
 ## 2026-10-01
 - FIX: Frontend API calls failing with `ERR_NAME_NOT_RESOLVED` on `http://backend` — Nginx proxied with `Host ${BACKEND_HOST}` (`backend`), so the `307` FastAPI emits for a missing trailing slash (`/api/v1/vehicles` → `/api/v1/vehicles/`) came back with an absolute `Location` on the internal service name. Proxied requests now send the browser-facing host (`X-Forwarded-Host` when behind TLS, else `$http_host`), so redirects resolve to the public origin.
 - FIX: Frontend container reported `unhealthy` — its healthcheck probed `127.0.0.1:4200`, but Nginx listens on port `80` inside the container; probes now target `/`.
