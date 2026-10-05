@@ -591,13 +591,13 @@ def test_chat_message_over_ws_reaches_recipient_via_service_push():
         with TestClient(app) as client:
             with (
                 client.websocket_connect(
-                    "/messages/ws",
+                    "/api/v1/messages/ws",
                     params={
                         "token": make_token(1, "WORKSHOP", tenant.id, "sender@test.dev")
                     },
                 ) as ws_sender,
                 client.websocket_connect(
-                    "/messages/ws",
+                    "/api/v1/messages/ws",
                     params={
                         "token": make_token(2, "CLIENT", tenant.id, "receiver@test.dev")
                     },
@@ -672,7 +672,7 @@ def test_schedule_create_route_pushes_to_workshop_over_ws():
 
         with TestClient(app) as client:
             with client.websocket_connect(
-                "/messages/ws",
+                "/api/v1/messages/ws",
                 params={
                     "token": make_token(
                         workshop_user.id, "WORKSHOP", tenant_a.id, "workshop@test.dev"
@@ -680,7 +680,7 @@ def test_schedule_create_route_pushes_to_workshop_over_ws():
                 },
             ) as ws_workshop:
                 response = client.post(
-                    "/schedules/",
+                    "/api/v1/schedules/",
                     json={
                         "workshop_id": workshop.id,
                         "vehicle_id": vehicle.id,
