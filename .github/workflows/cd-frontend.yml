@@ -1,7 +1,12 @@
-# CD — build e push da imagem do flow-web (SPA + Nginx) para o ACR.
+# CD — build e push da imagem do drivepluss-frontend (SPA + Nginx) para o ACR.
 #
 # Dispara com tags `web-*` (ex.: web-1.2.3). A versão publicada é a tag sem o
-# prefixo: web-1.2.3 -> flow-web:1.2.3 (além de :latest).
+# prefixo: web-1.2.3 -> drivepluss-frontend:1.2.3 (além de :latest).
+#
+# Quick release from the repository root:
+#   git tag web-1.2.3
+#   git push origin web-1.2.3
+# Publishes drivepluss-frontend:1.2.3 and updates :latest.
 #
 # Contexto: a raiz do monorepo fornece package.json e package-lock.json;
 # a SPA e a configuração do Nginx ficam em apps/web/.

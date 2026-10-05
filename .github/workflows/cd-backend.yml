@@ -1,3 +1,7 @@
+# Quick release from the repository root:
+#   git tag api-1.2.3
+#   git push origin api-1.2.3
+# Publishes drivepluss-api:1.2.3 and updates :latest.
 name: Build & Push API car management app — ACR
 
 on:
