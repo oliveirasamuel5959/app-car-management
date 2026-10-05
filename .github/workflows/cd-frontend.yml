@@ -1,0 +1,62 @@
+# CD — build e push da imagem do flow-web (SPA + Nginx) para o ACR.
+#
+# Dispara com tags `web-*` (ex.: web-1.2.3). A versão publicada é a tag sem o
+# prefixo: web-1.2.3 -> flow-web:1.2.3 (além de :latest).
+#
+# Contexto: o repositório tem dois níveis — a raiz é o pai e a SPA mora em
+# app-flow-web/flow-web/. O Dockerfile do front é autossuficiente, então o
+# context é a própria pasta da SPA.
+#
+# ATENÇÃO ao `file`: o buildx resolve --file relativo ao diretório de trabalho
+# (a raiz do repositório), NÃO relativo ao context. Daí o caminho completo.
+#
+# Pré-requisitos (Settings → Secrets and variables → Actions):
+#   Variable ACR_LOGIN_SERVER = <registry>.azurecr.io   (ex.: dtflowacr.azurecr.io)
+#   Secret   ACR_USERNAME    = usuário admin do ACR
+#   Secret   ACR_PASSWORD    = senha admin do ACR
+name: Build & Push frontend drivepluss app — ACR
+
+on:
+  push:
+    tags:
+      - 'web-*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-drivepluss-frontend
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # web-1.2.3 -> 1.2.3.
+      - name: Calcular versão
+        id: versao
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: echo "valor=${REF_NAME#web-}" >> "$GITHUB_OUTPUT"
+
+      - name: Login no ACR (admin user)
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build e push frontend drivepluss app
+        uses: docker/build-push-action@v6
+        with:
+          # SPA isolada: context = pasta do front, Dockerfile na raiz dela.
+          context: apps/web
+          # Relativo à raiz do repositório, não ao context (ver comentário no topo).
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss:latest
+            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss:${{ steps.versao.outputs.valor }}

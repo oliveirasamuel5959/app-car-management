@@ -1,171 +1,171 @@
-name: Deploy Azure Containers
+# name: Deploy Azure Containers
 
-on:
-  push:
-    branches:
-      - develop
-      - main
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: Environment to deploy
-        required: true
-        type: choice
-        options:
-          - staging
-          - production
+# on:
+#   push:
+#     branches:
+#       - develop
+#       - main
+#   workflow_dispatch:
+#     inputs:
+#       environment:
+#         description: Environment to deploy
+#         required: true
+#         type: choice
+#         options:
+#           - staging
+#           - production
 
-permissions:
-  contents: read
-  id-token: write
+# permissions:
+#   contents: read
+#   id-token: write
 
-env:
-  ACR_NAME: ${{ vars.ACR_NAME }}
-  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
-  IMAGE_TAG: ${{ github.sha }}
+# env:
+#   ACR_NAME: ${{ vars.ACR_NAME }}
+#   ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+#   IMAGE_TAG: ${{ github.sha }}
 
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Sign in to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#       - name: Sign in to Azure with OIDC
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Sign in to ACR
-        run: az acr login --name "$ACR_NAME"
+#       - name: Sign in to ACR
+#         run: az acr login --name "$ACR_NAME"
 
-      - name: Build and push backend image
-        run: |
-          docker build \
-            --tag "$ACR_LOGIN_SERVER/car-backend:$IMAGE_TAG" \
-            -f apps/backend/Dockerfile .
-          docker push "$ACR_LOGIN_SERVER/car-backend:$IMAGE_TAG"
+#       - name: Build and push backend image
+#         run: |
+#           docker build \
+#             --tag "$ACR_LOGIN_SERVER/car-backend:$IMAGE_TAG" \
+#             -f apps/backend/Dockerfile .
+#           docker push "$ACR_LOGIN_SERVER/car-backend:$IMAGE_TAG"
 
-      - name: Build and push frontend image
-        env:
-          VITE_GOOGLE_MAPS_API_KEY: ${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
-          VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
-        run: |
-          docker build \
-            --build-arg VITE_API_BASE_URL= \
-            --build-arg VITE_WS_BASE_URL= \
-            --build-arg VITE_GOOGLE_MAPS_API_KEY="$VITE_GOOGLE_MAPS_API_KEY" \
-            --build-arg VITE_STRIPE_PUBLISHABLE_KEY="$VITE_STRIPE_PUBLISHABLE_KEY" \
-            --tag "$ACR_LOGIN_SERVER/car-frontend:$IMAGE_TAG" \
-            -f apps/web/Dockerfile .
-          docker push "$ACR_LOGIN_SERVER/car-frontend:$IMAGE_TAG"
+#       - name: Build and push frontend image
+#         env:
+#           VITE_GOOGLE_MAPS_API_KEY: ${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
+#           VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
+#         run: |
+#           docker build \
+#             --build-arg VITE_API_BASE_URL= \
+#             --build-arg VITE_WS_BASE_URL= \
+#             --build-arg VITE_GOOGLE_MAPS_API_KEY="$VITE_GOOGLE_MAPS_API_KEY" \
+#             --build-arg VITE_STRIPE_PUBLISHABLE_KEY="$VITE_STRIPE_PUBLISHABLE_KEY" \
+#             --tag "$ACR_LOGIN_SERVER/car-frontend:$IMAGE_TAG" \
+#             -f apps/web/Dockerfile .
+#           docker push "$ACR_LOGIN_SERVER/car-frontend:$IMAGE_TAG"
 
-  deploy-staging:
-    needs: build-and-push
-    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
-    runs-on: ubuntu-latest
-    environment: staging
-    env:
-      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-      FRONTEND_APP_NAME: ${{ vars.AZURE_FRONTEND_APP_NAME }}
-      BACKEND_APP_NAME: ${{ vars.AZURE_BACKEND_APP_NAME }}
-      FRONTEND_URL: ${{ vars.AZURE_FRONTEND_URL }}
-      BACKEND_URL: ${{ vars.AZURE_BACKEND_URL }}
-    steps:
-      - name: Sign in to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#   deploy-staging:
+#     needs: build-and-push
+#     if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+#     runs-on: ubuntu-latest
+#     environment: staging
+#     env:
+#       RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+#       FRONTEND_APP_NAME: ${{ vars.AZURE_FRONTEND_APP_NAME }}
+#       BACKEND_APP_NAME: ${{ vars.AZURE_BACKEND_APP_NAME }}
+#       FRONTEND_URL: ${{ vars.AZURE_FRONTEND_URL }}
+#       BACKEND_URL: ${{ vars.AZURE_BACKEND_URL }}
+#     steps:
+#       - name: Sign in to Azure with OIDC
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy backend image
-        run: |
-          az webapp config container set \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$BACKEND_APP_NAME" \
-            --docker-custom-image-name "$ACR_LOGIN_SERVER/car-backend:$IMAGE_TAG" \
-            --docker-registry-server-url "https://$ACR_LOGIN_SERVER"
+#       - name: Deploy backend image
+#         run: |
+#           az webapp config container set \
+#             --resource-group "$RESOURCE_GROUP" \
+#             --name "$BACKEND_APP_NAME" \
+#             --docker-custom-image-name "$ACR_LOGIN_SERVER/car-backend:$IMAGE_TAG" \
+#             --docker-registry-server-url "https://$ACR_LOGIN_SERVER"
 
-      - name: Deploy frontend image
-        run: |
-          az webapp config container set \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$FRONTEND_APP_NAME" \
-            --docker-custom-image-name "$ACR_LOGIN_SERVER/car-frontend:$IMAGE_TAG" \
-            --docker-registry-server-url "https://$ACR_LOGIN_SERVER"
+#       - name: Deploy frontend image
+#         run: |
+#           az webapp config container set \
+#             --resource-group "$RESOURCE_GROUP" \
+#             --name "$FRONTEND_APP_NAME" \
+#             --docker-custom-image-name "$ACR_LOGIN_SERVER/car-frontend:$IMAGE_TAG" \
+#             --docker-registry-server-url "https://$ACR_LOGIN_SERVER"
 
-      - name: Restart applications
-        run: |
-          az webapp restart --resource-group "$RESOURCE_GROUP" --name "$BACKEND_APP_NAME"
-          az webapp restart --resource-group "$RESOURCE_GROUP" --name "$FRONTEND_APP_NAME"
+#       - name: Restart applications
+#         run: |
+#           az webapp restart --resource-group "$RESOURCE_GROUP" --name "$BACKEND_APP_NAME"
+#           az webapp restart --resource-group "$RESOURCE_GROUP" --name "$FRONTEND_APP_NAME"
 
-      - name: Smoke test staging
-        run: |
-          set -eu
-          healthy=0
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent "$BACKEND_URL/health" >/dev/null; then
-              healthy=1
-              break
-            fi
-            sleep 10
-          done
-          test "$healthy" -eq 1
-          curl --fail --silent "$FRONTEND_URL" >/dev/null
+#       - name: Smoke test staging
+#         run: |
+#           set -eu
+#           healthy=0
+#           for attempt in $(seq 1 30); do
+#             if curl --fail --silent "$BACKEND_URL/health" >/dev/null; then
+#               healthy=1
+#               break
+#             fi
+#             sleep 10
+#           done
+#           test "$healthy" -eq 1
+#           curl --fail --silent "$FRONTEND_URL" >/dev/null
 
-  deploy-production:
-    needs: build-and-push
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
-    runs-on: ubuntu-latest
-    environment: production
-    env:
-      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-      FRONTEND_APP_NAME: ${{ vars.AZURE_FRONTEND_APP_NAME }}
-      BACKEND_APP_NAME: ${{ vars.AZURE_BACKEND_APP_NAME }}
-      FRONTEND_URL: ${{ vars.AZURE_FRONTEND_URL }}
-      BACKEND_URL: ${{ vars.AZURE_BACKEND_URL }}
-    steps:
-      - name: Sign in to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#   deploy-production:
+#     needs: build-and-push
+#     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+#     runs-on: ubuntu-latest
+#     environment: production
+#     env:
+#       RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+#       FRONTEND_APP_NAME: ${{ vars.AZURE_FRONTEND_APP_NAME }}
+#       BACKEND_APP_NAME: ${{ vars.AZURE_BACKEND_APP_NAME }}
+#       FRONTEND_URL: ${{ vars.AZURE_FRONTEND_URL }}
+#       BACKEND_URL: ${{ vars.AZURE_BACKEND_URL }}
+#     steps:
+#       - name: Sign in to Azure with OIDC
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy backend image
-        run: |
-          az webapp config container set \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$BACKEND_APP_NAME" \
-            --docker-custom-image-name "$ACR_LOGIN_SERVER/car-backend:$IMAGE_TAG" \
-            --docker-registry-server-url "https://$ACR_LOGIN_SERVER"
+#       - name: Deploy backend image
+#         run: |
+#           az webapp config container set \
+#             --resource-group "$RESOURCE_GROUP" \
+#             --name "$BACKEND_APP_NAME" \
+#             --docker-custom-image-name "$ACR_LOGIN_SERVER/car-backend:$IMAGE_TAG" \
+#             --docker-registry-server-url "https://$ACR_LOGIN_SERVER"
 
-      - name: Deploy frontend image
-        run: |
-          az webapp config container set \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$FRONTEND_APP_NAME" \
-            --docker-custom-image-name "$ACR_LOGIN_SERVER/car-frontend:$IMAGE_TAG" \
-            --docker-registry-server-url "https://$ACR_LOGIN_SERVER"
+#       - name: Deploy frontend image
+#         run: |
+#           az webapp config container set \
+#             --resource-group "$RESOURCE_GROUP" \
+#             --name "$FRONTEND_APP_NAME" \
+#             --docker-custom-image-name "$ACR_LOGIN_SERVER/car-frontend:$IMAGE_TAG" \
+#             --docker-registry-server-url "https://$ACR_LOGIN_SERVER"
 
-      - name: Restart applications
-        run: |
-          az webapp restart --resource-group "$RESOURCE_GROUP" --name "$BACKEND_APP_NAME"
-          az webapp restart --resource-group "$RESOURCE_GROUP" --name "$FRONTEND_APP_NAME"
+#       - name: Restart applications
+#         run: |
+#           az webapp restart --resource-group "$RESOURCE_GROUP" --name "$BACKEND_APP_NAME"
+#           az webapp restart --resource-group "$RESOURCE_GROUP" --name "$FRONTEND_APP_NAME"
 
-      - name: Smoke test production
-        run: |
-          set -eu
-          healthy=0
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent "$BACKEND_URL/health" >/dev/null; then
-              healthy=1
-              break
-            fi
-            sleep 10
-          done
-          test "$healthy" -eq 1
-          curl --fail --silent "$FRONTEND_URL" >/dev/null
+#       - name: Smoke test production
+#         run: |
+#           set -eu
+#           healthy=0
+#           for attempt in $(seq 1 30); do
+#             if curl --fail --silent "$BACKEND_URL/health" >/dev/null; then
+#               healthy=1
+#               break
+#             fi
+#             sleep 10
+#           done
+#           test "$healthy" -eq 1
+#           curl --fail --silent "$FRONTEND_URL" >/dev/null
