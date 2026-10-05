@@ -3,9 +3,8 @@
 # Dispara com tags `web-*` (ex.: web-1.2.3). A versão publicada é a tag sem o
 # prefixo: web-1.2.3 -> flow-web:1.2.3 (além de :latest).
 #
-# Contexto: o repositório tem dois níveis — a raiz é o pai e a SPA mora em
-# app-flow-web/flow-web/. O Dockerfile do front é autossuficiente, então o
-# context é a própria pasta da SPA.
+# Contexto: a raiz do monorepo fornece package.json e package-lock.json;
+# a SPA e a configuração do Nginx ficam em apps/web/.
 #
 # ATENÇÃO ao `file`: o buildx resolve --file relativo ao diretório de trabalho
 # (a raiz do repositório), NÃO relativo ao context. Daí o caminho completo.
@@ -52,8 +51,8 @@ jobs:
       - name: Build e push frontend drivepluss app
         uses: docker/build-push-action@v6
         with:
-          # SPA isolada: context = pasta do front, Dockerfile na raiz dela.
-          context: apps/web
+          # Os caminhos de COPY do Dockerfile são relativos à raiz do monorepo.
+          context: .
           # Relativo à raiz do repositório, não ao context (ver comentário no topo).
           file: apps/web/Dockerfile
           push: true
