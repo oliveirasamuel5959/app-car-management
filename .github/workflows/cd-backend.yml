@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-car-api
+  group: deploy-drivepluss-api
   cancel-in-progress: false
 
 jobs:
@@ -40,5 +40,5 @@ jobs:
           file: apps/backend/Dockerfile
           push: true
           tags: |
-            ${{ vars.ACR_LOGIN_SERVER }}/car-api:latest
-            ${{ vars.ACR_LOGIN_SERVER }}/car-api:${{ steps.versao.outputs.valor }}
+            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss-api:latest
+            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss-api:${{ steps.versao.outputs.valor }}

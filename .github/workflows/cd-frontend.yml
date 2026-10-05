@@ -57,5 +57,5 @@ jobs:
           file: apps/web/Dockerfile
           push: true
           tags: |
-            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss:latest
-            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss:${{ steps.versao.outputs.valor }}
+            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss-frontend:latest
+            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss-frontend:${{ steps.versao.outputs.valor }}
