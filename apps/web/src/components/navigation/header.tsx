@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Car, Menu, X, User, LogOut, Search, Home } from 'lucide-react';
+import { Menu, X, User, LogOut, Search, Home } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
 import { Button } from '../../components/ui/button';
+import { BrandLogo } from '../brand/brand-logo';
 import { cn } from '../../lib/utils';
 import ThemeToggle from '../theme-toggle';
 import { NotificationBell } from './notification-bell';
@@ -56,12 +57,12 @@ const Header = () => {
         <div className="flex justify-between items-center h-16">
           
           <Link to={dashboardPath} aria-label="Home DrivePluss" className="flex items-center space-x-2 group focus-visible:ring-2 focus-visible:ring-blue-400 rounded-lg outline-none mr-4">
-            <div className="bg-white/20 rounded-lg p-1.5 shadow-lg group-hover:scale-105 transition-transform duration-300">
-              <Car className="w-6 h-6 text-white" aria-hidden="true" />
-            </div>
-            <span className="text-xl font-bold text-white font-display tracking-tight hidden sm:block">
-              Drive<span className="text-cyan-200">Pluss</span>
-            </span>
+            <BrandLogo
+              tone="light"
+              size="md"
+              iconClassName="shadow-lg group-hover:scale-105 transition-transform duration-300"
+              wordmarkClassName="hidden sm:block"
+            />
           </Link>
 
           <nav className="hidden md:flex items-center flex-1 justify-center" aria-label="Main Navigation">
