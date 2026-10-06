@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/main-layout';
+import LandingLayout from './layouts/landing-layout';
 import ProtectedRoute from './components/routing/protected-route';
 import RealtimeToasts from './components/realtime/realtime-toasts';
 import { AuthProvider } from './context/auth-context';
@@ -22,7 +23,14 @@ function App() {
               {/* Auth routes without MainLayout */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignUpPage />} />
-              <Route path="/" element={<HomePage />} />
+              <Route
+                path="/"
+                element={
+                  <LandingLayout>
+                    <HomePage />
+                  </LandingLayout>
+                }
+              />
 
               {/* All other routes with MainLayout */}
               <Route path="*" element={

@@ -1,62 +1,21 @@
-import { Box, Button, Container, Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import CarKeepLogo from '../assets/carkeep-logo.svg';
+import Hero from './home/hero';
+import Features from './home/features';
+import Audiences from './home/audiences';
+import HowItWorks from './home/how-it-works';
+import FinalCta from './home/cta';
 
-const Home = () => {
-  const navigate = useNavigate();
-
-  return (
-    <>
-      <Container maxWidth="sm" sx={{ pt: 10 }}>
-      <Box 
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          py: 4,
-        }}
-      >
-        <img 
-          src={CarKeepLogo} 
-          alt="Car Management System Logo"
-          style={{
-            height: '200px',
-            marginBottom: '2rem'
-          }}
-        />
-        <Typography 
-          variant="h3" 
-          component="h1"
-          sx={{ 
-            mb: 2, 
-            textAlign: 'center',
-            color: 'secondary.main'
-          }}
-        >
-          Welcome to Car Management System
-        </Typography>
-        <Typography 
-          variant="body1"
-          sx={{ 
-            mb: 2, 
-            textAlign: 'center',
-            color: 'secondary.light'
-          }}
-        >
-          Your all-in-one solution for managing your car fleet. Track maintenance, schedule services, and keep your vehicles running smoothly with ease.  
-        </Typography>
-        <Button 
-          variant="contained" 
-          size="large"
-          onClick={() => navigate('/login')}
-          sx={{ mt: 2 }}
-        >
-          Get Started
-        </Button>
-      </Box>
-    </Container>
-    </>
-  );
-};
+/**
+ * Public landing page. The surrounding chrome (header/footer) is provided by
+ * LandingLayout, wired up in App.tsx.
+ */
+const Home = () => (
+  <>
+    <Hero />
+    <Features />
+    <Audiences />
+    <HowItWorks />
+    <FinalCta />
+  </>
+);
 
 export default Home;
