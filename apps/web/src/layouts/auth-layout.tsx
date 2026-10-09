@@ -1,8 +1,9 @@
 import { Box, Typography } from '@mui/material';
-import { Car } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { BrandLogo } from '../components/brand/brand-logo';
 import loginImage from '../assets/login-image.jpg';
 
-const AuthLayout = ({ children }) => {
+const AuthLayout = ({ children }: { children: ReactNode }) => {
   return (
     <Box
       sx={{
@@ -27,22 +28,8 @@ const AuthLayout = ({ children }) => {
         }}
       >
         {/* Logo */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
-          <Box
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.2)',
-              borderRadius: 2,
-              p: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Car size={28} color="#FFFFFF" />
-          </Box>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.5rem', color: '#FFFFFF', letterSpacing: '-0.01em' }}>
-            Drive<span style={{ color: '#BFEFFF' }}>Pluss</span>
-          </Typography>
+        <Box sx={{ mb: 4 }}>
+          <BrandLogo tone="light" size="lg" />
         </Box>
 
         {/* Title */}
@@ -90,17 +77,9 @@ const AuthLayout = ({ children }) => {
         }}
       >
         {/* Mobile-only logo */}
-        <Typography
-          variant="h5"
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            fontWeight: 800,
-            mb: 4,
-            color: '#0E71AE',
-          }}
-        >
-          Drive<span style={{ color: '#0E71AE' }}>Pluss</span>
-        </Typography>
+        <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 4 }}>
+          <BrandLogo size="lg" />
+        </Box>
 
         <Box sx={{ width: '100%', maxWidth: 486 }}>
           {children}

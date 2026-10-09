@@ -1,0 +1,48 @@
+# Quick release from the repository root:
+#   git tag api-1.2.3
+#   git push origin api-1.2.3
+# Publishes drivepluss-api:1.2.3 and updates :latest.
+name: Build & Push API car management app — ACR
+
+on:
+  push:
+    tags:
+      - 'api-*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-drivepluss-api
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # api-1.2.3 -> 1.2.3.
+      - name: Calcular versão
+        id: versao
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: echo "valor=${REF_NAME#api-}" >> "$GITHUB_OUTPUT"
+
+      - name: Login no ACR (admin user)
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build e push API car management app
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/backend/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss-api:latest
+            ${{ vars.ACR_LOGIN_SERVER }}/drivepluss-api:${{ steps.versao.outputs.valor }}
