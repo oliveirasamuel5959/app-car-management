@@ -22,6 +22,13 @@ export interface Workshop {
   user_id: number;
 }
 
+/**
+ * Public discovery view of a workshop (`GET /workshops/{id}` as a CLIENT).
+ * Client discovery is cross-tenant, so the owning tenant's identifiers are
+ * not part of the response.
+ */
+export type WorkshopPublic = Omit<Workshop, 'tenant_id' | 'email'>;
+
 export interface WorkshopUpdate {
   name?: string;
   email?: string | null;
@@ -141,7 +148,7 @@ export const workshopService = {
     return response.data;
   },
 
-  getWorkshopById: async (workshopId: number) => {
+  getWorkshopById: async (workshopId: number): Promise<WorkshopPublic> => {
     try {
       const response = await api.get(`/workshops/${workshopId}`);
       return response;

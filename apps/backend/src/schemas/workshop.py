@@ -1,7 +1,7 @@
 import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WorkshopCreate(BaseModel):
@@ -43,6 +43,18 @@ class WorkshopRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class WorkshopPublic(WorkshopRead):
+    """Workshop shape for client discovery, which is cross-tenant.
+
+    Clients have no tenant of their own to scope against, so this omits the
+    owning tenant's identifiers while keeping everything the booking and chat
+    flows read — `user_id` in particular is the chat recipient.
+    """
+
+    tenant_id: UUID | None = Field(default=None, exclude=True)
+    email: str | None = Field(default=None, exclude=True)
 
 
 class WorkshopUpdate(BaseModel):

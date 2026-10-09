@@ -27,7 +27,7 @@ from src.repositories.services import (
 from src.repositories.services_history import repo_get_service_history_by_order
 from src.repositories.vehicle import (
     repo_get_vehicle_by_id,
-    repo_get_vehicles_by_user_id,
+    repo_get_vehicles_by_user_id_any_tenant,
 )
 from src.repositories.workshop import (
     repo_get_workshop_by_id,
@@ -105,11 +105,18 @@ class ServiceService:
         if not client:
             raise ValueError(f"No client found for workshop id {workshop.id}")
 
-        vehicles = repo_get_vehicles_by_user_id(self.db, client.user_id, tenant_id)
+        # The client registry row lives in the workshop's tenant, but the
+        # vehicle belongs to the client and lives in the client's own tenant,
+        # so this lookup must not be tenant-scoped by the workshop.
+        vehicles = (
+            repo_get_vehicles_by_user_id_any_tenant(self.db, client.user_id)
+            if client.user_id
+            else []
+        )
         if not vehicles:
             raise ValueError(
-                f"O cliente {client.name} não possui veículo cadastrado na sua "
-                "oficina. Peça para o cliente cadastrar o veículo antes de "
+                f"O cliente {client.name} não possui veículo cadastrado na "
+                "plataforma. Peça para o cliente cadastrar o veículo antes de "
                 "criar o orçamento."
             )
         vehicle = vehicles[0]

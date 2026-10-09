@@ -6,7 +6,6 @@ from src.repositories.workshop import (repo_create_workshop,
                                        repo_get_workshop_all_clients,
                                        repo_get_workshop_by_id,
                                        repo_get_workshop_by_id_any_tenant,
-                                       repo_get_workshop_by_id_for_client,
                                        repo_get_workshop_for_user,
                                        repo_get_workshops_nearby,
                                        repo_search_workshops,
@@ -55,12 +54,14 @@ class WorkshopService:
             raise ValueError(f"Workshop {workshop_id} not found")
         return workshop
 
-    def get_workshop_by_client_access(
-        self, workshop_id: int, user_id: int, user_email: str | None = None
-    ) -> Workshop:
-        workshop = repo_get_workshop_by_id_for_client(
-            self.db, workshop_id, user_id, user_email=user_email
-        )
+    def get_public_workshop(self, workshop_id: int) -> Workshop:
+        """Read a workshop for client discovery, which is cross-tenant.
+
+        Clients browse the public directory (`search_workshops`) and pick a
+        workshop from it, so requiring a pre-existing service relationship
+        here would 404 every workshop they have not used yet.
+        """
+        workshop = repo_get_workshop_by_id_any_tenant(self.db, workshop_id)
         if not workshop:
             raise ValueError(f"Workshop {workshop_id} not found")
         return workshop

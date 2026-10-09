@@ -53,6 +53,21 @@ def repo_get_vehicles_by_user_id(
     )
 
 
+def repo_get_vehicles_by_user_id_any_tenant(
+    db: Session, user_id: int
+) -> list[Vehicle]:
+    """List a user's vehicles regardless of tenant.
+
+    A workshop holds a `WorkshopClient` in its own tenant, but the vehicle
+    belongs to the linked client, whose vehicles live in the client's tenant.
+    Resolving through the workshop's tenant therefore never matches.
+    """
+    if not user_id:
+        return []
+
+    return db.query(Vehicle).filter(Vehicle.user_id == user_id).all()
+
+
 def check_duplicate_plate(
     db: Session, tenant_id: UUID | str, plate: str
 ) -> Vehicle | None:

@@ -1,14 +1,13 @@
 from math import cos, radians
 from uuid import UUID
 
-from sqlalchemy import func, or_
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.models.services import Service
 from src.models.user import User
 from src.models.vehicle import Vehicle
 from src.models.workshop import Workshop
-from src.models.workshop_client import WorkshopClient
 from src.models.workshop_rating import WorkshopRating
 from src.models.workshop_service import WorkshopService
 from src.schemas.workshop import WorkshopSearchItem
@@ -202,31 +201,6 @@ def repo_get_workshop_for_user(
         return workshop
 
     return db.query(Workshop).filter(Workshop.tenant_id == tenant_id).first()
-
-
-def repo_get_workshop_by_id_for_client(
-    db: Session,
-    workshop_id: int,
-    user_id: int,
-    user_email: str | None = None,
-) -> Workshop | None:
-    ownership_filters = [
-        Vehicle.user_id == user_id,
-        WorkshopClient.user_id == user_id,
-    ]
-    if user_email is not None:
-        ownership_filters.append(WorkshopClient.email == user_email)
-
-    return (
-        db.query(Workshop)
-        .join(Service, Service.workshop_id == Workshop.id)
-        .outerjoin(Vehicle, Service.vehicle_id == Vehicle.id)
-        .outerjoin(WorkshopClient, Service.workshop_client_id == WorkshopClient.id)
-        .filter(Workshop.id == workshop_id)
-        .filter(or_(*ownership_filters))
-        .distinct()
-        .first()
-    )
 
 
 def repo_get_workshop_all_clients(

@@ -30,7 +30,7 @@ import {
   Phone as PhoneIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import type { Workshop } from '../../services/workshop-service';
+import type { WorkshopPublic } from '../../services/workshop-service';
 import { workshopService } from '../../services/workshop-service';
 import type { AgendaDay, ServiceRequestType } from '../../services/schedule-service';
 import { scheduleService } from '../../services/schedule-service';
@@ -76,7 +76,7 @@ function fmtLocal(iso: string): string {
 }
 
 /** True if the workshop has all the fields needed to compute an agenda. */
-function hasOperatingHours(w: Workshop): boolean {
+function hasOperatingHours(w: WorkshopPublic): boolean {
   return !!(w.opening_time && w.closing_time && w.work_days);
 }
 
@@ -85,7 +85,7 @@ export default function SchedulingWorkshopPage() {
   const navigate = useNavigate();
 
   // Workshop data
-  const [workshop, setWorkshop] = useState<Workshop | null>(null);
+  const [workshop, setWorkshop] = useState<WorkshopPublic | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

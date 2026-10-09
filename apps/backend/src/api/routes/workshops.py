@@ -6,7 +6,8 @@ from src.core.auth import get_current_user
 from src.core.file_uploader import handle_file_upload
 from src.db.database import get_session
 from src.schemas.user import UserRead
-from src.schemas.workshop import (WorkshopAgenda, WorkshopCreate, WorkshopRead,
+from src.schemas.workshop import (WorkshopAgenda, WorkshopCreate,
+                                  WorkshopPublic, WorkshopRead,
                                   WorkshopSearchItem, WorkshopUpdate)
 from src.services.workshop import WorkshopService
 
@@ -185,9 +186,13 @@ async def upload_workshop_logo(
 
 @router.get(
     "/{workshop_id}",
-    response_model=WorkshopRead,
+    response_model=WorkshopPublic,
     status_code=status.HTTP_200_OK,
     summary="Get workshop by ID",
+    description=(
+        "Workshop owners get their own tenant-scoped record; clients get the "
+        "public discovery view, since they browse workshops across tenants."
+    ),
 )
 def get_workshop_by_id(
     workshop_id: int,
@@ -197,11 +202,7 @@ def get_workshop_by_id(
     service = WorkshopService(db)
     try:
         if current_user.get("role") == "CLIENT":
-            return service.get_workshop_by_client_access(
-                workshop_id,
-                int(current_user.get("user_id")),
-                user_email=current_user.get("sub"),
-            )
+            return service.get_public_workshop(workshop_id)
         return service.get_workshop_by_id(workshop_id, current_user.get("tenant_id"))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
