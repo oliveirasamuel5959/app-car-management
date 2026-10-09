@@ -465,3 +465,129 @@ def test_paid_order_is_terminal():
             user_id=workshop_user.id,
             tenant_id=tenant.id,
         )
+
+
+def seed_cross_tenant_graph():
+    """Workshop and client in separate tenants — the real deployment shape.
+
+    The workshop's registry row lives in the workshop's tenant while the
+    client's vehicle lives in the client's own tenant.
+    """
+    session = build_session()
+
+    workshop_tenant = Tenant(id=uuid.uuid4(), slug="workshop-t", name="Workshop T")
+    client_tenant = Tenant(id=uuid.uuid4(), slug="client-t", name="Client T")
+    session.add_all([workshop_tenant, client_tenant])
+    session.commit()
+
+    workshop_user = User(
+        id=1,
+        tenant_id=workshop_tenant.id,
+        name="Workshop Owner",
+        age=32,
+        sex="M",
+        email="workshop@test.dev",
+        password_hash="hashed",
+        role="WORKSHOP",
+        is_active=True,
+    )
+    client_user = User(
+        id=2,
+        tenant_id=client_tenant.id,
+        name="Samuel",
+        age=28,
+        sex="M",
+        email="client@test.dev",
+        password_hash="hashed",
+        role="CLIENT",
+        is_active=True,
+    )
+    session.add_all([workshop_user, client_user])
+    session.commit()
+
+    workshop = Workshop(
+        id=1,
+        tenant_id=workshop_tenant.id,
+        user_id=workshop_user.id,
+        name="Drive Pluss Garage",
+        email="workshop@test.dev",
+        description="desc",
+        latitude=10,
+        longitude=20,
+        rating_avg=4.2,
+    )
+    # The vehicle belongs to the client, so it carries the client's tenant.
+    vehicle = Vehicle(
+        id=1,
+        tenant_id=client_tenant.id,
+        brand="Fiat",
+        model="Siena",
+        year=2015,
+        plate="ABC-1234",
+        user_id=client_user.id,
+    )
+    workshop_client = WorkshopClient(
+        id=1,
+        tenant_id=workshop_tenant.id,
+        workshop_id=workshop.id,
+        name="Samuel",
+        email=client_user.email,
+        phone="5551999999999",
+        vehicle_brand="Fiat",
+        vehicle_model="Siena",
+        vehicle_year=2015,
+        vehicle_plate="ABC-1234",
+        user_id=client_user.id,
+    )
+    session.add_all([workshop, vehicle, workshop_client])
+    session.commit()
+
+    return session, workshop_tenant, workshop_user, client_user, vehicle
+
+
+def test_create_order_links_client_vehicle_across_tenants():
+    """Regression: the client's vehicle lives in the client's tenant.
+
+    Resolving it with the workshop's tenant made every workshop-side order
+    fail with a misleading "client has no vehicle" error.
+    """
+    session, workshop_tenant, workshop_user, client_user, vehicle = (
+        seed_cross_tenant_graph()
+    )
+
+    created = ServiceService(session).create_service(
+        ServiceCreate(
+            workshop_client_id=1,
+            name="Troca de óleo",
+            description="Revisão",
+            status="pending",
+            progress_percentage=0,
+            checkin_date=datetime(2026, 6, 3, 9, 0, 0),
+            estimated_finish_date=datetime(2026, 6, 4, 17, 0, 0),
+            estimated_cost=200.0,
+        ),
+        user_id=workshop_user.id,
+        tenant_id=workshop_tenant.id,
+    )
+
+    assert created.vehicle_id == vehicle.id
+    # The order itself still belongs to the workshop's tenant.
+    assert created.tenant_id == workshop_tenant.id
+
+
+def test_create_order_without_client_vehicle_still_raises():
+    session, workshop_tenant, workshop_user, _, _ = seed_cross_tenant_graph()
+    session.query(Vehicle).delete()
+    session.commit()
+
+    with pytest.raises(ValueError, match="não possui veículo"):
+        ServiceService(session).create_service(
+            ServiceCreate(
+                workshop_client_id=1,
+                name="Troca de óleo",
+                checkin_date=datetime(2026, 6, 3, 9, 0, 0),
+            ),
+            user_id=workshop_user.id,
+            tenant_id=workshop_tenant.id,
+        )
+
