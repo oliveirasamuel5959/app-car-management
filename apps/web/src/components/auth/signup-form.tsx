@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { useState, useMemo, useRef, useId } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Eye, EyeOff, Check, X, ChevronDown } from 'lucide-react';
 import { api } from '../../services/api';
+import { getErrorMessage } from '../../lib/errors';
 
 type AccountRole = 'CLIENT' | 'WORKSHOP';
 type AddressResult = {
@@ -10,48 +11,85 @@ type AddressResult = {
   lon: string;
 };
 
+// ── Reusable field wrapper ────────────────────────────────────────────────────
+type FieldShellProps = {
+  label: string;
+  htmlFor: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  children: React.ReactNode;
+  className?: string;
+};
+
+const FieldShell = ({ label, htmlFor, required, error, hint, children, className }: FieldShellProps) => (
+  <div className={`flex flex-col gap-1.5 ${className ?? ''}`}>
+    <label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
+      {label}
+      {required && <span className="ml-0.5 text-destructive-text">*</span>}
+    </label>
+    {children}
+    {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+    {error && (
+      <p id={`${htmlFor}-error`} className="text-sm text-destructive-text">
+        {error}
+      </p>
+    )}
+  </div>
+);
+
+const fieldClasses = (hasError: boolean) =>
+  `w-full rounded-lg border bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 ${
+    hasError ? 'border-destructive-text bg-destructive/5' : 'border-input'
+  }`;
+
 // ── Reusable Input ────────────────────────────────────────────────────────────
 const Input = ({
   label,
   error,
   required,
+  hint,
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   error?: string;
   required?: boolean;
-}) => (
-  <div className="flex flex-col gap-1">
-    <label className="text-sm font-medium text-gray-700">
-      {label}
-      {required && <span className="text-red-500 ml-0.5">*</span>}
-    </label>
-    <input
-      {...props}
-      className={`w-full rounded-lg border px-5 py-3.5 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-        error ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
-      } ${props.className ?? ''}`}
-    />
-    {error && <p className="text-sm text-red-500">{error}</p>}
-  </div>
-);
+  hint?: string;
+}) => {
+  const id = useId();
+  const inputId = props.id ?? id;
+  return (
+    <FieldShell label={label} htmlFor={inputId} required={required} error={error} hint={hint}>
+      <input
+        {...props}
+        id={inputId}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${inputId}-error` : undefined}
+        className={fieldClasses(Boolean(error))}
+      />
+    </FieldShell>
+  );
+};
 
 // ── Password requirement row ──────────────────────────────────────────────────
 const Req = ({ met, label }: { met: boolean; label: string }) => (
   <div className="flex items-center gap-1.5 text-sm">
     {met ? (
-      <Check className="w-4 h-4 text-green-500" />
+      <Check className="h-4 w-4 text-success-text" aria-hidden="true" />
     ) : (
-      <X className="w-4 h-4 text-gray-400" />
+      <X className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
     )}
-    <span className={met ? 'text-green-600' : 'text-gray-500'}>{label}</span>
+    <span className={met ? 'text-success-text' : 'text-muted-foreground'}>
+      {label}
+      <span className="sr-only">{met ? ' — met' : ' — not met'}</span>
+    </span>
   </div>
 );
 
 // ── Country codes ─────────────────────────────────────────────────────────────
 const COUNTRY_CODES = [
   { code: '+55', flag: '🇧🇷', label: 'BR' },
-  { code: '+1',  flag: '🇺🇸', label: 'US' },
+  { code: '+1', flag: '🇺🇸', label: 'US' },
   { code: '+44', flag: '🇬🇧', label: 'GB' },
   { code: '+49', flag: '🇩🇪', label: 'DE' },
   { code: '+34', flag: '🇪🇸', label: 'ES' },
@@ -62,15 +100,20 @@ const COUNTRY_CODES = [
 // ── Main component ────────────────────────────────────────────────────────────
 const SignupForm = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const roleParam = searchParams.get('role');
+  const initialRole: AccountRole = roleParam === 'workshop' ? 'WORKSHOP' : 'CLIENT';
+
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [form, setForm] = useState({
     lastName: '',
     firstName: '',
     email: '',
-    role: 'CLIENT' as AccountRole,
+    role: initialRole,
     countryCode: '+55',
     phone: '',
     password: '',
@@ -82,34 +125,33 @@ const SignupForm = () => {
     workshopLatitude: '',
     workshopLongitude: '',
   });
-  const [showWorkshopFields, setShowWorkshopFields] = useState(false);
   const [workshopAddressQuery, setWorkshopAddressQuery] = useState('');
   const [addressResults, setAddressResults] = useState<AddressResult[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
+  const [manualCoords, setManualCoords] = useState(false);
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // ── Password rules ──────────────────────────────────────────────────────────
+  // ── Validate ────────────────────────────────────────────────────────────────
+  const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  // ── Password rules — mirror the backend contract exactly
+  //    (UserRegister: >=8 chars, one uppercase, one digit).
   const pwRules = useMemo(() => ({
-    lowercase: /[a-z]/.test(form.password),
+    length: form.password.length >= 8,
     uppercase: /[A-Z]/.test(form.password),
-    special:   /[^a-zA-Z0-9]/.test(form.password),
-    length:    form.password.length >= 12,
+    digit: /[0-9]/.test(form.password),
   }), [form.password]);
 
   const pwValid = Object.values(pwRules).every(Boolean);
   const isWorkshop = form.role === 'WORKSHOP';
-  const workshopFieldsComplete =
-    form.workshopName.trim() &&
-    form.workshopEmail.trim() &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.workshopEmail) &&
-    form.workshopDescription.trim() &&
-    selectedAddress.trim() &&
-    form.workshopLatitude.trim() &&
+
+  const hasCoords =
+    Boolean(form.workshopLatitude.trim()) &&
     !Number.isNaN(Number(form.workshopLatitude)) &&
-    form.workshopLongitude.trim() &&
+    Boolean(form.workshopLongitude.trim()) &&
     !Number.isNaN(Number(form.workshopLongitude));
 
   // ── Validation ──────────────────────────────────────────────────────────────
@@ -118,34 +160,22 @@ const SignupForm = () => {
     if (!form.lastName.trim())  e.lastName = 'Last name is required';
     if (!form.firstName.trim()) e.firstName = 'First name is required';
     if (!form.email.trim())     e.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      e.email = 'Invalid email format';
-    if (!pwValid) e.password = 'Password does not meet requirements';
-    if (!form.acceptTerms) e.acceptTerms = 'You must accept the Terms';
+    else if (!validateEmail(form.email)) e.email = 'Enter a valid email address';
+    if (!form.password) e.password = 'Password is required';
+    else if (!pwValid) e.password = 'Password does not meet the requirements below';
+    if (!form.acceptTerms) e.acceptTerms = 'Please accept the Terms and Privacy Policy to continue';
     if (isWorkshop) {
-      if (!showWorkshopFields) e.workshopSection = 'Add workshop information to continue';
       if (!form.workshopName.trim()) e.workshopName = 'Workshop name is required';
       if (!form.workshopEmail.trim()) e.workshopEmail = 'Workshop email is required';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.workshopEmail)) e.workshopEmail = 'Invalid workshop email format';
+      else if (!validateEmail(form.workshopEmail)) e.workshopEmail = 'Enter a valid workshop email address';
       if (!form.workshopDescription.trim()) e.workshopDescription = 'Workshop description is required';
       if (!workshopAddressQuery.trim()) e.workshopAddressQuery = 'Workshop address is required';
-      if (!selectedAddress.trim()) e.workshopAddressQuery = 'Select an address from the lookup results';
-      if (!form.workshopLatitude.trim() || Number.isNaN(Number(form.workshopLatitude))) e.workshopLocation = 'Address lookup must provide valid coordinates';
-      if (!form.workshopLongitude.trim() || Number.isNaN(Number(form.workshopLongitude))) e.workshopLocation = 'Address lookup must provide valid coordinates';
+      // Coordinates are the real requirement; they arrive either from the
+      // address lookup or from manual entry.
+      if (!hasCoords) e.workshopLocation = 'Look up the address, or enter the latitude and longitude manually';
     }
     return e;
   };
-
-  const isFormValid = useMemo(() => {
-    return (
-      form.lastName.trim() &&
-      form.firstName.trim() &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
-      pwValid &&
-      form.acceptTerms &&
-      (!isWorkshop || (showWorkshopFields && Boolean(workshopFieldsComplete)))
-    );
-  }, [form, pwValid, isWorkshop, showWorkshopFields, workshopFieldsComplete]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const set = (field: string, value: string | boolean) =>
@@ -164,10 +194,8 @@ const SignupForm = () => {
       workshopEmail: nextRole === 'WORKSHOP' && !prev.workshopEmail ? prev.email : prev.workshopEmail,
     }));
     if (nextRole !== 'WORKSHOP') {
-      setShowWorkshopFields(false);
       setErrors(prev => {
         const nextErrors = { ...prev };
-        delete nextErrors.workshopSection;
         delete nextErrors.workshopName;
         delete nextErrors.workshopEmail;
         delete nextErrors.workshopDescription;
@@ -175,36 +203,14 @@ const SignupForm = () => {
         delete nextErrors.workshopLocation;
         return nextErrors;
       });
-      setWorkshopAddressQuery('');
-      setSelectedAddress('');
-      setAddressResults([]);
-      setForm(prev => ({
-        ...prev,
-        workshopLatitude: '',
-        workshopLongitude: '',
-      }));
     }
-  };
-
-  const openWorkshopFields = () => {
-    setShowWorkshopFields(true);
-    setForm(prev => ({
-      ...prev,
-      workshopEmail: prev.workshopEmail || prev.email,
-    }));
-    setTouched(prev => ({ ...prev, workshopSection: true }));
-    setErrors(validate());
   };
 
   const handleWorkshopAddressChange = (value: string) => {
     setWorkshopAddressQuery(value);
     setSelectedAddress('');
     setAddressResults([]);
-    setForm(prev => ({
-      ...prev,
-      workshopLatitude: '',
-      workshopLongitude: '',
-    }));
+    setForm(prev => ({ ...prev, workshopLatitude: '', workshopLongitude: '' }));
   };
 
   const searchAddress = async () => {
@@ -222,7 +228,8 @@ const SignupForm = () => {
       setAddressResults(results);
 
       if (!results.length) {
-        setErrors(prev => ({ ...prev, workshopAddressQuery: 'No address matches found. Try a more specific search.' }));
+        setErrors(prev => ({ ...prev, workshopAddressQuery: 'No address matches found. Try a more specific search, or enter coordinates manually.' }));
+        setManualCoords(true);
       } else {
         setErrors(prev => {
           const nextErrors = { ...prev };
@@ -231,9 +238,10 @@ const SignupForm = () => {
           return nextErrors;
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAddressResults([]);
-      setServerError(err.message || 'Address lookup failed. Please try again.');
+      setManualCoords(true);
+      setServerError(getErrorMessage(err, 'Address lookup failed. Enter the coordinates manually below.'));
     } finally {
       setIsSearchingAddress(false);
     }
@@ -243,11 +251,7 @@ const SignupForm = () => {
     setSelectedAddress(result.display_name);
     setWorkshopAddressQuery(result.display_name);
     setAddressResults([]);
-    setForm(prev => ({
-      ...prev,
-      workshopLatitude: result.lat,
-      workshopLongitude: result.lon,
-    }));
+    setForm(prev => ({ ...prev, workshopLatitude: result.lat, workshopLongitude: result.lon }));
     setTouched(prev => ({ ...prev, workshopAddressQuery: true }));
     setErrors(prev => {
       const nextErrors = { ...prev };
@@ -272,7 +276,15 @@ const SignupForm = () => {
       workshopDescription: true,
       workshopAddressQuery: true,
     });
-    if (Object.keys(errs).length) return;
+
+    if (Object.keys(errs).length) {
+      requestAnimationFrame(() => {
+        const el = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el?.focus({ preventScroll: true });
+      });
+      return;
+    }
 
     setIsLoading(true);
     setServerError('');
@@ -310,53 +322,64 @@ const SignupForm = () => {
           email: form.email,
         },
       });
-    } catch (err: any) {
-      setServerError(err.message || 'Registration failed. Please try again.');
+    } catch (err: unknown) {
+      setServerError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 w-full">
-      <h1 className="text-3xl font-bold text-gray-900 text-center">
-        Sign up to Drive Pluss
-      </h1>
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex w-full flex-col gap-5">
+      <header>
+        <h1 className="text-center font-display text-3xl font-bold tracking-tight text-foreground">
+          Create your account
+        </h1>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          Free to get started — no credit card required.
+        </p>
+      </header>
 
       {serverError && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-5 py-3.5 text-base text-red-700">
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive-text"
+        >
           {serverError}
         </div>
       )}
 
       {/* Name row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          label="Last Name"
+          label="First name"
           required
-          placeholder="Dupont"
-          value={form.lastName}
-          onChange={e => set('lastName', e.target.value)}
-          onBlur={() => blur('lastName')}
-          error={touched.lastName ? errors.lastName : ''}
-        />
-        <Input
-          label="First Name"
-          required
+          autoComplete="given-name"
           placeholder="Jean"
           value={form.firstName}
           onChange={e => set('firstName', e.target.value)}
           onBlur={() => blur('firstName')}
           error={touched.firstName ? errors.firstName : ''}
         />
+        <Input
+          label="Last name"
+          required
+          autoComplete="family-name"
+          placeholder="Dupont"
+          value={form.lastName}
+          onChange={e => set('lastName', e.target.value)}
+          onBlur={() => blur('lastName')}
+          error={touched.lastName ? errors.lastName : ''}
+        />
       </div>
 
       {/* Email */}
       <Input
-        label="Professional Email Address"
+        label="Email"
         required
         type="email"
-        placeholder="jean.dupont@company.com"
+        autoComplete="email"
+        placeholder="you@example.com"
         value={form.email}
         onChange={e => set('email', e.target.value)}
         onBlur={() => blur('email')}
@@ -364,151 +387,194 @@ const SignupForm = () => {
       />
 
       {/* Role */}
-      <div className="flex flex-col gap-1">
-        <label className="text-base font-medium text-gray-700">
-          Account type<span className="text-red-500 ml-0.5">*</span>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="account-type" className="text-sm font-medium text-foreground">
+          Account type<span className="ml-0.5 text-destructive-text">*</span>
         </label>
         <select
+          id="account-type"
           value={form.role}
           onChange={e => handleRoleChange(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-5 py-3.5 text-base text-gray-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={fieldClasses(false)}
         >
-          <option value="CLIENT">Client</option>
+          <option value="CLIENT">Vehicle owner</option>
           <option value="WORKSHOP">Workshop</option>
         </select>
+        <p className="text-xs text-muted-foreground">
+          {isWorkshop
+            ? 'Register your workshop to receive and manage service orders.'
+            : 'Manage your vehicles, book workshops and track every service.'}
+        </p>
       </div>
 
       {isWorkshop && (
-        <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-slate-50 px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-base font-medium text-gray-900">Workshop profile</p>
-              <p className="text-sm text-gray-500">Add the workshop details that will be saved in the workshops table.</p>
-            </div>
-            <button
-              type="button"
-              onClick={openWorkshopFields}
-              className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
-            >
-              {showWorkshopFields ? 'Workshop info added' : 'Add workshop info'}
-            </button>
+        <section
+          aria-labelledby="workshop-details-heading"
+          className="flex flex-col gap-4 rounded-xl border border-border bg-muted/40 px-4 py-5"
+        >
+          <div>
+            <h2 id="workshop-details-heading" className="font-display text-lg font-bold text-foreground">
+              Workshop details
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              These details are saved to your public workshop profile.
+            </p>
           </div>
 
-          {(touched.workshopSection || Object.keys(errors).length > 0) && errors.workshopSection && (
-            <p className="text-sm text-red-500">{errors.workshopSection}</p>
-          )}
+          <Input
+            label="Workshop name"
+            required
+            autoComplete="organization"
+            placeholder="Downtown Auto Care"
+            value={form.workshopName}
+            onChange={e => set('workshopName', e.target.value)}
+            onBlur={() => blur('workshopName')}
+            error={touched.workshopName ? errors.workshopName : ''}
+          />
 
-          {showWorkshopFields && (
-            <>
-              <Input
-                label="Workshop Name"
-                required
-                placeholder="Drive Pluss Garage"
-                value={form.workshopName}
-                onChange={e => set('workshopName', e.target.value)}
-                onBlur={() => blur('workshopName')}
-                error={touched.workshopName ? errors.workshopName : ''}
+          <Input
+            label="Workshop email"
+            required
+            type="email"
+            autoComplete="email"
+            placeholder="contact@yourworkshop.com"
+            value={form.workshopEmail}
+            onChange={e => set('workshopEmail', e.target.value)}
+            onBlur={() => blur('workshopEmail')}
+            error={touched.workshopEmail ? errors.workshopEmail : ''}
+          />
+
+          <FieldShell
+            label="Workshop description"
+            htmlFor="workshop-description"
+            required
+            error={touched.workshopDescription ? errors.workshopDescription : ''}
+          >
+            <textarea
+              id="workshop-description"
+              placeholder="Specialities, years in business, brands you service"
+              value={form.workshopDescription}
+              onChange={e => set('workshopDescription', e.target.value)}
+              onBlur={() => blur('workshopDescription')}
+              rows={4}
+              aria-invalid={Boolean(touched.workshopDescription && errors.workshopDescription)}
+              aria-describedby={touched.workshopDescription && errors.workshopDescription ? 'workshop-description-error' : undefined}
+              className={fieldClasses(Boolean(touched.workshopDescription && errors.workshopDescription))}
+            />
+          </FieldShell>
+
+          <FieldShell
+            label="Workshop address"
+            htmlFor="workshop-address"
+            required
+            error={touched.workshopAddressQuery ? errors.workshopAddressQuery : ''}
+          >
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                id="workshop-address"
+                autoComplete="street-address"
+                placeholder="Street, neighbourhood, city"
+                value={workshopAddressQuery}
+                onChange={e => handleWorkshopAddressChange(e.target.value)}
+                onBlur={() => blur('workshopAddressQuery')}
+                aria-invalid={Boolean(touched.workshopAddressQuery && errors.workshopAddressQuery)}
+                aria-describedby={touched.workshopAddressQuery && errors.workshopAddressQuery ? 'workshop-address-error' : undefined}
+                className={fieldClasses(Boolean(touched.workshopAddressQuery && errors.workshopAddressQuery))}
               />
+              <button
+                type="button"
+                onClick={searchAddress}
+                disabled={isSearchingAddress}
+                className="shrink-0 rounded-lg border border-input bg-card px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSearchingAddress ? 'Searching…' : 'Find address'}
+              </button>
+            </div>
 
-              <Input
-                label="Workshop Email"
-                required
-                type="email"
-                placeholder="contact@drivepluss.com"
-                value={form.workshopEmail}
-                onChange={e => set('workshopEmail', e.target.value)}
-                onBlur={() => blur('workshopEmail')}
-                error={touched.workshopEmail ? errors.workshopEmail : ''}
-              />
+            {addressResults.length > 0 && (
+              <ul className="mt-2 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                {addressResults.map(result => (
+                  <li key={`${result.lat}-${result.lon}-${result.display_name}`}>
+                    <button
+                      type="button"
+                      onClick={() => selectAddress(result)}
+                      className="block w-full border-b border-border px-4 py-3 text-left text-sm text-foreground transition last:border-b-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    >
+                      {result.display_name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">
-                  Workshop Description<span className="text-red-500 ml-0.5">*</span>
-                </label>
-                <textarea
-                  placeholder="Tell customers what your workshop specializes in"
-                  value={form.workshopDescription}
-                  onChange={e => set('workshopDescription', e.target.value)}
-                  onBlur={() => blur('workshopDescription')}
-                  rows={4}
-                  className={`w-full rounded-lg border px-5 py-3.5 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.workshopDescription && errors.workshopDescription ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
-                  }`}
+            {selectedAddress && (
+              <div className="mt-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success-text">
+                <p className="font-medium">Selected address</p>
+                <p className="mt-1">{selectedAddress}</p>
+              </div>
+            )}
+
+            {!selectedAddress && hasCoords && (
+              <div className="mt-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success-text">
+                <p className="font-medium">Coordinates set</p>
+                <p className="mt-1">
+                  {Number(form.workshopLatitude).toFixed(5)}, {Number(form.workshopLongitude).toFixed(5)}
+                </p>
+              </div>
+            )}
+
+            {/* Manual coordinate fallback — keeps signup possible when the
+                address lookup is unavailable or returns nothing. */}
+            <button
+              type="button"
+              onClick={() => setManualCoords(v => !v)}
+              aria-expanded={manualCoords}
+              className="mt-1 inline-flex w-fit items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${manualCoords ? 'rotate-180' : ''}`} aria-hidden="true" />
+              {manualCoords ? 'Hide manual coordinates' : 'Enter coordinates manually'}
+            </button>
+
+            {manualCoords && (
+              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Input
+                  label="Latitude"
+                  inputMode="decimal"
+                  placeholder="-23.55052"
+                  value={form.workshopLatitude}
+                  onChange={e => set('workshopLatitude', e.target.value)}
+                  onBlur={() => blur('workshopAddressQuery')}
                 />
-                {touched.workshopDescription && errors.workshopDescription && (
-                  <p className="text-sm text-red-500">{errors.workshopDescription}</p>
-                )}
+                <Input
+                  label="Longitude"
+                  inputMode="decimal"
+                  placeholder="-46.63331"
+                  value={form.workshopLongitude}
+                  onChange={e => set('workshopLongitude', e.target.value)}
+                />
               </div>
+            )}
 
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Workshop Address<span className="text-red-500 ml-0.5">*</span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    placeholder="Search by street, neighborhood, city"
-                    value={workshopAddressQuery}
-                    onChange={e => handleWorkshopAddressChange(e.target.value)}
-                    onBlur={() => blur('workshopAddressQuery')}
-                    className={`flex-1 rounded-lg border px-5 py-3.5 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      touched.workshopAddressQuery && errors.workshopAddressQuery ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={searchAddress}
-                    disabled={isSearchingAddress}
-                    className="rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isSearchingAddress ? 'Searching...' : 'Find address'}
-                  </button>
-                </div>
-                {touched.workshopAddressQuery && errors.workshopAddressQuery && (
-                  <p className="text-sm text-red-500">{errors.workshopAddressQuery}</p>
-                )}
-
-                {addressResults.length > 0 && (
-                  <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-                    {addressResults.map(result => (
-                      <button
-                        key={`${result.lat}-${result.lon}-${result.display_name}`}
-                        type="button"
-                        onClick={() => selectAddress(result)}
-                        className="block w-full border-b border-gray-100 px-4 py-3 text-left text-sm text-gray-700 transition last:border-b-0 hover:bg-slate-50"
-                      >
-                        {result.display_name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {selectedAddress && (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                    <p className="font-medium">Selected address</p>
-                    <p className="mt-1">{selectedAddress}</p>
-                    <p className="mt-2 text-emerald-700">
-                      Coordinates: {Number(form.workshopLatitude).toFixed(5)}, {Number(form.workshopLongitude).toFixed(5)}
-                    </p>
-                  </div>
-                )}
-
-                {errors.workshopLocation && (
-                  <p className="text-sm text-red-500">{errors.workshopLocation}</p>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+            {errors.workshopLocation && (
+              <p id="workshop-location-error" className="text-sm text-destructive-text">
+                {errors.workshopLocation}
+              </p>
+            )}
+          </FieldShell>
+        </section>
       )}
 
       {/* Phone */}
-      <div className="flex flex-col gap-1">
-        <label className="text-base font-medium text-gray-700">Phone</label>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="phone" className="text-sm font-medium text-foreground">
+          Phone <span className="font-normal text-muted-foreground">(optional)</span>
+        </label>
         <div className="flex gap-2">
           <select
+            aria-label="Country code"
             value={form.countryCode}
             onChange={e => set('countryCode', e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-3.5 text-base text-gray-900 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-28 flex-shrink-0"
+            className={`${fieldClasses(false)} w-24 shrink-0 px-3`}
           >
             {COUNTRY_CODES.map(c => (
               <option key={c.code} value={c.code}>
@@ -517,110 +583,128 @@ const SignupForm = () => {
             ))}
           </select>
           <input
+            id="phone"
             type="tel"
+            autoComplete="tel"
             placeholder="11 2596-1145"
             value={form.phone}
             onChange={e => set('phone', e.target.value)}
-            className="flex-1 rounded-lg border border-gray-300 bg-white px-5 py-3.5 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={`${fieldClasses(false)} flex-1`}
           />
         </div>
       </div>
 
       {/* Password */}
-      <div className="flex flex-col gap-1">
-        <label className="text-base font-medium text-gray-700">
-          Password<span className="text-red-500 ml-0.5">*</span>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="text-sm font-medium text-foreground">
+          Password<span className="ml-0.5 text-destructive-text">*</span>
         </label>
         <div className="relative">
           <input
+            id="password"
             type={showPassword ? 'text' : 'password'}
-            placeholder="Min. 12 characters"
+            autoComplete="new-password"
+            placeholder="At least 8 characters"
             value={form.password}
             onChange={e => set('password', e.target.value)}
             onBlur={() => blur('password')}
-            className={`w-full rounded-lg border px-5 py-3.5 pr-12 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              touched.password && errors.password ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
-            }`}
+            aria-invalid={Boolean(touched.password && errors.password)}
+            aria-describedby="password-requirements"
+            className={`${fieldClasses(Boolean(touched.password && errors.password))} pr-12`}
           />
           <button
             type="button"
             onClick={() => setShowPassword(v => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
           </button>
         </div>
 
-        {/* Requirement indicators */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1.5 pl-1">
-          <Req met={pwRules.lowercase} label="At least 1 lowercase" />
-          <Req met={pwRules.uppercase} label="At least 1 uppercase" />
-          <Req met={pwRules.special}   label="At least 1 special character" />
-          <Req met={pwRules.length}    label="Minimum 12 characters" />
+        <div id="password-requirements" className="mt-1 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
+          <Req met={pwRules.length} label="At least 8 characters" />
+          <Req met={pwRules.uppercase} label="One uppercase letter" />
+          <Req met={pwRules.digit} label="One number" />
         </div>
+
+        {touched.password && errors.password && (
+          <p className="text-sm text-destructive-text">{errors.password}</p>
+        )}
       </div>
 
       {/* Checkboxes */}
       <div className="flex flex-col gap-3">
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.acceptTerms}
-            onChange={e => {
-              set('acceptTerms', e.target.checked);
-              setErrors(prev => ({ ...prev, acceptTerms: '' }));
-            }}
-            className="mt-0.5 h-5 w-5 rounded border-gray-300 accent-blue-600"
-          />
-          <span className="text-base text-gray-600">
-            I have read, understood and agreed to the{' '}
-            <a href="#" className="text-blue-600 underline hover:text-blue-800">
-              Terms and Conditions
-            </a>{' '}
-            and{' '}
-            <a href="#" className="text-blue-600 underline hover:text-blue-800">
-              Privacy Policy
-            </a>
-            .<span className="text-red-500 ml-0.5">*</span>
-          </span>
-        </label>
-        {touched.acceptTerms && errors.acceptTerms && (
-          <p className="text-sm text-red-500 -mt-2 pl-7">{errors.acceptTerms}</p>
-        )}
+        <div className="flex flex-col gap-1">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={form.acceptTerms}
+              onChange={e => {
+                set('acceptTerms', e.target.checked);
+                setErrors(prev => ({ ...prev, acceptTerms: '' }));
+              }}
+              aria-invalid={Boolean(touched.acceptTerms && errors.acceptTerms)}
+              className="mt-0.5 h-5 w-5 rounded border-input accent-primary"
+            />
+            <span className="text-sm text-muted-foreground">
+              I have read, understood and agree to the{' '}
+              {/* Legal pages do not exist yet; these stay inert rather than
+                  pointing at a 404. Wire them when the pages ship. */}
+              <a href="#" className="font-medium text-primary underline underline-offset-4 hover:text-primary/80">
+                Terms of Service
+              </a>{' '}
+              and{' '}
+              <a href="#" className="font-medium text-primary underline underline-offset-4 hover:text-primary/80">
+                Privacy Policy
+              </a>
+              .<span className="ml-0.5 text-destructive-text">*</span>
+            </span>
+          </label>
+          {touched.acceptTerms && errors.acceptTerms && (
+            <p role="alert" className="pl-8 text-sm text-destructive-text">
+              {errors.acceptTerms}
+            </p>
+          )}
+        </div>
 
-        <label className="flex items-start gap-3 cursor-pointer">
+        <label className="flex cursor-pointer items-start gap-3">
           <input
             type="checkbox"
             checked={form.acceptMarketing}
             onChange={e => set('acceptMarketing', e.target.checked)}
-            className="mt-0.5 h-5 w-5 rounded border-gray-300 accent-blue-600"
+            className="mt-0.5 h-5 w-5 rounded border-input accent-primary"
           />
-          <span className="text-base text-gray-600">
-            I agree to be contacted by email with news and offers from DrivePluss.
+          <span className="text-sm text-muted-foreground">
+            Email me news and offers from DrivePluss.
           </span>
         </label>
       </div>
 
       {/* Submit */}
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={!isFormValid || isLoading}
-          className="rounded-lg bg-blue-600 px-10 py-3.5 text-base font-semibold text-white shadow transition hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Registering…' : 'Register'}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isLoading && (
+          <span
+            aria-hidden="true"
+            className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/40 border-t-primary-foreground"
+          />
+        )}
+        <span aria-live="polite">{isLoading ? 'Creating account…' : 'Create account'}</span>
+      </button>
 
-      <p className="text-center text-base text-gray-500">
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
-        <button
-          type="button"
-          onClick={() => navigate('/login')}
-          className="text-blue-600 font-semibold hover:underline"
+        <Link
+          to="/login"
+          className="font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Sign in
-        </button>
+        </Link>
       </p>
     </form>
   );

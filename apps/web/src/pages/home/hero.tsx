@@ -1,10 +1,18 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, Droplet, Disc3, Gauge, BatteryCharging } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Container } from './container';
 import carImage from '../../assets/cars/car-chevrolet-tracker.png';
 
 const HIGHLIGHTS = ['Free to get started', 'No credit card required', 'Cancel anytime'];
+
+const HERO_SERVICES: { icon: LucideIcon; label: string }[] = [
+  { icon: Droplet, label: 'Oil change' },
+  { icon: Disc3, label: 'Brakes' },
+  { icon: Gauge, label: 'Tires' },
+  { icon: BatteryCharging, label: 'Battery' },
+];
 
 const Hero = () => (
   <section className="relative overflow-hidden bg-background">
@@ -55,25 +63,26 @@ const Hero = () => (
             <img
               src={carImage}
               alt="A car maintained through DrivePluss"
+              width={1024}
+              height={768}
               className="aspect-[4/3] w-full object-cover"
             />
           </div>
-          <div className="absolute -left-4 bottom-6 hidden rounded-xl border border-border bg-card p-4 shadow-xl sm:block">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Next service
-            </p>
-            <p className="mt-1 font-display text-lg font-bold text-foreground">in 12 days</p>
-          </div>
-          <div className="absolute -right-4 top-6 hidden items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-xl sm:flex">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/15 text-secondary">
-              <Check className="h-5 w-5" aria-hidden="true" />
+
+          {/* Real service categories — the work a workshop actually records. */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {HERO_SERVICES.map(({ icon: Icon, label }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm"
+              >
+                <Icon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                {label}
+              </span>
+            ))}
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
+              and more
             </span>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Booking
-              </p>
-              <p className="font-display text-sm font-bold text-foreground">Confirmed</p>
-            </div>
           </div>
         </div>
       </div>

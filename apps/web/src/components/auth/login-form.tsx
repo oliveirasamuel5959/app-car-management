@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useId } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
 import { api } from '../../services/api';
+import { getErrorMessage } from '../../lib/errors';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -15,6 +16,9 @@ const LoginForm = () => {
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [formErrors, setFormErrors] = useState({ email: '', password: '' });
+
+  const emailId = useId();
+  const passwordId = useId();
 
   useEffect(() => {
     if (location.state?.email) {
@@ -30,7 +34,7 @@ const LoginForm = () => {
 
   const validatePassword = (password: string) => {
     if (!password) return 'Password is required';
-    if (password.length < 6) return 'Password must be at least 6 characters';
+    if (password.length < 8) return 'Password must be at least 8 characters';
     return '';
   };
 
@@ -56,102 +60,144 @@ const LoginForm = () => {
         login(response);
         navigate(response.user?.role === 'WORKSHOP' ? '/workshop/dashboard' : '/client/dashboard', { replace: true });
       } else {
-        setError('Invalid login response');
+        setError('We could not complete your sign in. Please try again.');
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during login');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'An error occurred during login'));
     } finally {
       setIsLoading(false);
     }
   };
 
+  const inputClasses = (hasError: boolean) =>
+    `w-full rounded-lg border bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 ${
+      hasError ? 'border-destructive-text bg-destructive/5' : 'border-input'
+    }`;
+
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 w-full">
-      <h1 className="text-3xl font-bold text-gray-900 text-center">
-        Sign in to Drive Plus
-      </h1>
+    <form onSubmit={handleSubmit} noValidate className="flex w-full flex-col gap-5">
+      <header>
+        <h1 className="text-center font-display text-3xl font-bold tracking-tight text-foreground">
+          Welcome back
+        </h1>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          Sign in to manage your vehicles and bookings.
+        </p>
+      </header>
 
       {successMessage && (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-5 py-3.5 text-base text-green-700">
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success-text"
+        >
           {successMessage}
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-5 py-3.5 text-base text-red-700">
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive-text"
+        >
           {error}
         </div>
       )}
 
       {/* Email */}
-      <div className="flex flex-col gap-1">
-        <label className="text-base font-medium text-gray-700">
-          Email<span className="text-red-500 ml-0.5">*</span>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={emailId} className="text-sm font-medium text-foreground">
+          Email<span className="ml-0.5 text-destructive-text">*</span>
         </label>
         <input
+          id={emailId}
           type="email"
           name="email"
-          placeholder="jean.dupont@company.com"
+          autoComplete="email"
+          placeholder="you@example.com"
           value={formData.email}
           onChange={handleChange}
           disabled={isLoading}
           required
-          className={`w-full rounded-lg border px-5 py-3.5 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            formErrors.email ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
-          }`}
+          aria-invalid={Boolean(formErrors.email)}
+          aria-describedby={formErrors.email ? `${emailId}-error` : undefined}
+          className={inputClasses(Boolean(formErrors.email))}
         />
-        {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
+        {formErrors.email && (
+          <p id={`${emailId}-error`} className="text-sm text-destructive-text">
+            {formErrors.email}
+          </p>
+        )}
       </div>
 
       {/* Password */}
-      <div className="flex flex-col gap-1">
-        <label className="text-base font-medium text-gray-700">
-          Password<span className="text-red-500 ml-0.5">*</span>
-        </label>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-baseline justify-between gap-3">
+          <label htmlFor={passwordId} className="text-sm font-medium text-foreground">
+            Password<span className="ml-0.5 text-destructive-text">*</span>
+          </label>
+          <Link
+            to="/forgot-password"
+            className="text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <div className="relative">
           <input
+            id={passwordId}
             type={showPassword ? 'text' : 'password'}
             name="password"
+            autoComplete="current-password"
             placeholder="••••••••"
             value={formData.password}
             onChange={handleChange}
             disabled={isLoading}
             required
-            className={`w-full rounded-lg border px-5 py-3.5 pr-12 text-base text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              formErrors.password ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
-            }`}
+            aria-invalid={Boolean(formErrors.password)}
+            aria-describedby={formErrors.password ? `${passwordId}-error` : undefined}
+            className={`${inputClasses(Boolean(formErrors.password))} pr-12`}
           />
           <button
             type="button"
             onClick={() => setShowPassword(v => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
           </button>
         </div>
-        {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
+        {formErrors.password && (
+          <p id={`${passwordId}-error`} className="text-sm text-destructive-text">
+            {formErrors.password}
+          </p>
+        )}
       </div>
 
       {/* Submit */}
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="rounded-lg bg-blue-600 px-10 py-3.5 text-base font-semibold text-white shadow transition hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Signing in…' : 'Sign In'}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isLoading && (
+          <span
+            aria-hidden="true"
+            className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/40 border-t-primary-foreground"
+          />
+        )}
+        <span aria-live="polite">{isLoading ? 'Signing in…' : 'Sign in'}</span>
+      </button>
 
-      <p className="text-center text-base text-gray-500">
-        Don't have an account?{' '}
-        <button
-          type="button"
-          onClick={() => navigate('/signup')}
-          className="text-blue-600 font-semibold hover:underline"
+      <p className="text-center text-sm text-muted-foreground">
+        Don&apos;t have an account?{' '}
+        <Link
+          to="/signup"
+          className="font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          Sign up
-        </button>
+          Create one
+        </Link>
       </p>
     </form>
   );

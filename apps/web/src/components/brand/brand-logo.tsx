@@ -21,7 +21,9 @@ interface BrandLogoProps {
 const TONES: Record<BrandTone, { tile: string; text: string; accent: string }> = {
   brand: {
     tile: 'bg-primary text-primary-foreground',
-    text: 'text-slate-900 dark:text-white',
+    // Explicit light/dark pair: on a light panel the wordmark is near-black, on
+    // a dark panel it is white. Never relies on a surface colour being assumed.
+    text: 'text-foreground',
     accent: 'text-primary dark:text-cyan-300',
   },
   light: {
@@ -31,7 +33,7 @@ const TONES: Record<BrandTone, { tile: string; text: string; accent: string }> =
   },
   dark: {
     tile: 'bg-slate-900 text-white dark:bg-white dark:text-slate-900',
-    text: 'text-slate-900 dark:text-white',
+    text: 'text-foreground',
     accent: 'text-primary dark:text-cyan-300',
   },
 };

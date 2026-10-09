@@ -1,5 +1,6 @@
 import Hero from './home/hero';
 import Features from './home/features';
+import ProofBand from './home/proof';
 import Audiences from './home/audiences';
 import HowItWorks from './home/how-it-works';
 import FinalCta from './home/cta';
@@ -12,6 +13,7 @@ const Home = () => (
   <>
     <Hero />
     <Features />
+    <ProofBand />
     <Audiences />
     <HowItWorks />
     <FinalCta />
