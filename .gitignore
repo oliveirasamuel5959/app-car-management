@@ -323,3 +323,4 @@ venv.bak/
 # Python distribution directory.
 !apps/web/src/lib/
 !apps/web/src/lib/**
+.playwright-mcp/
