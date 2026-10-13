@@ -130,4 +130,4 @@ Regra prática: o agente principal planeja, decide e edita; os subagentes fazem 
 - Tarefa multi-etapa: use `planner` primeiro; só edite depois do plano aprovado.
 - Exploração: delegue ao `explore` em vez de ler dezenas de arquivos diretamente.
 - Antes de concluir: use `reviewer` ou a skill `verify`, conforme o caso.
-- Use `@skill-id` para carregar skills; principais: `code-conventions`, `doc`, `git-commit-push`, `spec-kit`, `verify`.
+- Use `@skill-id` para carregar skills; principais: `code-conventions`, `doc`, `git-commit-push`, `spec-kit`, `verify`, `karpathy-guidelines`.
