@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What this is
+# What this is
 
 SaaS platform connecting vehicle owners (CLIENT) with mechanical workshops (WORKSHOP). Turborepo monorepo with a FastAPI backend and a Vite/React frontend. The product is **multi-tenant**: every workshop is a tenant, and tenant isolation is enforced in the data layer (see Multi-tenancy below).
 
-## Layout
+# Layout
 
 - `apps/backend` — FastAPI + SQLAlchemy + Alembic (Python ≥ 3.12, Poetry).
 - `apps/web` — React 18 + TypeScript + Vite.
@@ -16,7 +16,7 @@ SaaS platform connecting vehicle owners (CLIENT) with mechanical workshops (WORK
 
 > The root `README.md` is aspirational in places — it claims async SQLAlchemy and a `packages/` with shared types/UI. The actual backend is **synchronous** SQLAlchemy and those packages are empty. Trust the code over the README.
 
-## Stack
+# Stack
 
 - Frontend, React 18+, Next.js, Modern UI framework
 - Backend, FastAPI + Python 3.11+, REST API, async support
@@ -31,7 +31,7 @@ SaaS platform connecting vehicle owners (CLIENT) with mechanical workshops (WORK
   
 - Tests: Pytest, Vitest
 
-## Constraints
+# Constraints
 
 - Never use `any`. Use `unknown` + type guards.
 
@@ -39,7 +39,7 @@ SaaS platform connecting vehicle owners (CLIENT) with mechanical workshops (WORK
 
 - In backend use utils/<domain_name_convention>.py to add utils functions to use in Services Layer, separeted by domain.
 
-## Commands
+# Commands
 
 Root (Turbo fans out to workspaces): `npm run dev | build | lint | test`.
 
@@ -55,7 +55,7 @@ Web (`cd apps/web`): `npm run dev` (Vite on **port 5173**), `npm run build` (`vi
 
 Local DB: `docker compose -f apps/docker/docker-compose.yml up -d db` → Postgres 16, db `car_db`, user/pass `saas`/`saas`, port 5432. `alembic.ini` hardcodes this URL; the app reads `DATABASE_URL` from `.env`.
 
-## Backend architecture
+# Backend architecture
 
 Strict four-layer flow, one module per domain (user, vehicle, workshop, services, service_orders, workshop_client, messages, notifications, services_history):
 
@@ -71,7 +71,7 @@ Routers are assembled in `src/routers.py` and mounted in `src/main.py`. Add a ne
 
 DB sessions: `src/db/database.py` exposes a **synchronous** `get_session()` generator injected via `Depends(get_session)`. Repositories call `db.commit()`/`db.refresh()` themselves — don't double-commit in the service layer.
 
-### Auth & authorization
+# Auth & authorization
 
 JWT Bearer tokens. The decoded payload carries `user_id`, `role`, `email`, `tenant_id`, `tenant_slug`. Two interchangeable styles exist in the codebase (both valid):
 - **Dependency injection** (most routes): `current_user: dict = Depends(get_current_user)` from `src/core/auth.py`, then manual role checks (`if current_user.get("role") != "WORKSHOP": raise 403`). Helpers: `get_user_by_role`, `get_optional_user`, `verify_user_id_ownership`.
@@ -79,26 +79,55 @@ JWT Bearer tokens. The decoded payload carries `user_id`, `role`, `email`, `tena
 
 Roles: `CLIENT`, `WORKSHOP`, `ADMIN`. Global middleware stack (in `main.py`): `AuthMiddleware` (validates JWT, attaches `request.state`, skips `PUBLIC_ROUTES`), `RateLimitMiddleware` (~60 req/min/user), `SecurityHeadersMiddleware`.
 
-### Multi-tenancy (critical)
+# Multi-tenancy (critical)
 
 `tenant_id` (a UUID) lives in the JWT and is threaded **all the way down**: route reads it from `current_user`/`request.state` → passes to the service → service passes to every `repo_*` call → every repository query filters `Model.tenant_id == tenant_id`. When adding any query or new model, it **must** carry and filter by `tenant_id`, or you leak data across tenants. `src/core/tenant.py` defines `TenantContext` and `slugify_tenant_name`. `tests/test_tenant_isolation.py` guards this.
 
-### Realtime
+# Realtime
 
 WebSocket chat/notifications via `src/core/websocket_manager.py` and the `messages`/`notifications` domains. WS connections authenticate with a JWT passed as a query param (`authenticate_websocket` in `core/auth.py`), which also requires `tenant_id` in the token.
 
-### Gotcha
+# Gotcha
 
 `main.py` currently hardcodes CORS to `http://localhost:5173` (the settings-driven `cors_origins_list` block is commented out). Change CORS there, not just in config.
 
-## Frontend architecture
+# Frontend architecture
 
 - Routing: `src/App.tsx` wraps everything in `AuthProvider` + `NotificationProvider`, then renders `publicRoutes` / `protectedRoutes` from `src/routes/routes.tsx`. `protectedRoutes` are gated by `ProtectedRoute` with an optional `requiredRole`. Pages are split by audience under `src/pages/client` and `src/pages/workshop`.
 - API calls: one service module per domain under `src/services/*.tsx`, all built on `api.tsx`. Base URL is hardcoded to `http://localhost:5500`. The JWT is stored in `localStorage` (`access_token`) and auto-attached; a `401` clears it and redirects to `/login`. See `apps/web/FRONTEND_API_GUIDE.md`.
 - Path aliases (`vite.config.ts`): `@` → `src`, `@shared` → `shared`, `@assets` → `attached_assets`.
 - UI stack: MUI (`@mui/material`) + Tailwind, Leaflet and `@react-google-maps/api` for workshop maps (`VITE_GOOGLE_MAPS_API_KEY` required).
 
-## Conventions
+# Conventions
 
 - Before merging a branch, update the root `CHANGELOG.md` (dated `## YYYY-MM-DD` sections, newest first) — there's an `/update-changelog` skill for this.
 - New work is spec-driven: add/update the `specs/<date>-<feature>/` trio before/while implementing.
+
+# Preferências globais
+
+- Responda sempre em português brasileiro.
+- Commits em Conventional Commits, em português.
+- Nunca use `git push --force` em branches compartilhadas; nunca commite `.env`.
+- Antes de declarar concluído: rode o teste/lint relevante e mostre a evidência (skill `verify`).
+- Não crie arquivos de documentação sem pedido explícito.
+
+# Delegação para subagentes
+
+Delegue cedo; não gaste contexto do agente principal com trabalho mecânico. Use a tool `subagent`:
+
+- `explore` — exploração/leitura de código, mapear onde algo está, respostas objetivas de arquitetura. Use sempre que a tarefa exigir varrer muitos arquivos ou procurar algo que você não sabe onde está.
+- `planner` — antes de mudanças grandes ou multi-etapa, produza o plano; só edite com o plano aprovado.
+- `reviewer` — revisão de diff/PR; reporta achados por severidade sem editar.
+- `debugger` — investigar falha (teste/log) e aplicar a correção mínima com evidência.
+- `general` — tarefas longas e independentes (pesquisa multi-etapa, relatórios).
+- Tarefas demoradas (builds, suítes de teste, varreduras grandes) → rode em **background** (`subagent` com `background: true`) e continue trabalhando enquanto espera.
+- Dê ao subagente um prompt autocontido (contexto + objetivo + formato de saída esperado); subagentes começam sem contexto.
+
+Regra prática: o agente principal planeja, decide e edita; os subagentes fazem o trabalho "massante" (ler, buscar, revisar, depurar, rodar coisas demoradas).
+
+# Fluxo de trabalho
+
+- Tarefa multi-etapa: use `planner` primeiro; só edite depois do plano aprovado.
+- Exploração: delegue ao `explore` em vez de ler dezenas de arquivos diretamente.
+- Antes de concluir: use `reviewer` ou a skill `verify`, conforme o caso.
+- Use `@skill-id` para carregar skills; principais: `code-conventions`, `doc`, `git-commit-push`, `spec-kit`, `verify`.
