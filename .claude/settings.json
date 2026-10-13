@@ -41,6 +41,7 @@
   },
   "enabledPlugins": {
     "skill-creator@claude-plugins-official": true,
-    "impeccable@impeccable": true
+    "impeccable@impeccable": true,
+    "software-dev@ai-config": true
   }
 }
