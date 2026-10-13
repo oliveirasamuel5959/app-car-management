@@ -1,5 +1,12 @@
 import { createTheme } from '@mui/material/styles';
 
+/**
+ * MUI is a second, parallel palette: its colours are static hex and do not read
+ * the CSS custom properties in src/index.css, so the two can drift. Keep the
+ * brand blue here matching `--primary` in the light theme there (#0E71AE =
+ * hsl(203 85% 37%)). Note MUI does not follow the `.dark` class, so dark-mode
+ * MUI surfaces keep these light-theme values by design.
+ */
 const theme = createTheme({
   palette: {
     primary: {

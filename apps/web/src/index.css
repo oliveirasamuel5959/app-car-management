@@ -21,6 +21,11 @@
   --primary: 203 85% 37%;
   --primary-foreground: 0 0% 100%;
   --primary-border: 203 85% 30%;
+  /* Brand blue as *text* (links, inline actions) on --background: 5.02:1.
+     Kept separate from --primary for the same reason --destructive-text is
+     separate from --destructive: a fill colour and a text colour have
+     different lightness requirements. */
+  --primary-text: 203 85% 37%;
   --secondary: 187 96% 43%;
   --secondary-foreground: 0 0% 100%;
   --muted: 210 40% 96%;
@@ -73,9 +78,15 @@
   --popover: 0 0% 13%;
   --popover-foreground: 0 0% 87%;
   --popover-border: 0 0% 20%;
-  --primary: 203 75% 45%;
+  /* Lighter than light mode's 37%, but not so light that white label text
+     drops below AA: white on this fill is 4.60:1. */
+  --primary: 203 75% 41%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 203 75% 38%;
+  --primary-border: 203 75% 34%;
+  /* Much lighter than --primary: in dark mode the fill has to stay dark enough
+     for white button labels, which leaves it too dark to read as link text on
+     a near-black background. This is the text-side value (6.5:1). */
+  --primary-text: 203 75% 55%;
   --secondary: 187 80% 40%;
   --secondary-foreground: 0 0% 100%;
   --muted: 0 0% 16%;
@@ -92,17 +103,17 @@
   --success-text: 142 69% 58%;
   --border: 0 0% 20%;
   --input: 0 0% 20%;
-  --ring: 203 75% 45%;
+  --ring: 203 75% 41%;
   --sidebar: 0 0% 10%;
   --sidebar-foreground: 0 0% 87%;
   --sidebar-border: 0 0% 20%;
-  --sidebar-ring: 203 75% 45%;
-  --sidebar-primary: 203 75% 45%;
+  --sidebar-ring: 203 75% 41%;
+  --sidebar-primary: 203 75% 41%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 0 0% 16%;
   --sidebar-accent-foreground: 0 0% 87%;
 
-  --selection-bg: 203 75% 45%;
+  --selection-bg: 203 75% 41%;
   --selection-fg: 0 0% 100%;
 }
 
