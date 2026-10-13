@@ -30,13 +30,18 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
           </Link>
           <ThemeToggle className="text-primary-foreground hover:bg-white/15" />
         </div>
-        <p className="relative mt-3 max-w-sm text-sm leading-relaxed text-primary-foreground/80">
+        <p className="relative mt-3 max-w-sm text-sm leading-relaxed text-primary-foreground">
           Take your maintenance to the next level — for vehicle owners and workshops.
         </p>
       </header>
 
-      {/* Branding panel — desktop */}
-      <aside className="relative hidden overflow-hidden bg-primary text-primary-foreground lg:flex lg:w-[46%] lg:max-w-[620px] lg:flex-col lg:px-10 lg:pt-10">
+      {/* Branding panel — desktop.
+          `sticky` + `h-screen` + `self-start` keeps this column exactly one
+          viewport tall however long the form beside it gets. Without it the
+          panel stretched to the form's height (1016px on signup, 1604px on the
+          workshop variant), which pushed the image below the fold — 296px down
+          on a 1280x720 laptop — and opened a dead blue band above it. */}
+      <aside className="relative hidden overflow-hidden bg-primary text-primary-foreground lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[46%] lg:max-w-[620px] lg:flex-col lg:self-start lg:px-10 lg:pt-10">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full bg-secondary/25 blur-3xl"
@@ -60,11 +65,16 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
         <p className="relative mt-10 max-w-[22rem] font-display text-3xl font-bold leading-tight tracking-tight text-primary-foreground">
           Take your maintenance to the next level
         </p>
-        <p className="relative mt-4 max-w-[24rem] text-base leading-relaxed text-primary-foreground/80">
+        <p className="relative mt-4 max-w-[24rem] text-base leading-relaxed text-primary-foreground">
           Manage your vehicles, book trusted workshops, and follow every service in one place.
         </p>
 
-        <div className="relative mt-auto pt-10">
+        {/* Fills whatever height the copy leaves over, so the photo reaches the
+            panel's bottom edge with no dead band above it and never drops out of
+            view. `object-cover` crops to that space; the position is nudged left
+            of centre because the subject (hands on the wrench) sits left of the
+            frame's midpoint and a centred crop clips it. */}
+        <div className="relative mt-10 min-h-[170px] flex-1 overflow-hidden">
           <img
             src={loginImage1240}
             srcSet={`${loginImage640} 640w, ${loginImage1240} 1240w`}
@@ -74,7 +84,7 @@ const AuthLayout = ({ children }: { children: ReactNode }) => {
             height={826}
             loading="eager"
             decoding="async"
-            className="h-[46vh] max-h-[520px] w-full rounded-t-2xl object-cover object-center shadow-2xl"
+            className="absolute inset-0 h-full w-full rounded-t-2xl object-cover object-[35%_50%] shadow-2xl"
           />
         </div>
       </aside>
