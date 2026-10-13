@@ -2,6 +2,18 @@
 
 Chronological project changes grouped by commit date. Newest entries appear first.
 
+## 2026-10-09
+- FIX: `/login` and `/signup` rendered as a different product from the landing page — raw `bg-blue-600` (#2563EB) against the brand's `#0E71AE`, Inter headings against Outfit, and an `auth-layout.tsx` that hardcoded `#0E71AE`/`#FFFFFF` with zero `dark:` classes, so dark-mode users got a white page and an invisible white-on-white `BrandLogo` wordmark. The auth shell is now token-driven on the shared HSL system, with a home link, theme toggle and brand mark added.
+- FIX: Signup's Register button was `disabled` until the form validated, but the Terms error was only written on submit — so a missed checkbox produced a dead button with no message. The button now stays enabled, validates on click, and scrolls to and focuses the first invalid field.
+- FIX: No password-recovery path existed at all, and the two forms disagreed on policy (signup demanded 12 chars + lowercase + special; login accepted 6; the backend `UserRegister` requires ≥8 + uppercase + digit). Added `/forgot-password` and `/reset-password`, and aligned all three to the backend contract.
+- FEAT: Added `autoComplete` to every auth field (none were set, so autofill and password managers could not populate the forms), and a manual latitude/longitude fallback so workshop signup no longer hard-depends on the external geocoding lookup.
+- FEAT: Landing page now carries the two-sided marketplace promise through to conversion — `cta.tsx` routes to `/signup?role=client` and `/signup?role=workshop` (preset in the form), the feature section lists the real `ServiceType` service categories instead of six category-neutral cards, and a proof band states verifiable product facts. The two invented fake-UI chips in the hero ("Next service / in 12 days", "Booking / Confirmed") were removed.
+- FIX: Auth accessibility — labels were not associated with inputs (`htmlFor`/`id`), password toggles had no accessible name, and error regions had no `role="alert"`/`aria-live`. Error red `#EF4444` (3.7:1) and green-600 (3.3:1) failed AA as small text; added `--destructive-text` and `--success-text` tokens that pass in both themes.
+- FIX: `--muted-foreground` sat at 4.49:1 on the light background — a hair under AA for body text — and is the most-used secondary colour. Nudged to 4.83:1.
+- PERF: Replaced the 2.86 MB `login-image.jpg` (6192×4128) with responsive WebP derivatives (31 KB / 93 KB), and trimmed `index.html` from 25 Google font families to the 3 the app actually uses (Inter, Outfit, JetBrains Mono).
+- FIX: `.gitignore`'s Python-template `lib/` rule was silently ignoring `apps/web/src/lib/`, hiding a real source directory from version control; negated it.
+- DEVOPS: Documented the frontend pass in `apps/web/frontend-changes.md`. Note the password-reset UI calls `/auth/forgot-password` and `/auth/reset-password`, which do not exist on the backend yet — the flow errors until those routes and a mail service ship.
+
 ## 2026-10-05
 - FIX: Frontend CD now builds from the monorepo root instead of `apps/web`, matching the Dockerfile COPY paths for the root npm manifests and Nginx template. Verified with `docker build --progress=plain -f apps/web/Dockerfile .`.
 

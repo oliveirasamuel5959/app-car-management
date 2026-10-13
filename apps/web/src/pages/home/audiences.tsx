@@ -23,7 +23,7 @@ const AUDIENCES: Audience[] = [
       'Book and pay securely online',
       'Keep a complete service history',
     ],
-    cta: { label: 'Create an account', to: '/signup' },
+    cta: { label: 'Create an account', to: '/signup?role=client' },
   },
   {
     icon: Wrench,
@@ -35,7 +35,7 @@ const AUDIENCES: Audience[] = [
       'Message clients in real time',
       'Grow with verified reviews',
     ],
-    cta: { label: 'Register your workshop', to: '/signup' },
+    cta: { label: 'Register your workshop', to: '/signup?role=workshop' },
   },
 ];
 

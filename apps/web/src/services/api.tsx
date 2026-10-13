@@ -209,6 +209,23 @@ export const api = {
       return api.get('/auth/me');
     },
 
+    /**
+     * Request a password-reset link by email.
+     * Backend endpoint pending — see frontend-changes.md. The UI is built and
+     * type-checked; it will start working the moment /auth/forgot-password lands.
+     */
+    forgotPassword: async (payload: { email: string }) => {
+      return api.post('/auth/forgot-password', payload);
+    },
+
+    /**
+     * Complete a password reset with the token from the emailed link.
+     * Backend endpoint pending — see frontend-changes.md.
+     */
+    resetPassword: async (payload: { token: string; password: string; password_confirm: string }) => {
+      return api.post('/auth/reset-password', payload);
+    },
+
     // Logout
     logout: () => {
       localStorage.removeItem('access_token');

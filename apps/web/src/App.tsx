@@ -10,6 +10,8 @@ import { publicRoutes, protectedRoutes } from './routes/routes';
 import LoginPage from './pages/login-page';
 import HomePage from './pages/home-page';
 import SignUpPage from './pages/signup-page';
+import ForgotPasswordPage from './pages/forgot-password-page';
+import ResetPasswordPage from './pages/reset-password-page';
 import './App.css';
 
 function App() {
@@ -23,6 +25,8 @@ function App() {
               {/* Auth routes without MainLayout */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignUpPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route
                 path="/"
                 element={

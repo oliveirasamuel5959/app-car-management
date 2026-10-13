@@ -319,3 +319,7 @@ venv.bak/
 # Claude Code
 # =========================
 .claude/settings.local.json
+# The web app ships source under apps/web/src/lib — do not treat it as a
+# Python distribution directory.
+!apps/web/src/lib/
+!apps/web/src/lib/**
