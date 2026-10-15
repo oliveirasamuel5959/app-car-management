@@ -52,7 +52,7 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-[#0E71AE] dark:bg-slate-900 border-b border-white/10 dark:border-slate-700 transition-all duration-300 shadow-lg">
+    <header className="fixed top-0 w-full z-50 bg-header text-header-foreground border-b border-white/10 dark:border-border transition-all duration-300 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
@@ -152,7 +152,7 @@ const Header = () => {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-[#0E71AE] dark:bg-slate-800 border-t border-white/10 dark:border-slate-700 animate-slide-up">
+        <div className="md:hidden bg-header text-header-foreground border-t border-white/10 dark:border-border animate-slide-up">
            <nav className="flex flex-col px-4 py-4 space-y-1" aria-label="Mobile Navigation">
               {!isWorkshop && (
                 <Link 
