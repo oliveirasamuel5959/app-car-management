@@ -33,7 +33,7 @@ export const SectionHeading = ({
 }: SectionHeadingProps) => (
   <div className={cn('max-w-2xl', align === 'center' ? 'mx-auto text-center' : 'text-left', className)}>
     {eyebrow && (
-      <p className="text-sm font-semibold uppercase tracking-widest text-primary">{eyebrow}</p>
+      <p className="text-sm font-semibold uppercase tracking-widest text-primary-text">{eyebrow}</p>
     )}
     <h2
       id={id}

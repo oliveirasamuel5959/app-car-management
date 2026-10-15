@@ -104,7 +104,7 @@ const Features = () => (
 
       <Link
         to="/signup"
-        className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-text underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         See how it works for your car
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
