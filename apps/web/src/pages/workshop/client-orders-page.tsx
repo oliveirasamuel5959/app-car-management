@@ -33,6 +33,7 @@ import { serviceService } from '../../services/service-service';
 import { workshopClientService } from '../../services/workshop-client-service';
 import type { WorkshopClient } from '../../services/workshop-client-service';
 import { SERVICE_TYPE_OPTIONS, type ServiceHistoryType } from '../../services/service-history-service';
+import { getStatusMeta } from '../../lib/status';
 import PartsForm, {
   createEmptyPartsValue,
   normalizePartsValue,
@@ -74,20 +75,22 @@ const initialCompletionForm: CompletionFormState = {
 
 type StatusChipColor = 'success' | 'info' | 'warning' | 'primary' | 'error' | 'default';
 
+/**
+ * MUI chip colour for a status tone. The tone comes from the shared status
+ * module, so labels and colours cannot drift apart; only this mapping to MUI's
+ * own colour names is local, and it goes away with MUI.
+ */
 function getStatusColor(status: string): StatusChipColor {
-  switch (status) {
+  switch (getStatusMeta(status).tone) {
     case 'completed':
-    case 'paid':
       return 'success';
-    case 'in_progress':
+    case 'progress':
       return 'info';
     case 'pending':
-    case 'refunded':
       return 'warning';
     case 'confirmed':
       return 'primary';
     case 'cancelled':
-    case 'rejected':
       return 'error';
     default:
       return 'default';
@@ -277,7 +280,7 @@ export default function ClientOrdersPage() {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={service.status.replace('_', ' ').toUpperCase()}
+                      label={getStatusMeta(service.status).label}
                       color={getStatusColor(service.status)}
                       variant="outlined"
                       size="small"
@@ -331,7 +334,7 @@ export default function ClientOrdersPage() {
 
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="textSecondary">Status</Typography>
-                <Chip label={selectedService.status.replace('_', ' ').toUpperCase()} color={getStatusColor(selectedService.status)} variant="outlined" size="small" />
+                <Chip label={getStatusMeta(selectedService.status).label} color={getStatusColor(selectedService.status)} variant="outlined" size="small" />
               </Grid>
 
               {(selectedService.status === 'paid' ||

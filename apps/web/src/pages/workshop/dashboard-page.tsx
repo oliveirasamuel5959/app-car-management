@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { serviceService } from '../../services/service-service';
 import { workshopService } from '../../services/workshop-service';
+import { getStatusMeta } from '../../lib/status';
 
 interface WorkshopProfile {
   id: number;
@@ -226,21 +227,7 @@ export default function WorkshopDashboardPage() {
                                       : theme.palette.mode === 'dark' ? '#f8b4b4' : '#842029',
                           })}
                         >
-                          {activity.status === 'pending'
-                            ? 'Pendente'
-                            : activity.status === 'confirmed'
-                              ? 'Confirmado'
-                            : activity.status === 'in_progress'
-                              ? 'Em Progresso'
-                              : activity.status === 'completed'
-                                ? 'Concluído'
-                                : activity.status === 'paid'
-                                  ? 'Pago'
-                                  : activity.status === 'refunded'
-                                    ? 'Reembolsado'
-                                    : activity.status === 'rejected'
-                                      ? 'Recusado'
-                                      : activity.status}
+                          {getStatusMeta(activity.status).label}
                         </Typography>
                       </TableCell>
                       <TableCell>{formatDate(activity.created_at || activity.checkin_date)}</TableCell>

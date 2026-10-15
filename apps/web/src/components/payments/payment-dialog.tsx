@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import { formatBRL } from '../../pages/client/service-status';
+import { formatBRL } from '../../lib/status';
 import type { ServiceOrder } from '../../services/service-service';
 import { paymentService, type PaymentCheckout } from '../../services/payment-service';
 

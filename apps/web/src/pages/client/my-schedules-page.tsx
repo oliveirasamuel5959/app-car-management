@@ -27,27 +27,15 @@ import type { Schedule, ScheduleStatus } from '../../services/schedule-service';
 import { scheduleService } from '../../services/schedule-service';
 import type { WorkshopRating } from '../../services/workshop-rating-service';
 import { workshopRatingService } from '../../services/workshop-rating-service';
+import { SCHEDULE_STATUS_META, TYPE_LABELS, formatDateTime } from '../../lib/status';
 import RatingModal from './rating-modal';
 
-const STATUS_CONFIG: Record<ScheduleStatus, { label: string; color: 'warning' | 'info' | 'success' | 'error'; icon: React.ReactNode }> = {
-  pendente: { label: 'Pendente', color: 'warning', icon: <PendingIcon fontSize="small" /> },
-  visualizado: { label: 'Visualizado', color: 'info', icon: <ViewedIcon fontSize="small" /> },
-  aceito: { label: 'Aceito', color: 'success', icon: <AcceptedIcon fontSize="small" /> },
-  recusado: { label: 'Recusado', color: 'error', icon: <RejectedIcon fontSize="small" /> },
+const SCHEDULE_CHIP: Record<ScheduleStatus, { label: string; color: 'warning' | 'info' | 'success' | 'error'; icon: React.ReactElement }> = {
+  pendente: { label: SCHEDULE_STATUS_META.pendente.label, color: 'warning', icon: <PendingIcon fontSize="small" /> },
+  visualizado: { label: SCHEDULE_STATUS_META.visualizado.label, color: 'info', icon: <ViewedIcon fontSize="small" /> },
+  aceito: { label: SCHEDULE_STATUS_META.aceito.label, color: 'success', icon: <AcceptedIcon fontSize="small" /> },
+  recusado: { label: SCHEDULE_STATUS_META.recusado.label, color: 'error', icon: <RejectedIcon fontSize="small" /> },
 };
-
-const TYPE_LABELS: Record<string, string> = {
-  manutencao: 'Manutenção',
-  reparo: 'Reparo',
-  inspecao: 'Inspeção',
-  outro: 'Outro',
-};
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
-}
 
 export default function MySchedulesPage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -137,7 +125,7 @@ export default function MySchedulesPage() {
       ) : (
         <Stack spacing={2}>
           {schedules.map((s) => {
-            const cfg = STATUS_CONFIG[s.status] ?? STATUS_CONFIG.pendente;
+            const cfg = SCHEDULE_CHIP[s.status] ?? SCHEDULE_CHIP.pendente;
             const myRating = s.status === 'aceito' ? myRatings.get(s.id) : undefined;
             return (
               <Card key={s.id} variant="outlined" sx={{ transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 2 } }}>

@@ -20,7 +20,7 @@ import {
   formatBRL,
   formatDateTime,
   formatDateShort,
-} from './service-status';
+} from '../../lib/status';
 
 interface Service {
   id: number;

@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import { formatBRL } from '../../pages/client/service-status';
+import { formatBRL } from '../../lib/status';
 import type { ServicePart } from '../../services/service-service';
 
 interface PartsBreakdownTableProps {
