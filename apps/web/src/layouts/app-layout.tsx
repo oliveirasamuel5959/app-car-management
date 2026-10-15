@@ -1,178 +1,67 @@
 import { useState } from 'react';
-import {
-  Box,
-  Drawer,
-  IconButton,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import { Menu as MenuIcon } from '@mui/icons-material';
 
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/auth-context';
-import { ClientSidebar } from '../components/navigation/client-sidebar';
-import { WorkshopSidebar } from '../components/navigation/workshop-sidebar';
-
-const DRAWER_WIDTH = 240;
-const COLLAPSED_WIDTH = 64;
-// Matches the fixed Header height (Tailwind h-16 = 64px) so the sidebar top
-// and content top line up exactly under the header.
-const NAVBAR_HEIGHT = 64;
+import Header from '../components/navigation/header';
+import AppSidebar from '../components/navigation/app-sidebar';
+import BottomBar from '../components/navigation/bottom-bar';
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  pendingOrders?: number;
 }
 
-export const AppLayout = ({ children, pendingOrders = 0 }: AppLayoutProps) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
-
-  const handleDrawerToggle = () => {
-    setMobileOpen((prev) => !prev);
-  };
-
-  const handleCollapseToggle = () => {
-    if (isMobile) {
-      handleDrawerToggle();
-    } else {
-      setCollapsed((prev) => !prev);
-    }
-  };
-
-  const currentWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
-
-  // Determine which sidebar to show based on user role
-  const isWorkshop = user?.role === 'WORKSHOP';
-
-  const drawerContent = isWorkshop ? (
-    <WorkshopSidebar 
-      onMobileClose={handleDrawerToggle} 
-      isMobile={isMobile}
-      pendingOrders={pendingOrders}
-      collapsed={isMobile ? false : collapsed}
-      onToggleCollapse={handleCollapseToggle}
-    />
-  ) : (
-    <ClientSidebar 
-      onMobileClose={handleDrawerToggle} 
-      isMobile={isMobile}
-      collapsed={isMobile ? false : collapsed}
-      onToggleCollapse={handleCollapseToggle}
-    />
-  );
+/**
+ * AppLayout — the one authenticated shell.
+ *
+ * Structure per the design: a fixed brand bar across the full width, a sidebar
+ * that starts below it, and a centred content band of a fixed maximum width with
+ * one gutter — the same on every screen, which is what the redesign set out to
+ * fix ("different widths and margins per screen").
+ *
+ * Below 768px the sidebar is replaced by the bottom bar; the full grouped menu
+ * stays reachable from the bar's "Mais" entry, which opens the same sidebar in a
+ * dialog so no destination becomes unreachable on a phone.
+ */
+export const AppLayout = ({ children }: AppLayoutProps) => {
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <Box sx={{
-      display: 'flex',
-      minHeight: '100vh'
-    }}>
-      {/* Sidebar */}
-      <Box
-        component="nav"
-        sx={{
-          width: { sm: currentWidth },
-          flexShrink: { sm: 0 },
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-        }}
-      >
-        {/* Mobile Drawer */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              width: DRAWER_WIDTH,
-              boxSizing: 'border-box',
-              top: `${NAVBAR_HEIGHT}px`,
-              height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-              bgcolor: 'background.paper',
-              borderRight: '1px solid',
-              borderColor: 'divider',
-            },
-          }}
-        >
-          {drawerContent}
-        </Drawer>
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header />
 
-        {/* Desktop Drawer */}
-        <Drawer
-          variant="permanent"
-          open
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              width: currentWidth,
-              boxSizing: 'border-box',
-              top: `${NAVBAR_HEIGHT}px`,
-              height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-              bgcolor: 'background.paper',
-              borderRight: '1px solid',
-              borderColor: 'divider',
-              overflowX: 'hidden',
-              overflowY: 'auto',
-              transition: theme.transitions.create('width', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-            },
-          }}
-        >
-          {drawerContent}
-        </Drawer>
-      </Box>
+      {/* Offset for the fixed header (h-16 = 64px). */}
+      <div className="flex flex-1 pt-16">
+        <aside className="hidden w-sidebar shrink-0 pt-4 nav:block">
+          <AppSidebar />
+        </aside>
 
-      {/* Right Side (Navbar + Content) */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          flexGrow: 1,
-          width: { sm: `calc(100% - ${currentWidth}px)` },
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-        }}
-      >
-        {/* Mobile hamburger button */}
-        <Box sx={{ display: { xs: 'flex', sm: 'none' }, p: 1 }}>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
+        <main className="min-w-0 flex-1 pb-24 nav:pb-8">
+          <div className="mx-auto w-full max-w-content px-4 py-6 sm:px-gutter nav:py-8">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      <BottomBar onOpenMenu={() => setMenuOpen(true)} />
+
+      {/* The "Mais" sheet: the same sidebar, so nothing is phone-only-reachable. */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 nav:hidden">
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            className="absolute inset-y-0 left-0 w-64 max-w-[80%] bg-card shadow-xl"
           >
-            <MenuIcon />
-          </IconButton>
-        </Box>
-
-        {/* Main Content */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: { xs: 2, sm: 3 },
-            mt: `${NAVBAR_HEIGHT}px`,
-            width: '100%',
-            minWidth: 0,
-            overflow: 'auto',
-          }}
-        >
-          {children}
-        </Box>
-      </Box>
-    </Box>
+            <AppSidebar onNavigate={() => setMenuOpen(false)} />
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
