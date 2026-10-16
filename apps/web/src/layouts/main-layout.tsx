@@ -1,34 +1,14 @@
-import { Box } from '@mui/material';
-import Footer from '../components/navigation/footer';
-import Header from '../components/navigation/header';
-
-const MainLayout = ({ children }) => {
+const MainLayout = ({ children }: { children: React.ReactNode }) => {
+  /*
+    Full-bleed main: the authenticated AppLayout owns the fixed-header offset and
+    all content padding, so this wrapper adds nothing of its own. The header
+    itself renders inside AppLayout now — rendering it here as well would put two
+    brand bars on the page, which the redesign's diagnosis called out.
+  */
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      width: '100%',
-      position: 'relative'
-    }}>
-      <Header />
-      {/*
-        Full-bleed main: the nested AppLayout owns the single fixed-header
-        offset and all content padding, so this wrapper adds no extra margins.
-      */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-        }}
-      >
-        {children}
-      </Box>
-      {/* <Footer /> */}
-    </Box>
+    <div className="flex min-h-screen w-full flex-col">
+      <main className="flex flex-1 flex-col">{children}</main>
+    </div>
   );
 };
 

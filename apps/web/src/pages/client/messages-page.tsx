@@ -13,6 +13,7 @@ import {
 import { Chat as ChatIcon, Build as BuildIcon } from '@mui/icons-material';
 import { serviceService } from '../../services/service-service';
 import { workshopService } from '../../services/workshop-service';
+import { getStatusMeta } from '../../lib/status';
 
 interface WorkshopConversation {
   workshopId: number;
@@ -71,12 +72,14 @@ export default function MessagesPage() {
     }
   };
 
-  const statusLabel: Record<string, { label: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error' }> = {
-    pending: { label: 'Pendente', color: 'warning' },
-    confirmed: { label: 'Confirmado', color: 'primary' },
-    in_progress: { label: 'Em Andamento', color: 'primary' },
-    completed: { label: 'Concluído', color: 'success' },
-    cancelled: { label: 'Cancelado', color: 'error' },
+  /* Labels come from the shared status module; only the MUI chip colour is
+     local, and it goes away with MUI. */
+  const statusColors: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'error'> = {
+    pending: 'warning',
+    confirmed: 'primary',
+    in_progress: 'primary',
+    completed: 'success',
+    cancelled: 'error',
   };
 
   if (loading) {
@@ -114,7 +117,10 @@ export default function MessagesPage() {
       ) : (
         <Box className="flex flex-col gap-3">
           {conversations.map((conv) => {
-            const status = statusLabel[conv.latestServiceStatus] ?? { label: conv.latestServiceStatus, color: 'default' as const };
+            const status = {
+              label: getStatusMeta(conv.latestServiceStatus).label,
+              color: statusColors[conv.latestServiceStatus] ?? ('default' as const),
+            };
             return (
               <Card key={conv.workshopId} elevation={1} sx={{ borderRadius: 2 }}>
                 <CardActionArea

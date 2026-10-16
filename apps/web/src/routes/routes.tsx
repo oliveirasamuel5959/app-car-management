@@ -1,3 +1,4 @@
+import type { UserRole } from '../components/routing/protected-route';
 import Home from '../pages/home-page';
 import LoginPage from '../pages/login-page';
 import SignUpPage from '../pages/signup-page.tsx';
@@ -11,8 +12,6 @@ import MySchedulesPage from '../pages/client/my-schedules-page';
 import WorkshopPage from '../pages/client/workshop-page.tsx';
 import CarPage from '../pages/client/car-page.tsx';
 import ServiceHistoryPage from '../pages/client/service-history-page.tsx';
-import { useAuth } from '../context/auth-context';
-import { Navigate } from 'react-router-dom';
 
 // Workshop Pages
 import WorkshopDashboardPage from '../pages/workshop/dashboard-page';
@@ -37,11 +36,6 @@ import ClientChatPage from '../pages/client/chat-page.tsx';
 import WorkshopMessagesPage from '../pages/workshop/messages-page.tsx';
 import WorkshopChatPage from '../pages/workshop/chat-page.tsx';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: 'CLIENT' | 'WORKSHOP';
-}
-
 
 export const publicRoutes = [
   {
@@ -58,7 +52,16 @@ export const publicRoutes = [
   }
 ];
 
-export const protectedRoutes = [
+/*
+  Typed as UserRole so a typo in a route's role is a compile error rather
+  than a string that silently never matches (the previous failure mode:
+  `requiredRole` was passed to a component that ignored it).
+*/
+export const protectedRoutes: {
+  path: string;
+  role: UserRole;
+  element: React.ReactNode;
+}[] = [
   // CLIENT ROUTES
   {
     path: '/client/dashboard',
@@ -125,6 +128,16 @@ export const protectedRoutes = [
     role: 'CLIENT',
     element: <AppLayout><ProfilePage /></AppLayout>,
   },
+  /*
+    The menu's "Configurações" destination. It is the profile page, and it is a
+    real route rather than a dead link — which is what it was: both sidebars
+    pointed at /client/settings and /workshop/settings, and neither existed.
+  */
+  {
+    path: '/client/settings',
+    role: 'CLIENT',
+    element: <AppLayout><ProfilePage /></AppLayout>,
+  },
 
   // WORKSHOP ROUTES
   {
@@ -182,6 +195,12 @@ export const protectedRoutes = [
     role: 'WORKSHOP',
     element: <AppLayout><ProfilePage /></AppLayout>,
   },
+  /* See the note on /client/settings. */
+  {
+    path: '/workshop/settings',
+    role: 'WORKSHOP',
+    element: <AppLayout><ProfilePage /></AppLayout>,
+  },
   {
     path: '/workshop/:workshopId/clients',
     role: 'WORKSHOP',
@@ -218,18 +237,8 @@ export const protectedRoutes = [
   },
 ];
 
-const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { user, isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (requiredRole && user?.role !== requiredRole) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-export default ProtectedRoute;
+/*
+  The second `ProtectedRoute` that used to live here was never imported:
+  `App.tsx` uses `components/routing/protected-route.tsx`. The role check it
+  performed has moved into that component, so there is now one implementation.
+*/

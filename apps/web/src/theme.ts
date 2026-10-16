@@ -2,17 +2,19 @@ import { createTheme } from '@mui/material/styles';
 
 /**
  * MUI is a second, parallel palette: its colours are static hex and do not read
- * the CSS custom properties in src/index.css, so the two can drift. Keep the
- * brand blue here matching `--primary` in the light theme there (#0E71AE =
- * hsl(203 85% 37%)). Note MUI does not follow the `.dark` class, so dark-mode
- * MUI surfaces keep these light-theme values by design.
+ * the CSS custom properties in src/index.css, so the two can drift. Until MUI
+ * is removed entirely (see specs/2026-10-15-frontend-redesign), every value here
+ * is kept equal to its token counterpart in src/index.css by hand — the brand
+ * blue in particular, because the two are close enough that a partial swap
+ * would put two different blues on the same screen. Note MUI does not follow the
+ * `.dark` class, so dark-mode MUI surfaces keep these light-theme values.
  */
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#0E71AE',
+      main: '#0B6BA8',
       light: '#3E9AD1',
-      dark: '#0A5583',
+      dark: '#08507D',
       contrastText: '#FFFFFF',
     },
     secondary: {
@@ -22,14 +24,14 @@ const theme = createTheme({
       contrastText: '#FFFFFF',
     },
     background: {
-      default: '#F8FAFC',
+      default: '#F6F8FA',
       paper: '#FFFFFF',
     },
     text: {
-      primary: '#111827',
+      primary: '#14202B',
       secondary: '#6B7280',
     },
-    divider: '#E5E7EB',
+    divider: '#E1E6EC',
     success: {
       main: '#22C55E',
       light: '#86EFAC',
@@ -52,8 +54,8 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", "system-ui", "Avenir", "Helvetica", "Arial", sans-serif',
-    fontSize: 14,
+    fontFamily: '"Plus Jakarta Sans", "system-ui", "Avenir", "Helvetica", "Arial", sans-serif',
+    fontSize: 15,
     h1: {
       fontWeight: 700,
     },
@@ -74,7 +76,8 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 8,
+    /* Matches the token layer's default radius (10px). */
+    borderRadius: 10,
   },
 });
 

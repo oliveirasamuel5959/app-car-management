@@ -2,18 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Snackbar } from '@mui/material';
 
 import { useRealtime } from '../../context/realtime-context';
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendente',
-  confirmed: 'Confirmado',
-  in_progress: 'Em Progresso',
-  completed: 'Concluído',
-  cancelled: 'Cancelado',
-  pendente: 'Pendente',
-  visualizado: 'Visualizado',
-  aceito: 'Aceito',
-  recusado: 'Recusado',
-};
+import { getStatusMeta } from '../../lib/status';
 
 /**
  * Global toasts for realtime events. Mounted once inside RealtimeProvider.
@@ -25,11 +14,11 @@ export default function RealtimeToasts() {
 
   useEffect(() => {
     const unsubscribeOrder = subscribe('order_status_change', (event) => {
-      const label = STATUS_LABELS[event.new_status] ?? event.new_status;
+      const label = getStatusMeta(event.new_status).label;
       setToast(`Pedido #${event.service_order_id} atualizado para: ${label}`);
     });
     const unsubscribeSchedule = subscribe('schedule_status_change', (event) => {
-      const label = STATUS_LABELS[event.new_status] ?? event.new_status;
+      const label = getStatusMeta(event.new_status).label;
       setToast(`Agendamento #${event.schedule_id}: ${label}`);
     });
     const unsubscribeRating = subscribe('rating_received', (event) => {

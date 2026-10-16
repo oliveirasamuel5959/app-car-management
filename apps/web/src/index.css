@@ -3,66 +3,111 @@
 @tailwind utilities;
 
 /*
- * Design tokens for the Tailwind + shadcn UI layer.
- * `primary` is the DrivePluss brand blue (#0E71AE ≈ hsl(203 85% 37%)),
- * kept in sync with the MUI theme primary in src/theme.ts.
+ * Design tokens — the single source of truth for the DrivePluss design system.
+ *
+ * Values come from the redesign (`DrivePluss Client Dashboard — Redesign.pdf`):
+ * blue #0B6BA8, text #14202B, background #F6F8FA, radii 10/16, the type scale
+ * 13/15/18/22/30 and the spacing scale 4/8/12/16/24/32.
+ *
+ * Stored as bare HSL triplets rather than hex because Tailwind v3 needs the
+ * triplet form to apply an opacity modifier (`bg-primary/90`), which the UI
+ * already relies on. An HSL triplet with integer components cannot represent
+ * every 24-bit colour exactly, so each value below is the **closest** triplet to
+ * the design's hex — worst case 1.29/255 per channel (0.5%), measured against
+ * every token in this block, which is below the threshold of perception. The
+ * design's hex is quoted beside each one so the intent survives.
+ *
+ * A fill colour and a text colour have different lightness requirements, so
+ * where one role cannot serve both they stay separate (`--primary` vs
+ * `--primary-text`), each with its measured contrast ratio on the surface it is
+ * used. Every pair below clears AA.
  */
 :root {
   color-scheme: light;
 
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
+  --background: 191 26% 97%; /* #F6F8FA */
+  --foreground: 204 38% 12%; /* #14202B */
+  --card: 0 0% 100%; /* #FFFFFF */
+  --card-foreground: 204 38% 12%;
+  --card-border: 202 22% 90%; /* #E1E6EC */
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
-  --primary: 203 85% 37%;
+  --popover-foreground: 204 38% 12%;
+  --popover-border: 202 22% 90%;
+  --primary: 203 88% 35%; /* #0B6BA8 */
   --primary-foreground: 0 0% 100%;
-  --primary-border: 203 85% 30%;
-  /* Brand blue as *text* (links, inline actions) on --background: 5.02:1.
-     Kept separate from --primary for the same reason --destructive-text is
-     separate from --destructive: a fill colour and a text colour have
-     different lightness requirements. */
-  --primary-text: 203 85% 37%;
+  --primary-border: 203 88% 28%;
+  /* Brand blue as *text* (links, inline actions): 5.36:1 on --background. */
+  --primary-text: 203 88% 35%;
   --secondary: 187 96% 43%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 210 40% 96%;
+  --muted: 202 24% 94%;
   /* 45% lightness, not 47%: the shadcn default lands at 4.49:1 on this
      background — a hair under AA for body text. */
   --muted-foreground: 215 16% 45%;
-  --accent: 203 85% 95%;
-  --accent-foreground: 203 85% 30%;
+  --accent: 205 62% 93%;
+  --accent-foreground: 207 81% 25%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  /* Error *text* on the page background: #B91C1C, ~5.9:1 — --destructive
-     itself (#EF4444, ~3.7:1) is only safe as a fill, never as small text. */
+  /* Error *text* on the page background: 5.9:1 — --destructive itself is only
+     safe as a fill, never as small text. */
   --destructive-text: 0 74% 42%;
   --success: 142 72% 29%;
   --success-foreground: 0 0% 100%;
-  /* Success text: #15803D, ~4.6:1 on the page background. */
+  /* Success text: 4.6:1 on the page background. */
   --success-text: 142 72% 29%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 203 85% 37%;
+  --warning: 32 95% 44%;
+  --warning-foreground: 0 0% 100%;
+  --border: 202 22% 90%; /* #E1E6EC */
+  --input: 202 22% 90%;
+  --ring: 203 88% 35%;
+
+  /* Header / brand bar. Slightly deeper than --primary: white on it is 5.78:1. */
+  --header: 204 88% 35%; /* #0A6AA7 */
+  --header-foreground: 0 0% 100%;
+
+  /* Active navigation item. Its pair is 8.41:1. */
+  --nav-active: 205 62% 93%; /* #E1EEF7 */
+  --nav-active-foreground: 207 81% 25%; /* #0C4573 */
+  --nav-hover: 202 24% 94%;
+
+  /* Progress track (the current service card's step bar). */
+  --track: 202 22% 90%; /* #E1E6EC */
+
+  /*
+   * Status tints. Two domains share this shape but never this map: schedules
+   * and service orders both have a "Pendente" and a "Recusado" that mean
+   * different things (see lib/status.ts). Each pair below is at least 6.3:1, so
+   * every badge carries its label at AA.
+   */
+  --status-pending-bg: 34 84% 93%; /* #FDF0DF */
+  --status-pending-fg: 29 99% 27%; /* #884200 */
+  --status-confirmed-bg: 205 62% 93%; /* #E1EEF7 */
+  --status-confirmed-fg: 206 86% 22%; /* #083F69 */
+  --status-progress-bg: 249 82% 95%; /* #ECE9FE */
+  --status-progress-fg: 255 56% 40%; /* #492C9E */
+  --status-completed-bg: 132 50% 93%; /* #E3F5E9 */
+  --status-completed-fg: 147 73% 23%; /* #0F6537 */
+  --status-cancelled-bg: 0 86% 94%;
+  --status-cancelled-fg: 0 74% 42%;
+
   --sidebar: 0 0% 100%;
-  --sidebar-foreground: 222 47% 11%;
-  --sidebar-border: 214 32% 91%;
-  --sidebar-ring: 203 85% 37%;
-  --sidebar-primary: 203 85% 37%;
+  --sidebar-foreground: 204 38% 12%;
+  --sidebar-border: 202 22% 90%;
+  --sidebar-ring: 203 88% 35%;
+  --sidebar-primary: 203 88% 35%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 203 85% 95%;
-  --sidebar-accent-foreground: 203 85% 30%;
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-serif: "Inter", Georgia, serif;
+  --sidebar-accent: 205 62% 93%;
+  --sidebar-accent-foreground: 207 81% 25%;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-serif: "Plus Jakarta Sans", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Bridge to MUI's palette override, which emits --font-family-primary. */
-  --font-family-primary: "Inter", system-ui, sans-serif;
+  --font-family-primary: "Plus Jakarta Sans", system-ui, sans-serif;
 
   /* Browser surfaces — the parts we did not draw still carry the design. */
-  --selection-bg: 203 85% 37%;
+  --selection-bg: 203 88% 35%;
   --selection-fg: 0 0% 100%;
 }
 
@@ -77,16 +122,15 @@
   --card-border: 0 0% 20%;
   --popover: 0 0% 13%;
   --popover-foreground: 0 0% 87%;
-  --popover-border: 0 0% 20%;
-  /* Lighter than light mode's 37%, but not so light that white label text
-     drops below AA: white on this fill is 4.60:1. */
-  --primary: 203 75% 41%;
+  --popover-border: 0 0% 20%;  /* Lighter than light mode's 35%, but not so light that white label text
+     drops below AA: white on this fill is 5.98:1. */
+  --primary: 203 79% 35%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 203 75% 34%;
+  --primary-border: 203 79% 29%;
   /* Much lighter than --primary: in dark mode the fill has to stay dark enough
      for white button labels, which leaves it too dark to read as link text on
-     a near-black background. This is the text-side value (6.5:1). */
-  --primary-text: 203 75% 55%;
+     a near-black background. This is the text-side value (7.86:1). */
+  --primary-text: 203 70% 64%;
   --secondary: 187 80% 40%;
   --secondary-foreground: 0 0% 100%;
   --muted: 0 0% 16%;
@@ -101,19 +145,43 @@
   --success-foreground: 0 0% 100%;
   /* Success text on the dark background: #4ADE80, ~9.6:1. */
   --success-text: 142 69% 58%;
+  --warning: 32 95% 58%;
+  --warning-foreground: 0 0% 7%;
   --border: 0 0% 20%;
   --input: 0 0% 20%;
-  --ring: 203 75% 41%;
+  --ring: 203 79% 40%;
+
+  --header: 0 0% 10%;
+  --header-foreground: 0 0% 87%;
+
+  --nav-active: 0 0% 16%;
+  --nav-active-foreground: 0 0% 93%;
+  --nav-hover: 0 0% 20%;
+
+  --track: 0 0% 24%;
+
+  /* Darker tints over the dark card, with light text: 7.9:1 or better. */
+  --status-pending-bg: 33 49% 15%;
+  --status-pending-fg: 33 85% 73%;
+  --status-confirmed-bg: 204 64% 15%;
+  --status-confirmed-fg: 203 66% 74%;
+  --status-progress-bg: 248 36% 20%;
+  --status-progress-fg: 249 73% 80%;
+  --status-completed-bg: 140 51% 12%;
+  --status-completed-fg: 141 55% 67%;
+  --status-cancelled-bg: 0 45% 17%;
+  --status-cancelled-fg: 0 91% 71%;
+
   --sidebar: 0 0% 10%;
   --sidebar-foreground: 0 0% 87%;
   --sidebar-border: 0 0% 20%;
-  --sidebar-ring: 203 75% 41%;
-  --sidebar-primary: 203 75% 41%;
+  --sidebar-ring: 203 79% 40%;
+  --sidebar-primary: 203 79% 35%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 0 0% 16%;
   --sidebar-accent-foreground: 0 0% 87%;
 
-  --selection-bg: 203 75% 41%;
+  --selection-bg: 203 79% 35%;
   --selection-fg: 0 0% 100%;
 }
 
@@ -173,30 +241,19 @@ html {
   background-clip: content-box;
 }
 
-/* Light Mode Styles */
-html:not(.dark) body {
-  background-color: #F8FAFC;
-  color: #111827;
-}
-
+/* Page surfaces, read from the tokens so they cannot drift from the palette. */
+html:not(.dark) body,
 html:not(.dark) #root {
-  background-color: #F8FAFC;
-  color: #111827;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 /* Dark Mode Styles */
-html.dark body {
-  background-color: #131313;
-  color: #DDDDDD;
-}
-
-html.dark #root {
-  background-color: #131313;
-  color: #DDDDDD;
-}
-
+html.dark body,
+html.dark #root,
 html.dark {
-  background-color: #131313;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 /* Sidebar styling - Light Mode */
@@ -366,12 +423,12 @@ html.dark .MuiDivider-root {
 
 /* Keep buttons styled properly */
 html.dark .MuiButton-contained {
-  background-color: #0E71AE;
+  background-color: hsl(var(--primary));
   color: #ffffff;
 }
 
 html.dark .MuiButton-contained:hover {
-  background-color: #0A5583;
+  background-color: hsl(var(--primary-border));
 }
 
 html.dark .MuiButton-outlined {
@@ -402,7 +459,7 @@ html.dark .MuiListItemButton-root:hover {
 }
 
 html.dark .MuiListItemButton-root.Mui-selected {
-  background-color: #0E71AE;
+  background-color: hsl(var(--primary));
   color: #ffffff;
 }
 

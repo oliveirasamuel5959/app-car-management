@@ -18,7 +18,7 @@ import {
   formatBRL,
   formatDateShort,
   formatDateTime,
-} from '../../pages/client/service-status';
+} from '../../lib/status';
 import {
   serviceService,
   type ServiceBreakdown,

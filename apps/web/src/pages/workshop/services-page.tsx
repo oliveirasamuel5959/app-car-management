@@ -18,6 +18,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { serviceService } from '../../services/service-service';
 import { workshopClientService } from '../../services/workshop-client-service';
+import { STATUS_META } from '../../lib/status';
 
 interface ServiceItem {
   id: number;
@@ -38,14 +39,18 @@ interface ClientSummary {
 }
 
 const statusLabelMap: Record<string, string> = {
-  pending: 'Pendente - Aguardando Confirmação',
-  confirmed: 'Confirmado',
-  in_progress: 'Em progresso',
-  completed: 'Concluído',
-  cancelled: 'Cancelado',
-  rejected: 'Recusado',
+  pending: STATUS_META.pending.label,
+  confirmed: STATUS_META.confirmed.label,
+  in_progress: STATUS_META.in_progress.label,
+  completed: STATUS_META.completed.label,
+  cancelled: STATUS_META.cancelled.label,
+  rejected: STATUS_META.rejected.label,
 };
 
+/**
+ * MUI chip colour for a status tone. Labels come from the shared status module,
+ * so the two cannot drift; only this mapping to MUI's colour names is local.
+ */
 const statusColorMap: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
   pending: 'warning',
   confirmed: 'info',

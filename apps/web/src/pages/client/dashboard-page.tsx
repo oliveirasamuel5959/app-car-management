@@ -18,7 +18,7 @@ import {
   STATUS_META,
   formatBRL,
   formatDateShort,
-} from './service-status';
+} from '../../lib/status';
 
 interface Service {
   id: number;

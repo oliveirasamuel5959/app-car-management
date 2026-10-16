@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, DeleteOutline as DeleteIcon } from '@mui/icons-material';
 
-import { formatBRL } from '../../pages/client/service-status';
+import { formatBRL } from '../../lib/status';
 import type { ServicePartInput } from '../../services/service-service';
 
 export interface PartsRow {

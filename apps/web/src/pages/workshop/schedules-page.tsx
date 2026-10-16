@@ -26,19 +26,17 @@ import {
 } from '@mui/icons-material';
 import type { Schedule, ScheduleStatus } from '../../services/schedule-service';
 import { scheduleService } from '../../services/schedule-service';
+import { SCHEDULE_STATUS_META, TYPE_LABELS } from '../../lib/status';
 
-const STATUS_CONFIG: Record<ScheduleStatus, { label: string; color: 'warning' | 'info' | 'success' | 'error' }> = {
-  pendente: { label: 'Pendente', color: 'warning' },
-  visualizado: { label: 'Visualizado', color: 'info' },
-  aceito: { label: 'Aceito', color: 'success' },
-  recusado: { label: 'Recusado', color: 'error' },
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  manutencao: 'Manutenção',
-  reparo: 'Reparo',
-  inspecao: 'Inspeção',
-  outro: 'Outro',
+/**
+ * Labels come from the shared status module; only the mapping from a tone to
+ * MUI's own chip colour names is local, and it goes away with MUI.
+ */
+const SCHEDULE_CHIP: Record<ScheduleStatus, { label: string; color: 'warning' | 'info' | 'success' | 'error' }> = {
+  pendente: { label: SCHEDULE_STATUS_META.pendente.label, color: 'warning' },
+  visualizado: { label: SCHEDULE_STATUS_META.visualizado.label, color: 'info' },
+  aceito: { label: SCHEDULE_STATUS_META.aceito.label, color: 'success' },
+  recusado: { label: SCHEDULE_STATUS_META.recusado.label, color: 'error' },
 };
 
 function fmt(iso: string): string {
@@ -164,7 +162,7 @@ export default function WorkshopSchedulesPage() {
       ) : (
         <Stack spacing={2}>
           {schedules.map((s) => {
-            const cfg = STATUS_CONFIG[s.status] ?? STATUS_CONFIG.pendente;
+            const cfg = SCHEDULE_CHIP[s.status] ?? SCHEDULE_CHIP.pendente;
             return (
               <Card
                 key={s.id}
@@ -231,8 +229,8 @@ export default function WorkshopSchedulesPage() {
                 <Box>
                   <Typography variant="caption" color="text.disabled">Status</Typography>
                   <Chip
-                    label={(STATUS_CONFIG[selected.status] ?? STATUS_CONFIG.pendente).label}
-                    color={(STATUS_CONFIG[selected.status] ?? STATUS_CONFIG.pendente).color}
+                    label={(SCHEDULE_CHIP[selected.status] ?? SCHEDULE_CHIP.pendente).label}
+                    color={(SCHEDULE_CHIP[selected.status] ?? SCHEDULE_CHIP.pendente).color}
                     variant="outlined"
                     size="small"
                     sx={{ mt: 0.5, fontWeight: 600 }}
