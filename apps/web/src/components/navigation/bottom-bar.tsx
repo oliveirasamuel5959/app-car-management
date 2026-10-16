@@ -50,11 +50,15 @@ export function BottomBar({ onOpenMenu }: BottomBarProps) {
           );
         }
 
-        const active = isPathActive(pathname, entry.path);
+        const activePath = entry.path.split('?')[0];
+        const active = isPathActive(pathname, activePath);
+        const target = entry.path.startsWith('/client/appointments')
+          ? `${activePath}?tab=novo`
+          : entry.path;
         return (
           <Link
             key={entry.path}
-            to={entry.path}
+            to={target}
             aria-current={active ? 'page' : undefined}
             className={itemClasses(active)}
           >

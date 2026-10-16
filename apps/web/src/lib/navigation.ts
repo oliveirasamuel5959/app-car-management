@@ -117,7 +117,7 @@ export interface BottomBarEntry {
 
 export const CLIENT_BOTTOM_BAR: BottomBarEntry[] = [
   { label: 'Início', path: '/client/dashboard', icon: LayoutDashboard },
-  { label: 'Agendar', path: '/client/appointments', icon: CalendarDays },
+  { label: 'Agendar', path: '/client/appointments?tab=novo', icon: CalendarDays },
   { label: 'Carro', path: '/client/my-car', icon: Car },
   { label: 'Manutenção', path: '/client/service-history', icon: Wrench },
   { label: 'Mais', icon: Settings, opensMenu: true },

@@ -402,13 +402,11 @@ being untyped, so a typo in a `role` would never be caught (now fixed by typing
   grid with the filter panel hidden below `md`. As a tab inside a padded content
   band its sizing assumptions are all wrong. Leaflet also needs its container
   dimensions at mount, so a tab that starts hidden needs an explicit invalidate.
-- **The 4-step indicator has no third step today.** The PDF's steps are Oficina ·
-  Serviço · Data e horário · Confirmar, but the current booking flow is
-  day → time slot → dialog (type, description, phone, e-mail) and has **no
-  service-catalogue step**. Either the indicator reflects the flow that exists
-  (4 steps with a different third label) or a catalogue step is added. This is
-  the one place where the PDF's information architecture does not map onto the
-  API, and §D-OPEN-1 below must be decided before TG6 starts.
+- **The 4-step indicator has a third step decision.** The PDF's steps are Oficina ·
+  Serviço · Data e horário · Confirmar, but the current booking flow previously
+  picked the request type inside the confirmation dialog. The confirmed TG6
+  decision moves this existing type selection to step 2; no catalogue endpoint or
+  backend change is required.
 - **Dark mode regressions.** Removing MUI removes the override wall, but until
   TG12 completes, both systems render. The intermediate states need checking in
   both themes, not just the final one.
@@ -418,19 +416,28 @@ being untyped, so a typo in a `role` would never be caught (now fixed by typing
 
 ## 8. Open decisions
 
-### D-OPEN-1 — The third step of the booking indicator
+### D-OPEN-1 — Indicador de etapas do agendamento (decidido)
 
-The PDF's 4 steps include "Serviço" (a service-catalogue choice). The current
-flow has no such step: the request type is picked inside the confirmation dialog.
-Either the indicator's third step is relabelled to match reality, or a catalogue
-step is introduced. Introducing it is a product change with backend
-implications, not a visual one.
+A trilha de quatro etapas será **Oficina → Serviço → Data e horário → Confirmar**.
+A escolha do tipo de serviço, que hoje fica no diálogo de confirmação, passa para
+uma etapa própria antes da seleção de data e horário. Descrição do problema e
+contatos continuam na etapa de confirmação. Isso reorganiza a interface, mas
+reutiliza o campo `service_request_type` já existente e não requer endpoint ou
+mudança de backend.
 
-**Recommendation:** relabel the third step to "Data e horário" and keep the
-type/description fields in the confirmation dialog, which is what step 4 is.
-Decide before TG6.
+### D-OPEN-2 — Status buckets for appointment tabs (decided)
 
-### D-OPEN-2 — Whether the flag outlives the migration
+The tabs Próximos / Concluídos / Cancelados classify schedule requests as follows:
+
+- **Cancelados:** every `recusado` request, regardless of its scheduled date.
+- **Concluídos:** `aceito` requests whose scheduled date/time is in the past.
+- **Próximos:** all remaining requests, including `pendente` and `visualizado`
+  requests whose scheduled date/time has passed, and future `aceito` requests.
+
+The schedule API has no explicit completion or client-cancellation status; these
+labels are presentation buckets only and do not change backend state.
+
+### D-OPEN-3 — Whether the flag outlives the migration
 
 The PDF asks for a flag around the new Dashboard. Whether the flag is removed
 once all screens have migrated, or kept as a permanent escape hatch, is a

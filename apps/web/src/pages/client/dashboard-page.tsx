@@ -78,7 +78,7 @@ export default function DashboardPage() {
   const activeMeta = activeService ? STATUS_META[activeService.status] ?? STATUS_META.pending : null;
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', p: { xs: 2, md: 4 } }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', p: { xs: 2, md: 4 } }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>

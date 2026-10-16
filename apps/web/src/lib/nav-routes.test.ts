@@ -52,12 +52,9 @@ function resolves(path: string, declared: Set<string>): boolean {
 
 /**
  * Destinations the menu points at whose route lands in a later task group.
- * TG6 adds `/client/appointments` and its detail route; TG11 adds the workshop
- * redirects. Listed explicitly rather than excluded with a wildcard so each one
- * has to be deleted as it ships, and the list cannot quietly grow.
+ * TG8 adds the appointment detail route; TG11 adds the workshop redirects.
  */
 const PENDING_ROUTES = new Set<string>([
-  '/client/appointments',
   '/client/appointments/:orderId',
 ]);
 

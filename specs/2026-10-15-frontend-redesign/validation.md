@@ -127,20 +127,20 @@ Run the sections in order after completing every task group.
 ## V6 — Agendamentos (TG6)
 
 - [ ] **6.1** The page has both tabs, and the 4-step indicator matches the decided
-  flow (requirements §D-OPEN-1).
+  flow: Oficina → Serviço → Data e horário → Confirmar (`requirements.md` §8, D-OPEN-1).
 - [ ] **6.2** The three former screens are reachable from this page alone — the
   workshop search, the filters and the booking flow are all here.
 - [ ] **6.3** The card action reads "Agendar aqui".
 - [ ] **6.4** The map renders inside the tab at desktop width and does not assume
   a `100vh` parent. A map mounted in a hidden tab is correctly sized once shown.
 - [ ] **6.5** Filters work end to end: radius, minimum rating, service type, sort.
-- [ ] **6.6** The Próximos / Concluídos / Cancelados tabs each show the right
-  subset, and an empty tab offers the next step.
+- [ ] **6.6** The Próximos / Concluídos / Cancelados tabs follow the presentation
+  buckets defined in `requirements.md` §8, D-OPEN-2, and an empty tab offers the next step.
 - [ ] **6.7** A schedule created through the flow appears in Meus agendamentos
-  **without a manual refresh** (live reload preserved).
+  **without a manual refresh** (list reload on successful create and live reload preserved).
 - [ ] **6.8** A deep link from the old `/client/scheduling/:workshopId` still lands
   on that workshop.
-- [ ] **6.9** The booking dialog's timezone handling is unchanged — a slot booked
+- [ ] **6.9** The booking timezone handling is unchanged — a slot booked
   for 14:00 shows as 14:00.
 
 ---
@@ -182,7 +182,7 @@ Run the sections in order after completing every task group.
   service on the car card.
 - [ ] **9.5** Empty states offer their next step.
 - [ ] **9.6** Both Dashboard variants survive while the flag exists; the flag
-  choice from requirements §D-OPEN-2 is recorded.
+  choice from requirements §D-OPEN-3 is recorded.
 
 ---
 

@@ -222,7 +222,8 @@ Commit: `fix(web): corrigir o gate de papel e unificar o shell de navegação`
 - Tabs "Meus agendamentos" / "Novo agendamento".
 - The 4-step indicator ahead of the new-appointment flow, per §D-OPEN-1.
 - Absorb `scheduling-page`, `search-workshops-page` and
-  `scheduling-workshop-page`.
+  `scheduling-workshop-page`; retain their existing route declarations until TG10
+  redirects them to the new page.
 - Filters as a panel; result count; workshop cards whose action reads
   "Agendar aqui".
 - The map becomes an in-page panel. Handle the two Leaflet specifics: it must not
@@ -344,7 +345,7 @@ Commit: `refactor(web): remover MUI e Emotion, consolidando o design system`
 - `specs/ROADMAP.md` — reflect this phase.
 - `apps/web/frontend-changes.md` — the companion record for this pass, as the
   2026-10-09 pass did.
-- Decide §D-OPEN-2 on the flag.
+- Decide §D-OPEN-3 on the flag.
 - Execute [validation.md](validation.md) end to end.
 
 Verification: all validation gates pass; both themes reviewed; the accessibility

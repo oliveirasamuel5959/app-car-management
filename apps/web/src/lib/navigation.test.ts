@@ -58,6 +58,7 @@ describe('navigation', () => {
     expect(clientPaths).not.toContain('/client/my-schedules');
     expect(clientPaths).not.toContain('/client/search-workshops');
     expect(clientPaths).toContain('/client/appointments');
+    expect(CLIENT_BOTTOM_BAR.find((entry) => entry.label === 'Agendar')?.path).toBe('/client/appointments?tab=novo');
   });
 
   it('has no duplicate destinations', () => {

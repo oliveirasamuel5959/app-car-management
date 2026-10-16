@@ -18,8 +18,9 @@ export interface NavGroup {
 
 /** A path is active when the current location is it, or is nested under it. */
 export function isPathActive(currentPath: string, itemPath: string): boolean {
-  if (currentPath === itemPath) return true;
-  return currentPath.startsWith(`${itemPath}/`);
+  const normalizedItemPath = itemPath.split('?')[0];
+  if (currentPath === normalizedItemPath) return true;
+  return currentPath.startsWith(`${normalizedItemPath}/`);
 }
 
 interface MenuItemProps {

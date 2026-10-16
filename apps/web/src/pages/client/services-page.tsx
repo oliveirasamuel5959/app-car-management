@@ -124,7 +124,7 @@ export default function ServicesPage() {
           variant="contained"
           size="small"
           sx={{ mt: 3 }}
-          onClick={() => navigate('/client/scheduling')}
+          onClick={() => navigate('/client/appointments?tab=novo')}
         >
           Fazer um agendamento
         </Button>

@@ -9,6 +9,7 @@ import { SearchWorkshopsPage } from '../pages/client/search-workshops-page.tsx';
 import SchedulingPage from '../pages/client/scheduling-page';
 import SchedulingWorkshopPage from '../pages/client/scheduling-workshop-page';
 import MySchedulesPage from '../pages/client/my-schedules-page';
+import AppointmentsPage from '../pages/client/appointments-page';
 import WorkshopPage from '../pages/client/workshop-page.tsx';
 import CarPage from '../pages/client/car-page.tsx';
 import ServiceHistoryPage from '../pages/client/service-history-page.tsx';
@@ -77,6 +78,11 @@ export const protectedRoutes: {
     path: 'cars/new',
     role: 'CLIENT',
     element: <AppLayout><AddCarPage /></AppLayout>,
+  },
+  {
+    path: '/client/appointments',
+    role: 'CLIENT',
+    element: <AppLayout><AppointmentsPage /></AppLayout>,
   },
   {
     path: '/client/search-workshops',

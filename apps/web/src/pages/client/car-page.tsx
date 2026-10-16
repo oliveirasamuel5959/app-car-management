@@ -44,7 +44,7 @@ export function CarPage() {
   }, []);
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.default', p: { xs: 2, md: 4 } }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', p: { xs: 2, md: 4 } }}>
       {/* Header */}
       <Box
         sx={{
